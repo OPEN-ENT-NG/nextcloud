@@ -1,0 +1,25 @@
+<div id="nextcloud-content" class="nextcloud-content">
+    <article class="icons-view no-overflow no-margin-bottom ng-scope height-minus300">
+        <explorer class="radius explorer-hover"
+                  ng-repeat="content in vm.folderContents"
+                  ng-model="content.selected"
+                  ng-change="vm.onSelectContent(content)"
+                  on-open="vm.onOpenContent(content)"
+                  dragstart="vm.draggable.dragStartHandler($originalEvent, content)"
+                  dragdrop="vm.draggable.dragDropHandler($originalEvent, content)"
+                  dragend="vm.draggable.dragEndHandler($originalEvent, content)"
+                  dropcondition="vm.draggable.dropConditionHandler($originalEvent, content)">
+            <legend class="no-1d">
+                <a>
+                    <span tooltip-on-ellipsis="[[content.name]]">[[content.name]]</span>
+                </a>
+                <a class="author" ng-if="canShowOwner()">
+                    <strong>[[content.ownerName]]</strong>
+                </a>
+            </legend>
+            <a class="container">
+                <i class="folder-large"></i>
+            </a>
+        </explorer>
+    </article>
+</div>

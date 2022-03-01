@@ -10,8 +10,8 @@ module.exports = {
     ],
     "testPathIgnorePatterns": [
         "/node_modules/",
-        "<rootDir>/module-starting-pack/build/",
-        "<rootDir>/module-starting-pack/out/"
+        "<rootDir>/nextcloud/build/",
+        "<rootDir>/nextcloud/out/"
     ],
     "verbose": true,
     "testURL": "http://localhost/",
