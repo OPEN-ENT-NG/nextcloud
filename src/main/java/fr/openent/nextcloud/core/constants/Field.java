@@ -26,7 +26,7 @@ public class Field {
     public static final String ISFOLDER = "isFolder";
 
     // Config
-    public static final String ADMINCRENDENTIAL = "admin-credential";
+    public static final String ADMINCREDENTIAL = "admin-credential";
     public static final String ENDPOINT = "endpoint";
     public static final String OCS_ENDPOINT_API = "ocs-api";
     public static final String WEBDAV_ENDPOINT_API = "webdav-api";

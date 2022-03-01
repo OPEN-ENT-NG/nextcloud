@@ -12,8 +12,8 @@ public class NextcloudConfig {
 
     public NextcloudConfig(JsonObject config) {
         this.host = config.getString(Field.NEXTCLOUDHOST, null);
-        this.username = config.getJsonObject(Field.ADMINCRENDENTIAL, new JsonObject()).getString(Field.USERNAME, null);
-        this.password = config.getJsonObject(Field.ADMINCRENDENTIAL, new JsonObject()).getString(Field.PASSWORD, null);
+        this.username = config.getJsonObject(Field.ADMINCREDENTIAL, new JsonObject()).getString(Field.USERNAME, null);
+        this.password = config.getJsonObject(Field.ADMINCREDENTIAL, new JsonObject()).getString(Field.PASSWORD, null);
         this.ocsEndpoint = config.getJsonObject(Field.ENDPOINT, new JsonObject()).getString(Field.OCS_ENDPOINT_API, null);
         this.webdavEndpoint = config.getJsonObject(Field.ENDPOINT, new JsonObject()).getString(Field.WEBDAV_ENDPOINT_API, null);
     }
