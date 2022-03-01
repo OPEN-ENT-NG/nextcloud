@@ -3,9 +3,10 @@ package fr.openent.nextcloud.controller;
 import fr.openent.nextcloud.service.ServiceFactory;
 import fr.wseduc.rs.ApiDoc;
 import fr.wseduc.rs.Get;
+import fr.wseduc.security.ActionType;
 import fr.wseduc.security.SecuredAction;
+import fr.wseduc.webutils.http.Renders;
 import io.vertx.core.http.HttpServerRequest;
-import io.vertx.core.json.JsonObject;
 import org.entcore.common.controller.ControllerHelper;
 import org.entcore.common.events.EventStore;
 import org.entcore.common.events.EventStoreFactory;
@@ -20,9 +21,9 @@ public class NextcloudController extends ControllerHelper {
 
     @Get("")
     @ApiDoc("Render view")
-    @SecuredAction("view")
+    @SecuredAction(value = "", type = ActionType.AUTHENTICATED)
     public void view(HttpServerRequest request) {
-        renderView(request, new JsonObject());
-        eventStore.createAndStoreEvent("ACCESS", request);
+        Renders.notFound(request);
     }
+
 }
