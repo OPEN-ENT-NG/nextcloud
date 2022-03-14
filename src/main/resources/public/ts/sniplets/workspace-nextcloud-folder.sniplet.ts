@@ -1,12 +1,13 @@
-import {FolderTreeProps, angular, template, Behaviours, workspace} from "entcore";
-import {nextcloudMockup} from "../models/__mocks__/nextcloud.model.test";
+import {FolderTreeProps, angular, template, Behaviours, workspace, model} from "entcore";
 import {Tree} from "entcore/types/src/ts/workspace/model";
 import {safeApply} from "../utils/safe-apply.utils";
 import {RootsConst} from "../core/constants/roots.const";
 import {NEXTCLOUD_APP} from "../nextcloud.behaviours";
 import models = workspace.v2.models;
 import {WorkspaceEntcoreUtils} from "../utils/workspace-entcore.utils";
-import {Draggable} from "../models/nextcloud-draggable.model";
+import {INextcloudService, nextcloudService} from "../services";
+import {AxiosError} from "axios";
+import {Draggable, NextcloudPreference, SyncDocument} from "../models";
 
 declare let window: any;
 
@@ -15,38 +16,66 @@ const $folderTreeArrows: string = '#nextcloud-folder-tree i';
 const $nextcloudFolder: string = '#nextcloud-folder-tree';
 
 interface IViewModel {
-    initTree(): void;
+    initTree(folder: Array<SyncDocument>): void;
     watchFolderState(): void;
+    openDocument(folder: any): void;
     initDraggable(): void;
+    setSwitchDisplayHandler(): void;
 
+    userPreference: NextcloudPreference;
     folderTree: FolderTreeProps;
     selectedFolder: models.Element;
     openedFolder: Array<models.Element>;
     droppable: Draggable;
+
+    documents: Array<SyncDocument>;
 }
 
 class ViewModel implements IViewModel {
+    private nextcloudService: INextcloudService;
+    private scope: any;
+
+    userPreference: NextcloudPreference;
     folderTree: FolderTreeProps;
     selectedFolder: models.Element;
     openedFolder: Array<models.Element> = [];
     droppable: Draggable;
+    documents: Array<SyncDocument>;
 
-    constructor() {
+    constructor(scope, nextcloudService: INextcloudService) {
+        this.scope = scope;
+        this.nextcloudService = nextcloudService;
+        this.userPreference = this.scope.userPreference;
         this.folderTree = {};
         this.selectedFolder = null;
         this.openedFolder = [];
-        this.initTree();
-        this.initDraggable();
-        this.setSwitchDisplayHandler();
+
+        // init folder and fetch only folder todo
+
+        Promise.all<Array<SyncDocument>>([
+            nextcloudService.listDocument(model.me.login)
+            // todo need to fetch user nextcloud as well
+        ])
+            .then(([syncDocument]) => {
+                // filtering by taking folder only and not taking folder with login name included
+                const folder: Array<SyncDocument> = syncDocument.filter(this.filterDocumentOnly());
+                this.initTree([new SyncDocument().initParent()]);
+                this.initDraggable();
+                safeApply(this.scope);
+            })
+            .catch((err: AxiosError) => {
+                const message: string = "Error while attempting to fetch user and sync documents ";
+                console.error(message + err.message);
+            });
     }
 
-    initTree(): void {
+    initTree(folder: Array<SyncDocument>): void {
         // use this const to make it accessible to its folderTree inner context
         const viewModel: IViewModel = this;
         this.folderTree = {
             cssTree: "folders-tree",
             get trees(): any | Array<Tree> {
-                return nextcloudMockup;
+                return folder;
             },
             isDisabled(folder: models.Element): boolean {
                 return false;
@@ -58,16 +87,15 @@ class ViewModel implements IViewModel {
                 return viewModel.selectedFolder === folder;
             },
             async openFolder(folder: models.Element): Promise<void> {
+                viewModel.setSwitchDisplayHandler();
+
                 // create handler in case icon are only clicked
                 viewModel.watchFolderState();
                 viewModel.selectedFolder = folder;
                 if (!viewModel.openedFolder.some((openFolder: models.Element) => openFolder === folder)) {
                     viewModel.openedFolder.push(folder);
                 }
-                var workspace = angular.element(document.querySelector(WorkspaceEntcoreUtils.$ENTCORE_WORKSPACE)).scope();
-                workspace.openedFolder = new models.FolderContext;
-
-                Behaviours.applicationsBehaviours[NEXTCLOUD_APP].nextcloudService.sendFolder("from folder");
+                viewModel.openDocument(folder);
             },
         };
     }
@@ -98,7 +126,30 @@ class ViewModel implements IViewModel {
         $folders.click(this.onClickFolder(viewModel));
     }
 
-    private setSwitchDisplayHandler(): void {
+    async openDocument(document: any): Promise<void> {
+        console.log("document: ", document);
+        let syncDocuments: Array<SyncDocument> = await nextcloudService.listDocument(model.me.login, document.path ? document.name : null)
+            .catch((err: AxiosError) => {
+                const message: string = "Error while attempting to fetch documents children ";
+                console.error(message + err.message);
+                return [];
+        });
+        // first filter applies only when we happen to fetch its own folder and the second applies on document only
+        document.children = syncDocuments.filter(this.filterRemoveOwnDocument(document)).filter(this.filterDocumentOnly());
+        safeApply(this.scope);
+        Behaviours.applicationsBehaviours[NEXTCLOUD_APP].nextcloudService.sendDocuments(syncDocuments.filter(this.filterRemoveOwnDocument(document)));
+    }
+
+    /* Filter mode */
+    private filterDocumentOnly() {
+        return (syncDocument: SyncDocument) => syncDocument.isFolder && syncDocument.name != model.me.login;
+    }
+
+    private filterRemoveOwnDocument(document: SyncDocument) {
+        return (syncDocument: SyncDocument) => syncDocument.path !== document.path;
+    }
+
+    setSwitchDisplayHandler(): void {
         const viewModel: IViewModel = this;
         const $workspaceFolderTree: JQuery = $(WorkspaceEntcoreUtils.$ENTCORE_WORKSPACE);
         // case nextcloud folder tree is interacted
@@ -167,7 +218,8 @@ export const workspaceNextcloudFolder = {
     that: null,
     controller: {
         init: async function (): Promise<void> {
-            this.vm = new ViewModel();
+            this.userPreference = new NextcloudPreference(nextcloudService).init();
+            this.vm = new ViewModel(this, nextcloudService);
         }
     }
 };

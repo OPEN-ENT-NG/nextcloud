@@ -33,22 +33,27 @@ public class UserNextcloud {
     }
 
     public static class Quota {
+        private final Long free;
         private final Number used;
-        private byte maxQuota;
+        private final Long total;
+        private final Double relative;
+        private final Number quota;
 
         public Quota(JsonObject quota) {
-            this.used = quota.getNumber(Field.USED, 0);
-            try {
-                this.maxQuota = Integer.valueOf(quota.getString(Field.QUOTA, "-1")).byteValue();
-            } catch (NumberFormatException e) {
-                this.maxQuota = 0;
-            }
+            this.free = quota.getLong(Field.FREE, 0L);
+            this.used = quota.getInteger(Field.USED, 0);
+            this.total = quota.getLong(Field.TOTAL, 0L);
+            this.relative = quota.getDouble(Field.RELATIVE, 0.0);
+            this.quota = quota.getLong(Field.QUOTA, 0L);
         }
 
         public JsonObject toJSON() {
             return new JsonObject()
-                    .put(Field.USED, this.used)
-                    .put(Field.QUOTA, this.maxQuota > 0 ? QuotaHelper.humanReadableByteCount(this.maxQuota) : "none");
+                    .put(Field.FREE, QuotaHelper.humanReadableByteCount(this.free))
+                    .put(Field.USED, QuotaHelper.humanReadableByteCount(this.used.byteValue()))
+                    .put(Field.TOTAL, QuotaHelper.humanReadableByteCount(this.total.byteValue()))
+                    .put(Field.RELATIVE, this.relative)
+                    .put(Field.QUOTA, this.quota);
         }
     }
 

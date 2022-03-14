@@ -7,12 +7,15 @@ public class Field {
     public static final String USERID = "userid";
     public static final String PASSWORD = "password";
     public static final String USERNAME = "username";
-    public static final String DISPLAYNAME = "name";
+    public static final String DISPLAYNAME = "displayname";
     public static final String EMAIL = "email";
     public static final String PHONE = "phone";
     public static final String ADDRESS = "address";
     public static final String USED = "used";
     public static final String QUOTA = "quota";
+    public static final String FREE = "free";
+    public static final String RELATIVE = "relative";
+    public static final String TOTAL = "total";
 
     public static final String STATUS = "status";
     public static final String STATUSCODE = "statuscode";
@@ -32,6 +35,8 @@ public class Field {
     public static final String WEBDAV_ENDPOINT_API = "webdav-api";
     public static final String NEXTCLOUDHOST = "nextcloud-host";
     public static final String OCS_API_REQUEST = "OCS-APIRequest";
+    public static final String JSON = "json";
+    public static final String FORMAT = "format";
 
     // ProxyConf
     public static final String HTTP_CLIENT_PROXY_HOST = "httpclient.proxyHost";
