@@ -1,11 +1,9 @@
-import {angular, Behaviours, FolderTreeProps, workspace} from "entcore";
+import {Behaviours, model, idiom as lang} from "entcore";
 import {NEXTCLOUD_APP} from "../nextcloud.behaviours";
-import models = workspace.v2.models;
 import {Subscription} from "rxjs";
-import {Tree} from "entcore/types/src/ts/workspace/model";
-import {nextcloudMockup} from "../models/__mocks__/nextcloud.model.test";
-import {WorkspaceEntcoreUtils} from "../utils/workspace-entcore.utils";
-import {Draggable} from "../models/nextcloud-draggable.model";
+import {Draggable, SyncDocument} from "../models";
+import {safeApply} from "../utils/safe-apply.utils";
+import {INextcloudService, nextcloudService} from "../services";
 
 declare let window: any;
 
@@ -13,36 +11,44 @@ interface IViewModel {
     initDraggable(): void;
     onSelectContent(content: any): void;
     onOpenContent(content: any): void;
+    getFile(path: string): string;
     draggable: Draggable;
-    folderContents: Array<any>;
+    documents: Array<SyncDocument>;
 }
 
 class ViewModel implements IViewModel {
-    folderContents: Array<any>;
+    private scope: any;
+    private nextService: INextcloudService;
+
+    documents: Array<SyncDocument>;
     subscriptions: Subscription = new Subscription();
     draggable: Draggable;
 
-    constructor(scope) {
+    constructor(scope, nextService: INextcloudService) {
+        this.scope = scope;
+        this.nextService = nextService;
         this.subscriptions.add(Behaviours.applicationsBehaviours[NEXTCLOUD_APP].nextcloudService
-            .getFolderState()
-            .subscribe((state: string) => {
-                console.log("nextcloud-content received: ", state);
+            .getDocumentsState()
+            .subscribe((documents: Array<SyncDocument>) => {
+                this.documents = documents.filter((syncDocument: SyncDocument) => syncDocument.name != model.me.login);
+                console.log("nextcloud-content received: ", this.documents);
+                safeApply(scope);
             }));
 
-        this.folderContents = [
-            {
-                eParent: "3dcbeec3-4b3a-4114-8c4f-96a41e7a09fe",
-                _id: "3b97fa07-021d-4090-bbcc-4c97d8c080e8",
-                eType: "folder",
-                name: "cc"
-            },
-            {
-                eParent: "3dcbeec3-4b3a-4114-8c4f-96a41e7a09fe",
-                _id: "3b97fa07-021d-4090-bbcc-4c97d8c080e8",
-                eType: "file",
-                name: "my_file"
-            }
-        ]
+        // this.folderContents = [
+        //     {
+        //         eParent: "3dcbeec3-4b3a-4114-8c4f-96a41e7a09fe",
+        //         _id: "3b97fa07-021d-4090-bbcc-4c97d8c080e8",
+        //         eType: "folder",
+        //         name: "cc"
+        //     },
+        //     {
+        //         eParent: "3dcbeec3-4b3a-4114-8c4f-96a41e7a09fe",
+        //         _id: "3b97fa07-021d-4090-bbcc-4c97d8c080e8",
+        //         eType: "file",
+        //         name: "my_file"
+        //     }
+        // ]
 
         this.initDraggable();
 
@@ -87,6 +93,10 @@ class ViewModel implements IViewModel {
     onOpenContent(content: any): void {
         console.log("openingContent: ", content);
     };
+
+    getFile(path: string): string {
+        return this.nextService.getFile(model.me.login, path);
+    }
 }
 
 export const workspaceNextcloudContent = {
@@ -95,7 +105,9 @@ export const workspaceNextcloudContent = {
     that: null,
     controller: {
         init: async function (): Promise<void> {
-            this.vm = new ViewModel(this);
+            lang.addBundle('/nextcloud/i18n', () => {
+                this.vm = new ViewModel(this, nextcloudService);
+            });
         },
     }
 

@@ -1,7 +1,7 @@
 <div id="nextcloud-content" class="nextcloud-content">
     <article class="icons-view no-overflow no-margin-bottom ng-scope height-minus300">
         <explorer class="radius explorer-hover"
-                  ng-repeat="content in vm.folderContents"
+                  ng-repeat="content in vm.documents"
                   ng-model="content.selected"
                   ng-change="vm.onSelectContent(content)"
                   on-open="vm.onOpenContent(content)"
@@ -13,12 +13,23 @@
                 <a>
                     <span tooltip-on-ellipsis="[[content.name]]">[[content.name]]</span>
                 </a>
-                <a class="author" ng-if="canShowOwner()">
-                    <strong>[[content.ownerName]]</strong>
-                </a>
             </legend>
-            <a class="container">
-                <i class="folder-large"></i>
+
+            <a class="container" ng-switch="content.role">
+                <!-- img format -->
+                <div ng-switch-when="img" class="twelve cell">
+                    <div class="clip">
+                        <img ng-src="[[vm.getFile(content.path)]]" alt="thumbnail" src="" width="117" height="115"/>
+                    </div>
+                </div>
+
+                <!-- folder format -->
+                <div ng-switch-when="folder">
+                    <i class="folder-large"></i>
+                </div>
+                
+                <!-- default file todo pdf-large is example but also unknown-large -->
+                <i ng-switch-default class="unknown-large"></i>
             </a>
         </explorer>
     </article>

@@ -1,19 +1,20 @@
 import {ng} from 'entcore'
-import {Observable, ReplaySubject, Subject} from "rxjs";
+import {Observable, Subject} from "rxjs";
+import {SyncDocument} from "../models";
 
 export class NextcloudEventService {
-    private subject = new Subject<string>();
+    private subject = new Subject<Array<SyncDocument>>();
     private contentContext: any;
 
     constructor() {
         this.contentContext = {};
     }
 
-    sendFolder(message: string): void {
-        this.subject.next(message);
+    sendDocuments(documents: Array<SyncDocument>): void {
+        this.subject.next(documents);
     }
 
-    getFolderState(): Observable<string> {
+    getDocumentsState(): Observable<Array<SyncDocument>> {
         return this.subject.asObservable();
     }
 

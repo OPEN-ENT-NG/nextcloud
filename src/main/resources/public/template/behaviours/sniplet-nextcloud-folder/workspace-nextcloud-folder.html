@@ -1,4 +1,4 @@
-<div class="nextcloud">
+<div class="nextcloud" ng-if="vm.userPreference.body.active">
     <!-- nextcloud folder tree -->
     <folder-tree id="nextcloud-folder-tree"
                  tree-props="vm.folderTree"
@@ -18,7 +18,7 @@
                 <i18n>Espace synchronize utilisé</i18n>
             </h2>
             <!-- <progress-bar max="quota.max" filled="quota.used" unit="[[quota.unit]]"></progress-bar> todo example -->
-            <progress-bar max="2" filled="0.5" unit="Go"></progress-bar>
+            <progress-bar max="10" filled="0.5" unit="Go"></progress-bar>
         </div>
     </div>
 </div>

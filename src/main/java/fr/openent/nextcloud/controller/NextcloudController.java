@@ -3,10 +3,12 @@ package fr.openent.nextcloud.controller;
 import fr.openent.nextcloud.service.ServiceFactory;
 import fr.wseduc.rs.ApiDoc;
 import fr.wseduc.rs.Get;
+import fr.wseduc.rs.Post;
 import fr.wseduc.security.ActionType;
 import fr.wseduc.security.SecuredAction;
 import fr.wseduc.webutils.http.Renders;
 import io.vertx.core.http.HttpServerRequest;
+import io.vertx.core.json.JsonObject;
 import org.entcore.common.controller.ControllerHelper;
 import org.entcore.common.events.EventStore;
 import org.entcore.common.events.EventStoreFactory;
@@ -26,4 +28,11 @@ public class NextcloudController extends ControllerHelper {
         Renders.notFound(request);
     }
 
+    @Get("/auth/oauth2/callback")
+    @SecuredAction(value = "", type = ActionType.AUTHENTICATED)
+    public void authNextcloud(HttpServerRequest request) {
+        String codeToken = request.params().get("code");
+        log.info("request : " + codeToken);
+        Renders.renderJson(request, new JsonObject().put("result", codeToken));
+    }
 }

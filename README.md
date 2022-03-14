@@ -37,6 +37,19 @@ nextcloudOCSAPI=${String}
 nextcloudWebdavAPI=${String}
 </pre>
 
+
+## Usage (workspace module only)
+
+Call sniplet workspace-nextcloud-tree where nextcloud front logical 
+will be called to use synchronized documents : 
+
+```
+<div>
+    <sniplet template="nextcloud-folder/workspace-nextcloud-folder" application="nextcloud"></sniplet>
+</div>
+```
+
+
 # Documentation API
 * [OCS](https://docs.nextcloud.com/server/latest/developer_manual/client_apis/OCS/ocs-api-overview.html)
 * [Webdav](https://docs.nextcloud.com/server/latest/developer_manual/client_apis/WebDAV/basic.html#)
