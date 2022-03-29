@@ -9,12 +9,10 @@ import fr.openent.nextcloud.helper.XMLHelper;
 import fr.openent.nextcloud.model.Document;
 import fr.openent.nextcloud.model.XmlnsOptions;
 import fr.openent.nextcloud.service.DocumentsService;
-import fr.wseduc.webutils.http.Renders;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
@@ -137,4 +135,22 @@ public class DefaultDocumentsService implements DocumentsService {
             }
         }
     }
+
+    @Override
+    public Future<JsonObject> uploadFile(String userId, String path) {
+        Promise<JsonObject> promise = Promise.promise();
+        this.client.put(NextcloudHttpMethod.PROPFIND.method(), nextcloudConfig.host() +
+                        nextcloudConfig.webdavEndpoint() + "/" + userId + (path != null ? "/" + path : "" ))
+                .basicAuthentication(this.nextcloudConfig.username(), this.nextcloudConfig.password())
+                .as(BodyCodec.string(StandardCharsets.UTF_8.toString()))
+                .sendBuffer(Buffer.buffer(""), responseAsync -> {
+                    if (responseAsync.failed()) {
+                        // on error
+                    } else {
+                        // on success
+                    }
+                });
+        return promise.future();
+    }
+
 }

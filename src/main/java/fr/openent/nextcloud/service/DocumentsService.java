@@ -24,4 +24,12 @@ public interface DocumentsService {
      * @return  Buffer but might want to return an object with header in te future todo ?
      */
     Future<Buffer> getFile(String userId, String path);
+
+    /**
+     * upload file
+     *
+     * @param userId    User identifier
+     * @param path      path of nextcloud's user
+     */
+    Future<JsonObject> uploadFile(String userId, String path);
 }
