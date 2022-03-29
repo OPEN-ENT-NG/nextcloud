@@ -7,6 +7,7 @@ import fr.openent.nextcloud.service.ServiceFactory;
 
 import fr.wseduc.rs.ApiDoc;
 import fr.wseduc.rs.Get;
+import fr.wseduc.rs.Put;
 import fr.wseduc.security.ActionType;
 import fr.wseduc.security.SecuredAction;
 import io.vertx.core.http.HttpServerRequest;
@@ -48,6 +49,22 @@ public class DocumentsController extends ControllerHelper {
                 })
                 .onFailure(err -> renderError(request));
     }
+
+    @Put("/files/user/:userid")
+    @ApiDoc("Render view")
+    @SecuredAction(value = "", type = ActionType.RESOURCE)
+    @ResourceFilter(OwnerFilter.class)
+    public void uploadFile(HttpServerRequest request) {
+        String userId = request.getParam(Field.USERID);
+        String path = request.getParam(Field.PATH);
+        documentsService.getFile(userId, path.replace(" ", "%20"))
+                .onSuccess(file -> {
+                    request.response().end(file);
+                    // might want to add header for fetching different type of file
+                })
+                .onFailure(err -> renderError(request));
+    }
+
 
 
 

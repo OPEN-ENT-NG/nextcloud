@@ -12,10 +12,10 @@ import fr.wseduc.security.ActionType;
 import fr.wseduc.security.SecuredAction;
 import fr.wseduc.webutils.request.RequestUtils;
 import io.vertx.core.http.HttpServerRequest;
-import org.apache.commons.text.RandomStringGenerator;
+import io.vertx.core.json.JsonObject;
 import org.entcore.common.controller.ControllerHelper;
 import org.entcore.common.http.filter.ResourceFilter;
-
+import org.entcore.common.user.UserUtils;
 
 
 public class UserController extends ControllerHelper {
@@ -26,22 +26,17 @@ public class UserController extends ControllerHelper {
         this.userService = serviceFactory.userService();
     }
 
-    @Post("/user")
-    @ApiDoc("Render view")
+    @Post("/user/provide/token")
+    @ApiDoc("Provide nextcloud token")
     @SecuredAction(value = "", type = ActionType.RESOURCE)
     @ResourceFilter(OwnerFilter.class)
-    public void createUser(HttpServerRequest request) {
+    public void provideUserSession(HttpServerRequest request) {
         RequestUtils.bodyToJson(request, pathPrefix + "userCreationBody", body -> {
-            UserNextcloud.RequestBody userCreationBody = new UserNextcloud.RequestBody()
-                    .setUserId(body.getString(Field.USERID))
-                    .setPassword(new RandomStringGenerator.Builder()
-                            .withinRange(33, 45)
-                            .build()
-                            .generate(16)
-                    );
-            userService.addNewUser(userCreationBody)
-                    .onSuccess(res -> renderJson(request, res))
-                    .onFailure(err -> renderError(request));
+            UserNextcloud.RequestBody userCreationBody = new UserNextcloud.RequestBody().setUserId(body.getString(Field.USERID));
+            UserUtils.getUserInfos(eb, request, user ->
+                    userService.provideUserSession(user.getUserId(), userCreationBody)
+                            .onSuccess(userNextcloud -> renderJson(request, new JsonObject().put(Field.STATUS, Field.OK)))
+                            .onFailure(err -> renderError(request)));
         });
     }
 

@@ -35,6 +35,10 @@ adminNextcloudPassword=${String}
 nextcloudHost=${String}
 nextcloudOCSAPI=${String}
 nextcloudWebdavAPI=${String}
+
+# ENDPOINT
+nextcloudOCSAPI=/ocs/v1.php
+nextcloudWebdavAPI=/remote.php/dav/files
 </pre>
 
 

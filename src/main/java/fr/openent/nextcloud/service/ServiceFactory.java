@@ -2,6 +2,7 @@ package fr.openent.nextcloud.service;
 
 import fr.openent.nextcloud.config.NextcloudConfig;
 import fr.openent.nextcloud.service.impl.DefaultDocumentsService;
+import fr.openent.nextcloud.service.impl.DefaultTokenProviderService;
 import fr.openent.nextcloud.service.impl.DefaultUserService;
 import fr.wseduc.mongodb.MongoDb;
 import io.vertx.core.Vertx;
@@ -32,13 +33,21 @@ public class ServiceFactory {
     }
 
     public UserService userService() {
-        return new DefaultUserService(webClient, nextcloudConfig);
+        return new DefaultUserService(this);
     }
     public DocumentsService documentsService() {
         return new DefaultDocumentsService(webClient, nextcloudConfig);
     }
 
+    public TokenProviderService tokenProviderService() {
+        return new DefaultTokenProviderService(webClient, nextcloudConfig);
+    }
+
     // Helpers
+
+    public WebClient webClient() {
+        return this.webClient;
+    }
 
     public NextcloudConfig nextcloudConfig() {return this.nextcloudConfig;}
 

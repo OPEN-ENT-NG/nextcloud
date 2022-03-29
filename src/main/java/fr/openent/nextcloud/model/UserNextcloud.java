@@ -22,6 +22,10 @@ public class UserNextcloud {
         this.quota = new Quota(user.getJsonObject(Field.QUOTA, new JsonObject()));
     }
 
+    public String id() {
+        return id;
+    }
+
     public JsonObject toJSON() {
         return new JsonObject()
                 .put(Field.ID, this.id)
@@ -61,6 +65,14 @@ public class UserNextcloud {
         private String userId;
         private String password;
 
+        public String userId() {
+            return userId;
+        }
+
+        public String password() {
+            return password;
+        }
+
         public RequestBody setUserId(String userId) {
             this.userId = userId;
             return this;
@@ -74,7 +86,53 @@ public class UserNextcloud {
         public JsonObject toJSON() {
             return new JsonObject()
                     .put(Field.USERID, this.userId)
-                    .put(Field.PASSWORD, this.password);
+                    .put(Field.PASSWORD, this.password)
+                    .put(Field.QUOTA, "2 GB");
+        }
+    }
+
+    public static class TokenProvider {
+        private String userId;
+        private String loginName;
+        private String token;
+
+        public String userId() {
+            return userId;
+        }
+
+        public String loginName() {
+            return loginName;
+        }
+
+        public String token() {
+            return token;
+        }
+
+        public TokenProvider setUserId(String userId) {
+            this.userId = userId;
+            return this;
+        }
+
+        public TokenProvider setLoginName(String loginName) {
+            this.loginName = loginName;
+            return this;
+        }
+
+        public TokenProvider setToken(String token) {
+            this.token = token;
+            return this;
+        }
+
+        public JsonObject toJSON() {
+            return new JsonObject()
+                    .put(Field.LOGINNAME, this.loginName)
+                    .put(Field.TOKEN, this.token);
+        }
+
+        public boolean isEmpty() {
+            return this.userId == null
+                    && this.loginName == null
+                    && this.token == null;
         }
     }
 }

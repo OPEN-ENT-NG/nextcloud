@@ -6,6 +6,8 @@
         "app-name" : "Nextcloud",
     	"app-address" : "/nextcloud",
     	"app-icon" : "Nextcloud-large",
+    	"sql": true,
+    	"db-schema" : "nextcloud",
         "host": "${host}",
         "ssl" : $ssl,
         "auto-redeploy": false,

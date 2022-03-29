@@ -5,8 +5,10 @@ public class Field {
     public static final String DATA = "data";
     public static final String ID = "id";
     public static final String USERID = "userid";
+    public static final String USER_ID = "user_id";
     public static final String PASSWORD = "password";
     public static final String USERNAME = "username";
+    public static final String NAME = "name";
     public static final String DISPLAYNAME = "displayname";
     public static final String EMAIL = "email";
     public static final String PHONE = "phone";
@@ -16,6 +18,9 @@ public class Field {
     public static final String FREE = "free";
     public static final String RELATIVE = "relative";
     public static final String TOTAL = "total";
+    public static final String KEY = "key";
+    public static final String VALUE = "value";
+    public static final String APPPASSWORD = "apppassword";
 
     public static final String STATUS = "status";
     public static final String STATUSCODE = "statuscode";
@@ -26,10 +31,22 @@ public class Field {
     public static final String PATH = "path";
     public static final String OCS = "ocs";
 
+    // Token Provider
+    public static final String LOGINNAME = "loginName";
+    public static final String LOGIN = "login";
+    public static final String TOKEN = "token";
+    public static final String DEVICETOKEN = "deviceToken";
+
+    // State
+    public static final String OK = "OK";
+    public static final String KO = "KO";
+
+
     public static final String ISFOLDER = "isFolder";
 
     // Config
     public static final String ADMINCREDENTIAL = "admin-credential";
+    public static final String NEXTCLOUDSESSION = "nextcloud-session";
     public static final String ENDPOINT = "endpoint";
     public static final String OCS_ENDPOINT_API = "ocs-api";
     public static final String WEBDAV_ENDPOINT_API = "webdav-api";
