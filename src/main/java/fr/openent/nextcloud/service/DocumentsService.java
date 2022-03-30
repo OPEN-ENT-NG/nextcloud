@@ -5,6 +5,8 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
+import java.util.List;
+
 public interface DocumentsService {
 
     /**
@@ -25,6 +27,15 @@ public interface DocumentsService {
      * @param path              path of nextcloud's user
      */
     Future<Buffer> getFile(String userId, String userNextcloudId, String path);
+
+    /**
+     * download multiple files (.zip given)
+     *
+     * @param userId            User identifier (ENT part)
+     * @param path              path of nextcloud's user
+     * @param files             List of wanted file to download
+     */
+    Future<Buffer> getFiles(String userId, String path, List<String> files);
 
     /**
      * upload file

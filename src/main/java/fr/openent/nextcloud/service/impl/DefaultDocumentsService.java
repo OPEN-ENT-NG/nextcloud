@@ -27,12 +27,16 @@ import io.vertx.ext.web.codec.BodyCodec;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class DefaultDocumentsService implements DocumentsService {
     private final Logger log = LoggerFactory.getLogger(DefaultDocumentsService.class);
     private final WebClient client;
     private final NextcloudConfig nextcloudConfig;
     private final UserService userService;
+
+    private static final String DOWNLOAD_ENDPOINT = "/index.php/apps/files/ajax/download.php";
+
 
     public DefaultDocumentsService(ServiceFactory serviceFactory) {
         this.client = serviceFactory.webClient();
@@ -139,6 +143,20 @@ public class DefaultDocumentsService implements DocumentsService {
                 promise.complete(response.body());
             }
         }
+    }
+
+    @Override
+    public Future<Buffer> getFiles(String userId, String path, List<String> files) {
+        Promise<Buffer> promise = Promise.promise();
+        userService.getUserSession(userId)
+                .onSuccess(userSession ->
+                        this.client.getAbs(nextcloudConfig.host() + DOWNLOAD_ENDPOINT)
+                                .basicAuthentication(userSession.loginName(), userSession.token())
+                                .addQueryParam(Field.DIR, path)
+                                .addQueryParam(Field.FILES, new JsonArray(files).toString())
+                                .send(responseAsync -> proceedGetFile(responseAsync, promise)))
+                .onFailure(promise::fail);
+        return promise.future();
     }
 
     @Override

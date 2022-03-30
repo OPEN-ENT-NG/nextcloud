@@ -8,8 +8,9 @@ import {WorkspaceEntcoreUtils} from "../utils/workspace-entcore.utils";
 import {INextcloudService, nextcloudService} from "../services";
 import {AxiosError} from "axios";
 import {Draggable, SyncDocument} from "../models";
-import {INextcloudUserService, nextcloudUserService} from "../services/nextcloud-user.service";
+import {INextcloudUserService, nextcloudUserService} from "../services";
 import {UserNextcloud} from "../models/nextcloud-user.model";
+import {Subscription} from "rxjs";
 
 declare let window: any;
 
@@ -45,6 +46,8 @@ class ViewModel implements IViewModel {
     droppable: Draggable;
     documents: Array<SyncDocument>;
 
+    subscriptions: Subscription = new Subscription();
+
     constructor(scope, nextcloudService: INextcloudService, nextcloudUserService: INextcloudUserService) {
         this.scope = scope;
         this.nextcloudService = nextcloudService;
@@ -54,6 +57,7 @@ class ViewModel implements IViewModel {
         this.selectedFolder = null;
         this.openedFolder = [];
 
+        // resolve user nextcloud && init tree
         this.nextcloudUserService.getUserInfo(decodeURI(model.me.login))
             .then((userInfo: UserNextcloud) => {
                 this.userInfo = userInfo;
@@ -65,6 +69,14 @@ class ViewModel implements IViewModel {
                 const message: string = "Error while attempting to fetch user info";
                 console.error(message + err.message);
             });
+
+        // on receive openFolder event
+        this.subscriptions.add(Behaviours.applicationsBehaviours[NEXTCLOUD_APP].nextcloudService
+            .getOpenedFolderDocument()
+            .subscribe((document: SyncDocument) => {
+                this.folderTree.openFolder(document);
+            }));
+
     }
 
     initTree(folder: Array<SyncDocument>): void {
@@ -93,7 +105,6 @@ class ViewModel implements IViewModel {
                 if (!viewModel.openedFolder.some((openFolder: models.Element) => openFolder === folder)) {
                     viewModel.openedFolder.push(folder);
                 }
-
                 // synchronize documents and send content to its other sniplet content
                 viewModel.openDocument(folder);
             },
@@ -127,7 +138,7 @@ class ViewModel implements IViewModel {
     }
 
     async openDocument(document: any): Promise<void> {
-        let syncDocuments: Array<SyncDocument> = await nextcloudService.listDocument(model.me.login, document.path ? document.name : null)
+        let syncDocuments: Array<SyncDocument> = await nextcloudService.listDocument(model.me.login, document.path ? document.path : null)
             .catch((err: AxiosError) => {
                 const message: string = "Error while attempting to fetch documents children ";
                 console.error(message + err.message);
@@ -136,8 +147,9 @@ class ViewModel implements IViewModel {
         // first filter applies only when we happen to fetch its own folder and the second applies on document only
         document.children = syncDocuments.filter(this.filterRemoveOwnDocument(document)).filter(this.filterDocumentOnly());
         safeApply(this.scope);
+
         Behaviours.applicationsBehaviours[NEXTCLOUD_APP].nextcloudService
-            .sendDocuments(syncDocuments.filter(this.filterRemoveOwnDocument(document)));
+            .sendDocuments({path: document.path ? document.path : model.me.login, documents: syncDocuments.filter(this.filterRemoveOwnDocument(document))});
     }
 
     /* Filter mode */

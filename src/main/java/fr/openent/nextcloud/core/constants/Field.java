@@ -21,6 +21,10 @@ public class Field {
     public static final String KEY = "key";
     public static final String VALUE = "value";
     public static final String APPPASSWORD = "apppassword";
+    public static final String FILENAME = "fileName";
+    public static final String FILE = "file";
+    public static final String FILES = "files";
+    public static final String DIR = "dir";
 
     public static final String STATUS = "status";
     public static final String STATUSCODE = "statuscode";

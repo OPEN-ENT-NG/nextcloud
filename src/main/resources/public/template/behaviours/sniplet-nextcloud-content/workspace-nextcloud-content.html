@@ -1,5 +1,5 @@
 <div id="nextcloud-content" class="nextcloud-content">
-    <article class="icons-view no-overflow no-margin-bottom ng-scope height-minus300">
+    <article class="icons-view no-overflow no-margin-bottom ng-scope height-minus300" ng-show="vm.documents.length > 0">
         <explorer class="radius explorer-hover"
                   ng-repeat="content in vm.documents"
                   ng-model="content.selected"
@@ -19,7 +19,7 @@
                 <!-- img format -->
                 <div ng-switch-when="img" class="twelve cell">
                     <div class="clip">
-                        <img ng-src="[[vm.getFile(content.path)]]" alt="thumbnail" src="" width="117" height="115"/>
+                        <img ng-src="[[vm.getFile(content)]]" alt="thumbnail" src="" width="117" height="115"/>
                     </div>
                 </div>
 
@@ -33,4 +33,21 @@
             </a>
         </explorer>
     </article>
+
+    <!-- empty state -->
+    <div class="emptyscreen" ng-if="vm.documents.length === 0">
+        <h2 class="emptyscreen-header">
+            <i18n>empty.workspace.subfolder.title</i18n>
+        </h2>
+
+        <img class="emptyscreen-image__mini" src="/workspace/public/img/empty-workspace.svg" alt="">
+
+        <p class="emptyscreen-footer">
+            <i18n>empty.workspace</i18n>
+        </p>
+    </div>
 </div>
+
+<!-- toolbar -->
+<div ng-include="'/nextcloud/public/template/behaviours/sniplet-nextcloud-content/workspace-nextcloud-toolbar.html'"></div>
+

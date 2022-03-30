@@ -1,0 +1,11 @@
+<section class="nextcloud-content-toolbar toggle-buttons hide" ng-class="{display: vm.selectedDocuments && vm.selectedDocuments.length > 0}">
+    <div class="toggle">
+        <div class="row">
+
+            <!-- download file(s) -->
+            <button ng-click="vm.toolbar.downloadFiles(vm.selectedDocuments)">
+                <i18n>workspace.download</i18n>
+            </button>
+        </div>
+    </div>
+</section>
