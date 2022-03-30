@@ -53,9 +53,9 @@ public class UserNextcloud {
 
         public JsonObject toJSON() {
             return new JsonObject()
-                    .put(Field.FREE, QuotaHelper.humanReadableByteCount(this.free))
-                    .put(Field.USED, QuotaHelper.humanReadableByteCount(this.used.byteValue()))
-                    .put(Field.TOTAL, QuotaHelper.humanReadableByteCount(this.total.byteValue()))
+                    .put(Field.FREE, this.free)
+                    .put(Field.USED, this.used.longValue())
+                    .put(Field.TOTAL, this.total)
                     .put(Field.RELATIVE, this.relative)
                     .put(Field.QUOTA, this.quota);
         }

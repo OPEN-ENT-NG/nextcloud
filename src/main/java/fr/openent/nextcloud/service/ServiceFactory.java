@@ -36,7 +36,7 @@ public class ServiceFactory {
         return new DefaultUserService(this);
     }
     public DocumentsService documentsService() {
-        return new DefaultDocumentsService(webClient, nextcloudConfig);
+        return new DefaultDocumentsService(this);
     }
 
     public TokenProviderService tokenProviderService() {
