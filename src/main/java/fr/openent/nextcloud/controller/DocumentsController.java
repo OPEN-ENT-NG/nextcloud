@@ -14,6 +14,7 @@ import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.json.JsonObject;
 import org.entcore.common.controller.ControllerHelper;
 import org.entcore.common.http.filter.ResourceFilter;
+import org.entcore.common.user.UserUtils;
 
 public class DocumentsController extends ControllerHelper {
 
@@ -30,9 +31,10 @@ public class DocumentsController extends ControllerHelper {
     public void listFiles(HttpServerRequest request) {
         String userId = request.getParam(Field.USERID);
         String path = request.getParam(Field.PATH);
-        documentsService.listFiles(userId, path)
-                .onSuccess(files -> renderJson(request, new JsonObject().put(Field.DATA, files)))
-                .onFailure(err -> renderError(request));
+        UserUtils.getUserInfos(eb, request, user ->
+                documentsService.listFiles(user.getUserId(), userId, path)
+                        .onSuccess(files -> renderJson(request, new JsonObject().put(Field.DATA, files)))
+                        .onFailure(err -> renderError(request)));
     }
 
     @Get("/files/user/:userid/download")
@@ -42,12 +44,10 @@ public class DocumentsController extends ControllerHelper {
     public void getFile(HttpServerRequest request) {
         String userId = request.getParam(Field.USERID);
         String path = request.getParam(Field.PATH);
-        documentsService.getFile(userId, path.replace(" ", "%20"))
-                .onSuccess(file -> {
-                    request.response().end(file);
-                    // might want to add header for fetching different type of file
-                })
-                .onFailure(err -> renderError(request));
+        UserUtils.getUserInfos(eb, request, user ->
+                documentsService.getFile(user.getUserId(), userId, path.replace(" ", "%20"))
+                        .onSuccess(file -> request.response().end(file))
+                        .onFailure(err -> renderError(request)));
     }
 
     @Put("/files/user/:userid")
@@ -57,12 +57,10 @@ public class DocumentsController extends ControllerHelper {
     public void uploadFile(HttpServerRequest request) {
         String userId = request.getParam(Field.USERID);
         String path = request.getParam(Field.PATH);
-        documentsService.getFile(userId, path.replace(" ", "%20"))
-                .onSuccess(file -> {
-                    request.response().end(file);
-                    // might want to add header for fetching different type of file
-                })
-                .onFailure(err -> renderError(request));
+        UserUtils.getUserInfos(eb, request, user ->
+                documentsService.getFile(user.getUserId(), userId, path.replace(" ", "%20"))
+                        .onSuccess(file -> request.response().end(file))
+                        .onFailure(err -> renderError(request)));
     }
 
 

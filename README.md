@@ -48,9 +48,7 @@ Call sniplet workspace-nextcloud-tree where nextcloud front logical
 will be called to use synchronized documents : 
 
 ```
-<div>
-    <sniplet template="nextcloud-folder/workspace-nextcloud-folder" application="nextcloud"></sniplet>
-</div>
+<sniplet template="nextcloud-folder/workspace-nextcloud-folder" application="nextcloud"></sniplet>
 ```
 
 

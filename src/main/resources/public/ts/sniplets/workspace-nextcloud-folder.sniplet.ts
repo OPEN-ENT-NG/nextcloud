@@ -7,7 +7,9 @@ import models = workspace.v2.models;
 import {WorkspaceEntcoreUtils} from "../utils/workspace-entcore.utils";
 import {INextcloudService, nextcloudService} from "../services";
 import {AxiosError} from "axios";
-import {Draggable, NextcloudPreference, SyncDocument} from "../models";
+import {Draggable, SyncDocument} from "../models";
+import {INextcloudUserService, nextcloudUserService} from "../services/nextcloud-user.service";
+import {UserNextcloud} from "../models/nextcloud-user.model";
 
 declare let window: any;
 
@@ -22,7 +24,7 @@ interface IViewModel {
     initDraggable(): void;
     setSwitchDisplayHandler(): void;
 
-    userPreference: NextcloudPreference;
+    userInfo: UserNextcloud;
     folderTree: FolderTreeProps;
     selectedFolder: models.Element;
     openedFolder: Array<models.Element>;
@@ -33,43 +35,36 @@ interface IViewModel {
 
 class ViewModel implements IViewModel {
     private nextcloudService: INextcloudService;
+    private nextcloudUserService: INextcloudUserService;
     private scope: any;
 
-    userPreference: NextcloudPreference;
+    userInfo: UserNextcloud;
     folderTree: FolderTreeProps;
     selectedFolder: models.Element;
     openedFolder: Array<models.Element> = [];
     droppable: Draggable;
     documents: Array<SyncDocument>;
 
-    constructor(scope, nextcloudService: INextcloudService) {
+    constructor(scope, nextcloudService: INextcloudService, nextcloudUserService: INextcloudUserService) {
         this.scope = scope;
         this.nextcloudService = nextcloudService;
-        this.userPreference = this.scope.userPreference;
+        this.nextcloudUserService = nextcloudUserService;
+        this.userInfo = null;
         this.folderTree = {};
         this.selectedFolder = null;
         this.openedFolder = [];
 
-
-        this.initTree([new SyncDocument().initParent()]);
-        this.initDraggable();
-        safeApply(this.scope);
-        // init folder and fetch only folder todo
-        // Promise.all<Array<SyncDocument>>([
-        //     nextcloudService.listDocument(model.me.login)
-        //     // todo need to fetch user nextcloud as well
-        // ])
-        //     .then(([syncDocument]) => {
-        //         // filtering by taking folder only and not taking folder with login name included
-        //         const folder: Array<SyncDocument> = syncDocument.filter(this.filterDocumentOnly());
-        //         this.initTree([new SyncDocument().initParent()]);
-        //         this.initDraggable();
-        //         safeApply(this.scope);
-        //     })
-        //     .catch((err: AxiosError) => {
-        //         const message: string = "Error while attempting to fetch user and sync documents ";
-        //         console.error(message + err.message);
-        //     });
+        this.nextcloudUserService.getUserInfo(decodeURI(model.me.login))
+            .then((userInfo: UserNextcloud) => {
+                this.userInfo = userInfo;
+                this.initTree([new SyncDocument().initParent()]);
+                this.initDraggable();
+                safeApply(this.scope);
+            })
+            .catch((err: AxiosError) => {
+                const message: string = "Error while attempting to fetch user info";
+                console.error(message + err.message);
+            });
     }
 
     initTree(folder: Array<SyncDocument>): void {
@@ -223,9 +218,9 @@ export const workspaceNextcloudFolder = {
     that: null,
     controller: {
         init: function (): void {
-            lang.addBundle('/nextcloud/i18n', () => {
-                this.userPreference = new NextcloudPreference(nextcloudService).init();
-                this.vm = new ViewModel(this, nextcloudService);
+            lang.addBundle('/nextcloud/i18n', async () => {
+                await nextcloudUserService.resolveUser(decodeURI(model.me.login));
+                this.vm = new ViewModel(this, nextcloudService, nextcloudUserService);
             });
         }
     }
