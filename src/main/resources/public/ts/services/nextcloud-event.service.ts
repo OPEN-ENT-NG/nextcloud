@@ -3,23 +3,32 @@ import {Observable, Subject} from "rxjs";
 import {SyncDocument} from "../models";
 
 export class NextcloudEventService {
-    private subject = new Subject<Array<SyncDocument>>();
+    // catch openFolder
+    private openFolderSubject = new Subject<SyncDocument>();
+
+    // sending document observable
+    private documentSubject = new Subject<{path: string, documents: Array<SyncDocument>}>();
+
     private contentContext: any;
 
     constructor() {
         this.contentContext = {};
     }
 
-    sendDocuments(documents: Array<SyncDocument>): void {
-        this.subject.next(documents);
+    sendDocuments(documents: {path: string, documents: Array<SyncDocument>}): void {
+        this.documentSubject.next(documents);
     }
 
-    getDocumentsState(): Observable<Array<SyncDocument>> {
-        return this.subject.asObservable();
+    getDocumentsState(): Observable<{path: string, documents: Array<SyncDocument>}> {
+        return this.documentSubject.asObservable();
     }
 
-    unsubscribe(): void {
-        this.subject.unsubscribe();
+    sendOpenFolderDocument(document: SyncDocument): void {
+        this.openFolderSubject.next(document);
+    }
+
+    getOpenedFolderDocument(): Observable<SyncDocument> {
+        return this.openFolderSubject.asObservable();
     }
 
     getContentContext(): void {

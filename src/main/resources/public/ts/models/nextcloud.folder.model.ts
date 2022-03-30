@@ -26,6 +26,9 @@ export class SyncDocument {
     role: string | typeof DocumentRole;
     children: Array<SyncDocument>;
 
+    // custom field bound by other entity/model
+    selected?: boolean;
+
     build(data: IDocumentResponse): SyncDocument {
         this.name = decodeURI(data.displayname);
         this.ownerDisplayName = data.ownerDisplayName;
@@ -38,9 +41,6 @@ export class SyncDocument {
         this.isFolder = data.isFolder;
         this.role = this.determineRole();
         this.children = [];
-        if (this.size > 0) {
-            this.children.push(new SyncDocument());
-        }
         return this;
     }
 

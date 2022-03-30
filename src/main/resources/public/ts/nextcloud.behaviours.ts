@@ -1,6 +1,6 @@
 import {NextcloudEventService} from "./services";
 import {workspaceNextcloudFolder} from "./sniplets/workspace-nextcloud-folder.sniplet";
-import {workspaceNextcloudContent} from "./sniplets/workspace-nextcloud-content.sniplet";
+import {workspaceNextcloudContent} from "./sniplets/content/workspace-nextcloud-content.sniplet";
 
 export const NEXTCLOUD_APP = "nextcloud";
 
