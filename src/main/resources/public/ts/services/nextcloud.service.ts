@@ -1,6 +1,6 @@
 import {ng} from 'entcore'
 import http, {AxiosResponse} from 'axios';
-import {IDocumentResponse, Meta, SyncDocument} from "../models";
+import {IDocumentResponse, SyncDocument} from "../models";
 
 export interface INextcloudService {
     listDocument(userid: string, path?: string): Promise<Array<SyncDocument>>;
