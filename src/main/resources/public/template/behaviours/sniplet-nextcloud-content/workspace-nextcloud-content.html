@@ -1,4 +1,4 @@
-<div id="nextcloud-content" class="nextcloud-content">
+<div id="nextcloud-content" class="sniplet nextcloud">
     <article class="icons-view no-overflow no-margin-bottom ng-scope height-minus300" ng-show="vm.documents.length > 0">
         <explorer class="radius explorer-hover"
                   ng-repeat="content in vm.documents"
@@ -46,8 +46,8 @@
             <i18n>empty.workspace</i18n>
         </p>
     </div>
-</div>
 
-<!-- toolbar -->
-<div ng-include="'/nextcloud/public/template/behaviours/sniplet-nextcloud-content/workspace-nextcloud-toolbar.html'"></div>
+    <!-- toolbar -->
+    <div ng-include="'/nextcloud/public/template/behaviours/sniplet-nextcloud-content/workspace-nextcloud-toolbar.html'"></div>
+</div>
 
