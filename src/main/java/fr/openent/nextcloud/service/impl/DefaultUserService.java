@@ -6,6 +6,7 @@ import fr.openent.nextcloud.core.constants.Field;
 import fr.openent.nextcloud.core.enums.EditableDataField;
 import fr.openent.nextcloud.helper.HttpResponseHelper;
 import fr.openent.nextcloud.helper.PromiseHelper;
+import fr.openent.nextcloud.helper.StringHelper;
 import fr.openent.nextcloud.model.OCSResponse;
 import fr.openent.nextcloud.model.UserNextcloud;
 import fr.openent.nextcloud.service.ServiceFactory;
@@ -67,6 +68,8 @@ public class DefaultUserService implements UserService {
      */
     private Future<Void> resolveUserSession(String userId, UserNextcloud.RequestBody userBody, UserNextcloud userNextcloud) {
         Promise<Void> promise = Promise.promise();
+        // correct format string user login identifier nextcloud
+        userBody.setUserId(StringHelper.removeAccent(userBody.userId()));
         if (userNextcloud.id() != null) {
             this.getUserSession(userId)
                     .onSuccess(userSession -> {

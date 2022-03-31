@@ -12,7 +12,7 @@ export const nextcloudUserService: INextcloudUserService = {
     resolveUser: async (userid: string): Promise<AxiosResponse> => {
         const param: string = `?userid=${userid}`;
         const body: {userid: string} = {userid: userid};
-        return http.post(`/nextcloud/user/provide/token${param}`, body);
+        return http.post(decodeURI(`/nextcloud/user/provide/token${param}`), body);
     },
 
     getUserInfo: async (userid: string): Promise<UserNextcloud> => {

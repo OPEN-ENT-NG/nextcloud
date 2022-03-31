@@ -1,7 +1,6 @@
 package fr.openent.nextcloud.model;
 
 import fr.openent.nextcloud.core.constants.Field;
-import fr.openent.nextcloud.helper.QuotaHelper;
 import io.vertx.core.json.JsonObject;
 
 public class UserNextcloud {
