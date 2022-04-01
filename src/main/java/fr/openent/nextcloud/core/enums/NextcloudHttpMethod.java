@@ -1,7 +1,8 @@
 package fr.openent.nextcloud.core.enums;
 
 public enum NextcloudHttpMethod {
-    PROPFIND("PROPFIND");
+    PROPFIND("PROPFIND"),
+    MOVE("MOVE");
 
 
     private final String httpMethod;

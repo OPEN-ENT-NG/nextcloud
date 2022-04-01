@@ -15,7 +15,7 @@ interface IViewModel {
     getFile(document: SyncDocument): string;
     draggable: Draggable;
 
-    pathParent: string;
+    parentDocument: SyncDocument;
     documents: Array<SyncDocument>;
     selectedDocuments: Array<SyncDocument>;
 }
@@ -27,7 +27,7 @@ class ViewModel implements IViewModel {
     subscriptions: Subscription = new Subscription();
     draggable: Draggable;
 
-    pathParent: string;
+    parentDocument: SyncDocument;
     documents: Array<SyncDocument>;
     selectedDocuments: Array<SyncDocument>;
 
@@ -39,12 +39,12 @@ class ViewModel implements IViewModel {
         // on receive documents from folder-tree sniplet
         this.subscriptions.add(Behaviours.applicationsBehaviours[NEXTCLOUD_APP].nextcloudService
             .getDocumentsState()
-            .subscribe((res: {path: string, documents: Array<SyncDocument>}) => {
+            .subscribe((res: {parentDocument: SyncDocument, documents: Array<SyncDocument>}) => {
                 if (res.documents && res.documents.length > 0) {
-                    this.pathParent = res.path;
+                    this.parentDocument = res.parentDocument;
                     this.documents = res.documents.filter((syncDocument: SyncDocument) => syncDocument.name != model.me.login);
                 } else {
-                    this.pathParent = res.path;
+                    this.parentDocument = res.parentDocument;
                     this.documents = [];
                 }
                 safeApply(scope);
@@ -87,8 +87,8 @@ class ViewModel implements IViewModel {
     }
 
     onSelectContent(content: SyncDocument): void {
+        console.log("content: ", content);
         this.selectedDocuments = this.documents.filter((document: SyncDocument) => document.selected);
-        console.log("selectedDocuments: ", this.selectedDocuments);
     };
 
     onOpenContent(document: SyncDocument): void {

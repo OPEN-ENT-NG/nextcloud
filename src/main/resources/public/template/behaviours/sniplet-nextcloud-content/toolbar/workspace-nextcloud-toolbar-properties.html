@@ -1,0 +1,25 @@
+<lightbox show="vm.toolbar.lightbox.properties" class="" on-close="vm.toolbar.toggleRenameView(false)">
+    <!-- title -->
+    <h2>
+        <i18n>workspace.properties</i18n>
+    </h2>
+
+    <!-- body -->
+    <div class="row">
+        <label class="three cell">
+            <i18n>workspace.document.name</i18n>
+        </label>
+        <label>
+            <input class="nine cell" type="text" ng-model="vm.toolbar.currentDocument.name"
+                   placeholder="[[vm.toolbar.currentDocument.name]]" autofocus />
+        </label>
+    </div>
+
+    <!-- footer -->
+    <div class="lightbox-buttons fluid">
+        <button class="nextcloud-button right-magnet" ng-click="vm.toolbar.renameDocument()">
+            <i18n>save</i18n>
+        </button>
+    </div>
+
+</lightbox>

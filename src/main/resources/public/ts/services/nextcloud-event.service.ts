@@ -7,7 +7,7 @@ export class NextcloudEventService {
     private openFolderSubject = new Subject<SyncDocument>();
 
     // sending document observable
-    private documentSubject = new Subject<{path: string, documents: Array<SyncDocument>}>();
+    private documentSubject = new Subject<{parentDocument: SyncDocument, documents: Array<SyncDocument>}>();
 
     private contentContext: any;
 
@@ -15,11 +15,11 @@ export class NextcloudEventService {
         this.contentContext = {};
     }
 
-    sendDocuments(documents: {path: string, documents: Array<SyncDocument>}): void {
+    sendDocuments(documents: {parentDocument: SyncDocument, documents: Array<SyncDocument>}): void {
         this.documentSubject.next(documents);
     }
 
-    getDocumentsState(): Observable<{path: string, documents: Array<SyncDocument>}> {
+    getDocumentsState(): Observable<{parentDocument: SyncDocument, documents: Array<SyncDocument>}> {
         return this.documentSubject.asObservable();
     }
 

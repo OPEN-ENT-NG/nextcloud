@@ -101,6 +101,7 @@ class ViewModel implements IViewModel {
 
                 // create handler in case icon are only clicked
                 viewModel.watchFolderState();
+                console.log("test");
                 viewModel.selectedFolder = folder;
                 if (!viewModel.openedFolder.some((openFolder: models.Element) => openFolder === folder)) {
                     viewModel.openedFolder.push(folder);
@@ -149,7 +150,10 @@ class ViewModel implements IViewModel {
         safeApply(this.scope);
 
         Behaviours.applicationsBehaviours[NEXTCLOUD_APP].nextcloudService
-            .sendDocuments({path: document.path ? document.path : model.me.login, documents: syncDocuments.filter(this.filterRemoveOwnDocument(document))});
+            .sendDocuments({
+                parentDocument: document.path ? document : new SyncDocument().initParent(),
+                documents: syncDocuments.filter(this.filterRemoveOwnDocument(document))
+            });
     }
 
     /* Filter mode */

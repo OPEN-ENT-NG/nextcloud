@@ -9,10 +9,10 @@ import fr.openent.nextcloud.helper.HttpResponseHelper;
 import fr.openent.nextcloud.helper.PromiseHelper;
 import fr.openent.nextcloud.helper.XMLHelper;
 import fr.openent.nextcloud.model.Document;
+import fr.openent.nextcloud.model.UserNextcloud;
 import fr.openent.nextcloud.model.XmlnsOptions;
 import fr.openent.nextcloud.service.DocumentsService;
 import fr.openent.nextcloud.service.ServiceFactory;
-import fr.openent.nextcloud.service.UserService;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
@@ -32,7 +32,6 @@ public class DefaultDocumentsService implements DocumentsService {
     private final Logger log = LoggerFactory.getLogger(DefaultDocumentsService.class);
     private final WebClient client;
     private final NextcloudConfig nextcloudConfig;
-    private final UserService userService;
 
     private static final String DOWNLOAD_ENDPOINT = "/index.php/apps/files/ajax/download.php";
 
@@ -40,27 +39,23 @@ public class DefaultDocumentsService implements DocumentsService {
     public DefaultDocumentsService(ServiceFactory serviceFactory) {
         this.client = serviceFactory.webClient();
         this.nextcloudConfig = serviceFactory.nextcloudConfig();
-        this.userService = serviceFactory.userService();
     }
     
     /**
      * List files/folder
      *
-     * @param userId User identifier
+     * @param userSession   User Session
      * @param path   path of nextcloud's user
      * @return Future Instance of User from Nextcloud {@link JsonArray}
      */
     @Override
-    public Future<JsonArray> listFiles(String userId, String userNextcloudId, String path) {
+    public Future<JsonArray> listFiles(UserNextcloud.TokenProvider userSession, String path) {
         Promise<JsonArray> promise = Promise.promise();
-        userService.getUserSession(userId)
-                .onSuccess(userSession ->
-                        this.client.rawAbs(NextcloudHttpMethod.PROPFIND.method(), nextcloudConfig.host() +
-                                        nextcloudConfig.webdavEndpoint() + "/" + userNextcloudId + (path != null ? "/" + path : "" ))
-                                .basicAuthentication(userSession.loginName(), userSession.token())
-                                .as(BodyCodec.string(StandardCharsets.UTF_8.toString()))
-                                .sendBuffer(Buffer.buffer(getListFilesPropsBody()), responseAsync -> proceedListFiles(responseAsync, promise)))
-                .onFailure(promise::fail);
+        this.client.rawAbs(NextcloudHttpMethod.PROPFIND.method(), nextcloudConfig.host() +
+                        nextcloudConfig.webdavEndpoint() + "/" + userSession.loginName() + (path != null ? "/" + path : "" ))
+                .basicAuthentication(userSession.loginName(), userSession.token())
+                .as(BodyCodec.string(StandardCharsets.UTF_8.toString()))
+                .sendBuffer(Buffer.buffer(getListFilesPropsBody()), responseAsync -> proceedListFiles(responseAsync, promise));
         return promise.future();
     }
 
@@ -90,36 +85,56 @@ public class DefaultDocumentsService implements DocumentsService {
             PromiseHelper.reject(log, messageToFormat, this.getClass().getSimpleName(), responseAsync, promise);
         } else {
             HttpResponse<String> response = responseAsync.result();
-            if (response.statusCode() != 207) {
-                String messageToFormat = "[Nextcloud@%s::listFiles] Response status is not a HTTP 207 : %s : %s";
-                HttpResponseHelper.reject(log, messageToFormat, this.getClass().getSimpleName(), response, promise);
-            } else {
+            // complete promise if 207.
+            // Even if we fetch 404 status, as we consider the request has been fulfilled but has not found the document(s)
+            // we still attempt to create an array (will be an empty one)
+            if (response.statusCode() == 207 || response.statusCode() == 404) {
                 JsonObject results = XMLHelper.toJsonObject(response.body());
-                JsonArray responses;
-                try {
-                    responses = results.getJsonObject(Field.D_MULTISTATUS, new JsonObject()).getJsonArray(Field.D_RESPONSE, new JsonArray());
-                } catch(ClassCastException e) {
-                    String message = String.format("[Nextcloud@%s::proceedListFiles] An error has occurred during attempting to fetch response data : %s, " +
-                            "returning empty list", this.getClass().getSimpleName(), e.getMessage());
-                    log.error(message);
-                    responses = new JsonArray();
-                }
+                JsonArray responses = getResultMultiStatus(results);
                 List<Document> documents = DocumentHelper.documents(responses);
                 promise.complete(new JsonArray(DocumentHelper.toListJsonObject(documents).toString()));
+            } else {
+                String messageToFormat = "[Nextcloud@%s::listFiles] Response status is not a HTTP 207 : %s : %s";
+                HttpResponseHelper.reject(log, messageToFormat, this.getClass().getSimpleName(), response, promise);
             }
         }
     }
 
+    /**
+     * method that will determine result multi status
+     *
+     * @param   results   results documents to parse
+     * @return  list of response documents
+     */
+    private JsonArray getResultMultiStatus(JsonObject results) {
+        JsonArray responses;
+        try {
+            JsonObject multiStatusObject = results.getJsonObject(Field.D_MULTISTATUS, new JsonObject());
+            // if fetching D_RESPONSE value is JsonArray, it's an array of response, else it would be a JsonObject one
+            if (multiStatusObject.getValue(Field.D_RESPONSE) instanceof JsonArray) {
+                responses = multiStatusObject.getJsonArray(Field.D_RESPONSE, new JsonArray());
+            } else {
+                responses = new JsonArray();
+                if (!multiStatusObject.getJsonObject(Field.D_RESPONSE, new JsonObject()).isEmpty()) {
+                    responses.add(multiStatusObject.getJsonObject(Field.D_RESPONSE, new JsonObject()));
+                }
+            }
+        } catch (ClassCastException e) {
+            String message = String.format("[Nextcloud@%s::proceedListFiles] An error has occurred during attempting to fetch response data : %s, " +
+                    "returning empty list", this.getClass().getSimpleName(), e.getMessage());
+            log.error(message);
+            responses = new JsonArray();
+        }
+        return responses;
+    }
+
     @Override
-    public Future<Buffer> getFile(String userId, String userNextcloudId, String path) {
+    public Future<Buffer> getFile(UserNextcloud.TokenProvider userSession, String path) {
         Promise<Buffer> promise = Promise.promise();
-        userService.getUserSession(userId)
-                .onSuccess(userSession ->
-                        this.client.getAbs(nextcloudConfig.host() + nextcloudConfig.webdavEndpoint() + "/" +
-                                        userNextcloudId + (path != null ? "/" + path : "" ))
-                                .basicAuthentication(userSession.loginName(), userSession.token())
-                                .send(responseAsync -> proceedGetFile(responseAsync, promise)))
-                .onFailure(promise::fail);
+        this.client.getAbs(nextcloudConfig.host() + nextcloudConfig.webdavEndpoint() + "/" +
+                        userSession.loginName() + (path != null ? "/" + path : "" ))
+                .basicAuthentication(userSession.loginName(), userSession.token())
+                .send(responseAsync -> proceedGetFile(responseAsync, promise));
         return promise.future();
     }
 
@@ -145,17 +160,54 @@ public class DefaultDocumentsService implements DocumentsService {
     }
 
     @Override
-    public Future<Buffer> getFiles(String userId, String path, List<String> files) {
+    public Future<Buffer> getFiles(UserNextcloud.TokenProvider userSession, String path, List<String> files) {
         Promise<Buffer> promise = Promise.promise();
-        userService.getUserSession(userId)
-                .onSuccess(userSession ->
-                        this.client.getAbs(nextcloudConfig.host() + DOWNLOAD_ENDPOINT)
+        this.client.getAbs(nextcloudConfig.host() + DOWNLOAD_ENDPOINT)
+                .basicAuthentication(userSession.loginName(), userSession.token())
+                .addQueryParam(Field.DIR, path)
+                .addQueryParam(Field.FILES, new JsonArray(files).toString())
+                .send(responseAsync -> proceedGetFile(responseAsync, promise));
+        return promise.future();
+    }
+
+    @Override
+    public Future<JsonObject> moveDocument(UserNextcloud.TokenProvider userSession, String path, String destPath) {
+        Promise<JsonObject> promise = Promise.promise();
+        String endpoint = nextcloudConfig.host() + nextcloudConfig.webdavEndpoint() + "/" + userSession.loginName();
+        this.listFiles(userSession, destPath)
+                .onSuccess(files -> {
+                    if (files.isEmpty()) {
+                        this.client.rawAbs(NextcloudHttpMethod.MOVE.method(), endpoint + "/" + path)
                                 .basicAuthentication(userSession.loginName(), userSession.token())
-                                .addQueryParam(Field.DIR, path)
-                                .addQueryParam(Field.FILES, new JsonArray(files).toString())
-                                .send(responseAsync -> proceedGetFile(responseAsync, promise)))
+                                .putHeader(Field.DESTINATION, endpoint + "/" + destPath)
+                                .send(responseAsync -> this.onMoveDocumentHandler(responseAsync, promise));
+                    } else {
+                        promise.fail("nextcloud.file.already.exist");
+                    }
+                })
                 .onFailure(promise::fail);
         return promise.future();
+    }
+
+    /**
+     * Proceed async event after HTTP MOVE documents API endpoint has been sent
+     *
+     * @param   responseAsync   HttpResponse of string depending on its state {@link AsyncResult}
+     * @param   promise         Promise that could be completed or fail sending {@link JsonObject}
+     */
+    private void onMoveDocumentHandler(AsyncResult<HttpResponse<Buffer>> responseAsync, Promise<JsonObject> promise) {
+        if (responseAsync.failed()) {
+            String messageToFormat = "[Nextcloud@%s::onMoveDocumentHandler] An error has occurred during fetching endpoint : %s";
+            PromiseHelper.reject(log, messageToFormat, this.getClass().getSimpleName(), responseAsync, promise);
+        } else {
+            HttpResponse<Buffer> response = responseAsync.result();
+            if (response.statusCode() != 201) {
+                String messageToFormat = "[Nextcloud@%s::onMoveDocumentHandler] Response status is not a HTTP 201 : %s : %s";
+                HttpResponseHelper.reject(log, messageToFormat, this.getClass().getSimpleName(), response, promise);
+            } else {
+                promise.complete(new JsonObject().put(Field.STATUS, Field.OK));
+            }
+        }
     }
 
     @Override

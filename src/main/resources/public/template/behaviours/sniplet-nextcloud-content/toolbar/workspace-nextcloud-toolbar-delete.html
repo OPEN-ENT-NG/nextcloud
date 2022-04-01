@@ -1,0 +1,32 @@
+<lightbox show="vm.toolbar.lightbox.properties" class="" on-close="vm.toolbar.toggleRenameView(false)">
+    <div class="horizontal-spacing twelve cell">
+        <!-- Lightbox title -->
+        <section class="">
+            <h3>
+                <i18n>presences.collective.absences.delete</i18n>
+            </h3>
+        </section>
+
+        <!-- Confirm deletion body text -->
+        <section class="">
+            <div class="">
+                <i18n>presences.collective.absences.form.delete.confirm.1</i18n>
+            </div>
+        </section>
+
+        <!-- Footer/buttons -->
+        <section class="body row">
+            <div class="">
+                <!-- delete-->
+                <button data-ng-click="vm.deleteCollectiveAbsence()" class="right-magnet">
+                    <i18n>presences.collective.absences.form.delete</i18n>
+                </button>
+
+                <!-- cancel -->
+                <button ng-click="vm.toolbar.toggleRenameView(false)" class="right-magnet">
+                    <i18n>presences.collective.absences.form.cancel</i18n>
+                </button>
+            </div>
+        </section>
+    </div>
+</lightbox>

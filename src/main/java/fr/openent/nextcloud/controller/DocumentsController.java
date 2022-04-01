@@ -5,6 +5,7 @@ import fr.openent.nextcloud.security.OwnerFilter;
 import fr.openent.nextcloud.service.DocumentsService;
 import fr.openent.nextcloud.service.ServiceFactory;
 
+import fr.openent.nextcloud.service.UserService;
 import fr.wseduc.rs.ApiDoc;
 import fr.wseduc.rs.Get;
 import fr.wseduc.rs.Put;
@@ -22,9 +23,11 @@ import java.util.List;
 public class DocumentsController extends ControllerHelper {
 
     private final DocumentsService documentsService;
+    private final UserService userService;
 
     public DocumentsController(ServiceFactory serviceFactory) {
         this.documentsService = serviceFactory.documentsService();
+        this.userService = serviceFactory.userService();
     }
 
     @Get("/files/user/:userid")
@@ -32,10 +35,10 @@ public class DocumentsController extends ControllerHelper {
     @SecuredAction(value = "", type = ActionType.RESOURCE)
     @ResourceFilter(OwnerFilter.class)
     public void listFiles(HttpServerRequest request) {
-        String userId = request.getParam(Field.USERID);
         String path = request.getParam(Field.PATH);
         UserUtils.getUserInfos(eb, request, user ->
-                documentsService.listFiles(user.getUserId(), userId, path)
+                userService.getUserSession(user.getUserId())
+                        .compose(userSession -> documentsService.listFiles(userSession, path))
                         .onSuccess(files -> renderJson(request, new JsonObject().put(Field.DATA, files)))
                         .onFailure(err -> renderError(request)));
     }
@@ -45,12 +48,12 @@ public class DocumentsController extends ControllerHelper {
     @SecuredAction(value = "", type = ActionType.RESOURCE)
     @ResourceFilter(OwnerFilter.class)
     public void getFile(HttpServerRequest request) {
-        String userId = request.getParam(Field.USERID);
         String fileName = request.getParam(Field.FILENAME);
         String path = request.getParam(Field.PATH);
         String contentType = request.getParam(Field.CONTENTTYPE);
         UserUtils.getUserInfos(eb, request, user ->
-                documentsService.getFile(user.getUserId(), userId, path.replace(" ", "%20"))
+                userService.getUserSession(user.getUserId())
+                        .compose(userSession -> documentsService.getFile(userSession, path.replace(" ", "%20")))
                         .onSuccess(file -> request.response()
                                 .putHeader("Content-type", contentType + "; charset=utf-8")
                                 .putHeader("Content-Disposition", "attachment; filename=" + fileName)
@@ -67,7 +70,8 @@ public class DocumentsController extends ControllerHelper {
         List<String> files = request.params().getAll(Field.FILE);
         if ((path != null && !path.isEmpty()) && (files != null && !files.isEmpty())) {
             UserUtils.getUserInfos(eb, request, user ->
-                    documentsService.getFiles(user.getUserId(), path, files)
+                    userService.getUserSession(user.getUserId())
+                            .compose(userSession -> documentsService.getFiles(userSession, path, files))
                             .onSuccess(file -> {
                                 String pathName = path.equals("/") ? user.getLogin() : path;
                                 HttpServerResponse resp = request.response();
@@ -83,18 +87,26 @@ public class DocumentsController extends ControllerHelper {
         }
     }
 
-    @Put("/files/user/:userid")
+    @Put("/files/user/:userid/move")
     @ApiDoc("Upload file")
     @SecuredAction(value = "", type = ActionType.RESOURCE)
     @ResourceFilter(OwnerFilter.class)
-    public void uploadFile(HttpServerRequest request) {
-        String userId = request.getParam(Field.USERID);
+    public void moveDocuments(HttpServerRequest request) {
         String path = request.getParam(Field.PATH);
-        String contentType = request.getParam(Field.CONTENTTYPE);
-        UserUtils.getUserInfos(eb, request, user ->
-                documentsService.getFile(user.getUserId(), userId, path.replace(" ", "%20"))
-                        .onSuccess(file -> request.response().end(file))
-                        .onFailure(err -> renderError(request)));
+        String destPath = request.getParam(Field.DESTPATH);
+        if ((path != null && !path.isEmpty()) && (destPath != null && !destPath.isEmpty())) {
+            UserUtils.getUserInfos(eb, request, user ->
+                    userService.getUserSession(user.getUserId())
+                            .compose(userSession -> {
+                                String formattedPath = path.replace(" ", "%20");
+                                String formattedDestPath = destPath.replace(" ", "%20");
+                                return documentsService.moveDocument(userSession, formattedPath, formattedDestPath);
+                            })
+                            .onSuccess(res -> renderJson(request, res))
+                            .onFailure(err -> renderError(request, new JsonObject().put(Field.MESSAGE, err.getMessage()))));
+        } else {
+            badRequest(request);
+        }
     }
 
 

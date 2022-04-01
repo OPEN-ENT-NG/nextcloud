@@ -28,6 +28,7 @@ export class SyncDocument {
 
     // custom field bound by other entity/model
     selected?: boolean;
+    isNextcloudParent?: boolean;
 
     build(data: IDocumentResponse): SyncDocument {
         this.name = decodeURI(data.displayname);
@@ -67,6 +68,7 @@ export class SyncDocument {
         parentNextcloudFolder.fileId = null;
         parentNextcloudFolder.isFolder = true;
         parentNextcloudFolder.children = [];
+        parentNextcloudFolder.isNextcloudParent = true;
         return parentNextcloudFolder;
     }
 }

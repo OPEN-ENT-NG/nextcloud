@@ -4,6 +4,7 @@ import {IDocumentResponse, SyncDocument} from "../models";
 
 export interface INextcloudService {
     listDocument(userid: string, path?: string): Promise<Array<SyncDocument>>;
+    moveDocument(userid: string, path: string, destPath: string): Promise<AxiosResponse>;
     getFile(userid: string, fileName: string, path: string, contentType: string): string;
     getFiles(userid: string, path: string, files: Array<string>): string;
 }
@@ -14,6 +15,11 @@ export const nextcloudService: INextcloudService = {
         const urlParam: string = path ? `?path=${path}` : '';
         return http.get(`/nextcloud/files/user/${userid}${urlParam}`)
             .then((res: AxiosResponse) => res.data.data.map((document: IDocumentResponse) => new SyncDocument().build(document)));
+    },
+
+    moveDocument: (userid: string, path: string, destPath: string): Promise<AxiosResponse> => {
+        const urlParam: string = `?path=${path}&destPath=${destPath}`
+        return http.put(`/nextcloud/files/user/${userid}/move${urlParam}`);
     },
 
     getFile: (userid: string, fileName: string, path: string, contentType: string): string => {

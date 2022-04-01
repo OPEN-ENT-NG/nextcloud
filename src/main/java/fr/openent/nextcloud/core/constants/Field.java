@@ -25,6 +25,7 @@ public class Field {
     public static final String FILE = "file";
     public static final String FILES = "files";
     public static final String DIR = "dir";
+    public static final String DESTINATION = "destination";
 
     public static final String STATUS = "status";
     public static final String STATUSCODE = "statuscode";
@@ -33,6 +34,7 @@ public class Field {
     public static final String ITEMSPERPAGE = "itemsperpage";
     public static final String META = "meta";
     public static final String PATH = "path";
+    public static final String DESTPATH = "destPath";
     public static final String OCS = "ocs";
 
     // Token Provider

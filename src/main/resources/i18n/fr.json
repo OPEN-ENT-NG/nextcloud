@@ -2,5 +2,6 @@
   "nextcloud.title": "Nextcloud",
   "nextcloud.documents": "Documents synchronisés",
   "create.nextcloud.documents": "Créer un dossier synchronisé",
-  "nextcloud.quota": "Espace utilisé synchronisé"
+  "nextcloud.quota": "Espace utilisé synchronisé",
+  "nextcloud.file.already.exist": "Impossible de renommer le fichier avec ce nom: celui-ci existe déjà"
 }
