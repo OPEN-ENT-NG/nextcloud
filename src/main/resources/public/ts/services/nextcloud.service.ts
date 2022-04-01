@@ -6,7 +6,6 @@ export interface INextcloudService {
     listDocument(userid: string, path?: string): Promise<Array<SyncDocument>>;
     getFile(userid: string, fileName: string, path: string, contentType: string): string;
     getFiles(userid: string, path: string, files: Array<string>): string;
-    test(): Promise<AxiosResponse>;
 }
 
 export const nextcloudService: INextcloudService = {
@@ -33,10 +32,6 @@ export const nextcloudService: INextcloudService = {
         const urlParam: string = `${pathParam}${filesParam}`;
         return `/nextcloud/files/user/${userid}/multiple/download${urlParam}`;
     },
-
-    test: async (): Promise<AxiosResponse> => {
-        return http.get(`/nextcloud/test/ok`);
-    }
 };
 
 export const NextcloudService = ng.service('NextcloudService', (): INextcloudService => nextcloudService);
