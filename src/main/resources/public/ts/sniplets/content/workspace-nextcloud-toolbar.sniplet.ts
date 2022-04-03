@@ -43,14 +43,13 @@ export class ToolbarSnipletViewModel implements IViewModel {
 
     downloadFiles(selectedDocuments: Array<SyncDocument>): void {
         if (selectedDocuments.length === 1) {
-            window.open(this.vm.nextcloudService.getFile(model.me.login, selectedDocuments[0].name,
+            window.open(this.vm.nextcloudService.getFile(model.me.userId, selectedDocuments[0].name,
                 selectedDocuments[0].path, selectedDocuments[0].contentType))
         } else {
-            console.log("test");
             const selectedDocumentsName: Array<string> = selectedDocuments.map((selectedDocuments: SyncDocument) => selectedDocuments.name);
             // if path parent is null (meaning is the parent folder sync), we return "/"
-            const getPathParent: string = this.vm.parentDocument.path ? this.vm.parentDocument.name : "/";
-            window.open(this.vm.nextcloudService.getFiles(model.me.login, getPathParent, selectedDocumentsName));
+            const getPathParent: string = this.vm.parentDocument.path ? this.vm.parentDocument.path : "/";
+            window.open(this.vm.nextcloudService.getFiles(model.me.userId, getPathParent, selectedDocumentsName));
         }
     }
 

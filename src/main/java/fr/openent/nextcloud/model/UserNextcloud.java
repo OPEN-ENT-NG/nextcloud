@@ -62,10 +62,14 @@ public class UserNextcloud {
 
     public static class RequestBody {
         private String userId;
+        private String displayName;
         private String password;
 
         public String userId() {
             return userId;
+        }
+        public String displayName() {
+            return displayName;
         }
 
         public String password() {
@@ -77,6 +81,11 @@ public class UserNextcloud {
             return this;
         }
 
+        public RequestBody setDisplayName(String displayName) {
+            this.displayName = displayName;
+            return this;
+        }
+
         public RequestBody setPassword(String password) {
             this.password = password;
             return this;
@@ -85,6 +94,7 @@ public class UserNextcloud {
         public JsonObject toJSON() {
             return new JsonObject()
                     .put(Field.USERID, this.userId)
+                    .put(Field.DISPLAYNAMECAMEL, this.displayName)
                     .put(Field.PASSWORD, this.password)
                     .put(Field.QUOTA, "2 GB");
         }
@@ -92,15 +102,15 @@ public class UserNextcloud {
 
     public static class TokenProvider {
         private String userId;
-        private String loginName;
+        private String userName;
         private String token;
 
         public String userId() {
             return userId;
         }
 
-        public String loginName() {
-            return loginName;
+        public String userName() {
+            return userName;
         }
 
         public String token() {
@@ -112,8 +122,8 @@ public class UserNextcloud {
             return this;
         }
 
-        public TokenProvider setLoginName(String loginName) {
-            this.loginName = loginName;
+        public TokenProvider setUserName(String userName) {
+            this.userName = userName;
             return this;
         }
 
@@ -124,13 +134,13 @@ public class UserNextcloud {
 
         public JsonObject toJSON() {
             return new JsonObject()
-                    .put(Field.LOGINNAME, this.loginName)
+                    .put(Field.LOGINNAME, this.userName)
                     .put(Field.TOKEN, this.token);
         }
 
         public boolean isEmpty() {
             return this.userId == null
-                    && this.loginName == null
+                    && this.userName == null
                     && this.token == null;
         }
     }

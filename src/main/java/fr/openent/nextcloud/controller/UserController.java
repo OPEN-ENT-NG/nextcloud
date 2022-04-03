@@ -26,17 +26,18 @@ public class UserController extends ControllerHelper {
         this.userService = serviceFactory.userService();
     }
 
-    @Post("/user/provide/token")
+    @Get("/user/:userid/provide/token")
     @ApiDoc("Provide nextcloud token")
     @SecuredAction(value = "", type = ActionType.RESOURCE)
     @ResourceFilter(OwnerFilter.class)
     public void provideUserSession(HttpServerRequest request) {
-        RequestUtils.bodyToJson(request, pathPrefix + "userCreationBody", body -> {
-            UserNextcloud.RequestBody userCreationBody = new UserNextcloud.RequestBody().setUserId(body.getString(Field.USERID));
-            UserUtils.getUserInfos(eb, request, user ->
-                    userService.provideUserSession(user.getUserId(), userCreationBody)
-                            .onSuccess(userNextcloud -> renderJson(request, new JsonObject().put(Field.STATUS, Field.OK)))
-                            .onFailure(err -> renderError(request)));
+        UserUtils.getUserInfos(eb, request, user -> {
+            UserNextcloud.RequestBody userCreationBody = new UserNextcloud.RequestBody()
+                    .setUserId(user.getUserId())
+                    .setDisplayName(user.getUsername());
+            userService.provideUserSession(userCreationBody)
+                    .onSuccess(userNextcloud -> renderJson(request, new JsonObject().put(Field.STATUS, Field.OK)))
+                    .onFailure(err -> renderError(request));
         });
     }
 

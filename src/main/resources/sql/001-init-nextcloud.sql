@@ -12,7 +12,7 @@ CREATE TABLE nextcloud.user
 (
     id bigserial NOT NULL,
     user_id character varying(255) NOT NULL,
-    login character varying(255) NOT NULL,
+    username character varying(255) NOT NULL,
     password character varying(255) NOT NULL,
     last_modified timestamp without time zone DEFAULT now(),
     PRIMARY KEY (user_id)

@@ -58,7 +58,7 @@ class ViewModel implements IViewModel {
         this.openedFolder = [];
 
         // resolve user nextcloud && init tree
-        this.nextcloudUserService.getUserInfo(decodeURI(model.me.login))
+        this.nextcloudUserService.getUserInfo(model.me.userId)
             .then((userInfo: UserNextcloud) => {
                 this.userInfo = userInfo;
                 this.initTree([new SyncDocument().initParent()]);
@@ -101,7 +101,6 @@ class ViewModel implements IViewModel {
 
                 // create handler in case icon are only clicked
                 viewModel.watchFolderState();
-                console.log("test");
                 viewModel.selectedFolder = folder;
                 if (!viewModel.openedFolder.some((openFolder: models.Element) => openFolder === folder)) {
                     viewModel.openedFolder.push(folder);
@@ -139,7 +138,7 @@ class ViewModel implements IViewModel {
     }
 
     async openDocument(document: any): Promise<void> {
-        let syncDocuments: Array<SyncDocument> = await nextcloudService.listDocument(model.me.login, document.path ? document.path : null)
+        let syncDocuments: Array<SyncDocument> = await nextcloudService.listDocument(model.me.userId, document.path ? document.path : null)
             .catch((err: AxiosError) => {
                 const message: string = "Error while attempting to fetch documents children ";
                 console.error(message + err.message);
@@ -158,7 +157,7 @@ class ViewModel implements IViewModel {
 
     /* Filter mode */
     private filterDocumentOnly() {
-        return (syncDocument: SyncDocument) => syncDocument.isFolder && syncDocument.name != model.me.login;
+        return (syncDocument: SyncDocument) => syncDocument.isFolder && syncDocument.name != model.me.userId;
     }
 
     private filterRemoveOwnDocument(document: SyncDocument) {
@@ -177,7 +176,7 @@ class ViewModel implements IViewModel {
     private switchWorkspaceTreeHandler() {
         return function (): void {
             const $workspaceFolderTree: JQuery = $(WorkspaceEntcoreUtils.$ENTCORE_WORKSPACE + ' li > a');
-            
+
             // using nextcloud content display
             template.open('documents', `../../../${RootsConst.template}/behaviours/workspace-nextcloud`);
 
@@ -235,7 +234,7 @@ export const workspaceNextcloudFolder = {
     controller: {
         init: function (): void {
             lang.addBundle('/nextcloud/i18n', async () => {
-                await nextcloudUserService.resolveUser(decodeURI(model.me.login));
+                await nextcloudUserService.resolveUser(model.me.userId);
                 this.vm = new ViewModel(this, nextcloudService, nextcloudUserService);
             });
         }

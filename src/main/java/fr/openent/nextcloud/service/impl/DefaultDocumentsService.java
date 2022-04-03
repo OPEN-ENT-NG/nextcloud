@@ -52,8 +52,8 @@ public class DefaultDocumentsService implements DocumentsService {
     public Future<JsonArray> listFiles(UserNextcloud.TokenProvider userSession, String path) {
         Promise<JsonArray> promise = Promise.promise();
         this.client.rawAbs(NextcloudHttpMethod.PROPFIND.method(), nextcloudConfig.host() +
-                        nextcloudConfig.webdavEndpoint() + "/" + userSession.loginName() + (path != null ? "/" + path : "" ))
-                .basicAuthentication(userSession.loginName(), userSession.token())
+                        nextcloudConfig.webdavEndpoint() + "/" + userSession.userId() + (path != null ? "/" + path : "" ))
+                .basicAuthentication(userSession.userId(), userSession.token())
                 .as(BodyCodec.string(StandardCharsets.UTF_8.toString()))
                 .sendBuffer(Buffer.buffer(getListFilesPropsBody()), responseAsync -> proceedListFiles(responseAsync, promise));
         return promise.future();
@@ -132,8 +132,8 @@ public class DefaultDocumentsService implements DocumentsService {
     public Future<Buffer> getFile(UserNextcloud.TokenProvider userSession, String path) {
         Promise<Buffer> promise = Promise.promise();
         this.client.getAbs(nextcloudConfig.host() + nextcloudConfig.webdavEndpoint() + "/" +
-                        userSession.loginName() + (path != null ? "/" + path : "" ))
-                .basicAuthentication(userSession.loginName(), userSession.token())
+                        userSession.userId() + (path != null ? "/" + path : "" ))
+                .basicAuthentication(userSession.userId(), userSession.token())
                 .send(responseAsync -> proceedGetFile(responseAsync, promise));
         return promise.future();
     }
@@ -163,7 +163,7 @@ public class DefaultDocumentsService implements DocumentsService {
     public Future<Buffer> getFiles(UserNextcloud.TokenProvider userSession, String path, List<String> files) {
         Promise<Buffer> promise = Promise.promise();
         this.client.getAbs(nextcloudConfig.host() + DOWNLOAD_ENDPOINT)
-                .basicAuthentication(userSession.loginName(), userSession.token())
+                .basicAuthentication(userSession.userId(), userSession.token())
                 .addQueryParam(Field.DIR, path)
                 .addQueryParam(Field.FILES, new JsonArray(files).toString())
                 .send(responseAsync -> proceedGetFile(responseAsync, promise));
@@ -173,12 +173,12 @@ public class DefaultDocumentsService implements DocumentsService {
     @Override
     public Future<JsonObject> moveDocument(UserNextcloud.TokenProvider userSession, String path, String destPath) {
         Promise<JsonObject> promise = Promise.promise();
-        String endpoint = nextcloudConfig.host() + nextcloudConfig.webdavEndpoint() + "/" + userSession.loginName();
+        String endpoint = nextcloudConfig.host() + nextcloudConfig.webdavEndpoint() + "/" + userSession.userId();
         this.listFiles(userSession, destPath)
                 .onSuccess(files -> {
                     if (files.isEmpty()) {
                         this.client.rawAbs(NextcloudHttpMethod.MOVE.method(), endpoint + "/" + path)
-                                .basicAuthentication(userSession.loginName(), userSession.token())
+                                .basicAuthentication(userSession.userId(), userSession.token())
                                 .putHeader(Field.DESTINATION, endpoint + "/" + destPath)
                                 .send(responseAsync -> this.onMoveDocumentHandler(responseAsync, promise));
                     } else {

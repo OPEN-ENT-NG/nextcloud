@@ -10,6 +10,7 @@ public class Field {
     public static final String USERNAME = "username";
     public static final String NAME = "name";
     public static final String DISPLAYNAME = "displayname";
+    public static final String DISPLAYNAMECAMEL = "displayName";
     public static final String EMAIL = "email";
     public static final String PHONE = "phone";
     public static final String ADDRESS = "address";

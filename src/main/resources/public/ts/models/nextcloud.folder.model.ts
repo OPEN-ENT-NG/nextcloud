@@ -33,7 +33,7 @@ export class SyncDocument {
     build(data: IDocumentResponse): SyncDocument {
         this.name = decodeURI(data.displayname);
         this.ownerDisplayName = data.ownerDisplayName;
-        this.path = data.path.split(this.ownerDisplayName).pop();
+        this.path = data.path.split(model.me.userId).pop();
         this.contentType = data.contentType;
         this.size = data.size;
         this.favorite = data.favorite;

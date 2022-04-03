@@ -5,6 +5,7 @@ import {Draggable, SyncDocument} from "../../models";
 import {safeApply} from "../../utils/safe-apply.utils";
 import {INextcloudService, nextcloudService} from "../../services";
 import {ToolbarSnipletViewModel} from "./workspace-nextcloud-toolbar.sniplet";
+import {AxiosError} from "axios";
 
 declare let window: any;
 
@@ -36,13 +37,25 @@ class ViewModel implements IViewModel {
         this.nextcloudService = nextcloudService;
         this.documents = [new SyncDocument()];
 
+        // on init we first sync its main folder content
+        nextcloudService.listDocument(model.me.userId,null)
+            .then((documents: Array<SyncDocument>) => {
+                this.documents = documents.filter((syncDocument: SyncDocument) => syncDocument.name != model.me.userId);
+                safeApply(scope);
+            })
+            .catch((err: AxiosError) => {
+                const message: string = "Error while attempting to fetch documents children from content";
+                console.error(message + err.message);
+                return [];
+            });
+
         // on receive documents from folder-tree sniplet
         this.subscriptions.add(Behaviours.applicationsBehaviours[NEXTCLOUD_APP].nextcloudService
             .getDocumentsState()
             .subscribe((res: {parentDocument: SyncDocument, documents: Array<SyncDocument>}) => {
                 if (res.documents && res.documents.length > 0) {
                     this.parentDocument = res.parentDocument;
-                    this.documents = res.documents.filter((syncDocument: SyncDocument) => syncDocument.name != model.me.login);
+                    this.documents = res.documents.filter((syncDocument: SyncDocument) => syncDocument.name != model.me.userId);
                 } else {
                     this.parentDocument = res.parentDocument;
                     this.documents = [];
@@ -87,7 +100,6 @@ class ViewModel implements IViewModel {
     }
 
     onSelectContent(content: SyncDocument): void {
-        console.log("content: ", content);
         this.selectedDocuments = this.documents.filter((document: SyncDocument) => document.selected);
     };
 
@@ -100,7 +112,7 @@ class ViewModel implements IViewModel {
     };
 
     getFile(document: SyncDocument): string {
-        return this.nextcloudService.getFile(model.me.login, document.name, document.path, document.contentType);
+        return this.nextcloudService.getFile(model.me.userId, document.name, document.path, document.contentType);
     }
 }
 

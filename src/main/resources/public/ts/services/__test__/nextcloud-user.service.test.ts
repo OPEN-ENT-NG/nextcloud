@@ -1,7 +1,7 @@
 import axios from 'axios';
 import MockAdapter from 'axios-mock-adapter';
 import {nextcloudUserService} from "../nextcloud-user.service";
-import {IUserResponse, Quota, UserNextcloud} from "../../models/nextcloud-user.model";
+import {IUserResponse} from "../../models/nextcloud-user.model";
 
 describe('NextcloudUserService', () => {
     it('Test resolveUser method', done => {
@@ -10,7 +10,7 @@ describe('NextcloudUserService', () => {
         const userId = "userId"
         const body = {userid: "userId"};
 
-        mock.onPost(`/nextcloud/user/provide/token?userid=userId`, body).reply(200, data);
+        mock.onGet(`/nextcloud/user/userId/provide/token`, body).reply(200, data);
 
 
         nextcloudUserService.resolveUser(userId).then(response => {

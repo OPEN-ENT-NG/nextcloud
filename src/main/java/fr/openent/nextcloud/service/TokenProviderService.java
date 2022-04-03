@@ -9,9 +9,8 @@ public interface TokenProviderService {
     /**
      * add new user session to nextcloud
      *
-     * @param   userId      User identifier (ENT user identifier)
      * @param   userBody    User Body request {@link UserNextcloud.RequestBody}
      * @return  Future Instance of User creation response {@link JsonObject}
      */
-    Future<JsonObject> provideNextcloudSession(String userId, UserNextcloud.RequestBody userBody);
+    Future<JsonObject> provideNextcloudSession(UserNextcloud.RequestBody userBody);
 }

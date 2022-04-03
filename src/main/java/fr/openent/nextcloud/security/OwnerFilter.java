@@ -11,6 +11,6 @@ public class OwnerFilter implements ResourcesProvider {
     @Override
     public void authorize(HttpServerRequest httpServerRequest, Binding binding, UserInfos userInfos, Handler<Boolean> handler) {
         String userId = httpServerRequest.getParam(Field.USERID);
-        handler.handle(userInfos != null && userInfos.getLogin().equals(userId));
+        handler.handle(userInfos != null && userInfos.getUserId().equals(userId));
     }
 }

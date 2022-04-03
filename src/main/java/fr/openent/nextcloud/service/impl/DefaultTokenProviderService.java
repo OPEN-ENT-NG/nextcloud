@@ -34,26 +34,25 @@ public class DefaultTokenProviderService implements TokenProviderService {
     }
 
     @Override
-    public Future<JsonObject> provideNextcloudSession(String userId, UserNextcloud.RequestBody userBody) {
+    public Future<JsonObject> provideNextcloudSession(UserNextcloud.RequestBody userBody) {
         Promise<JsonObject> promise = Promise.promise();
         this.client.getAbs(nextcloudConfig.host() + this.nextcloudConfig.ocsEndpoint() + TOKEN_ENDPOINT + "/getapppassword")
                 .basicAuthentication(userBody.userId(), userBody.password())
                 .putHeader(Field.OCS_API_REQUEST, String.valueOf(true))
                 .as(BodyCodec.jsonObject())
                 .addQueryParam(Field.FORMAT, Field.JSON)
-                .send(responseAsync -> onProvideNextcloudSessionHandler(userId, userBody, responseAsync, promise));
+                .send(responseAsync -> onProvideNextcloudSessionHandler(userBody, responseAsync, promise));
         return promise.future();
     }
 
     /**
      * persist its user session plus It's token to database
      *
-     * @param   userId          User identifier (ENT user identifier)
      * @param   userBody        User Body request {@link UserNextcloud.RequestBody}
      * @param   responseAsync   Response OCS given after creating nextcloud user session
      * @param   promise         Promise to complete
      */
-    private void onProvideNextcloudSessionHandler(String userId, UserNextcloud.RequestBody userBody, AsyncResult<HttpResponse<JsonObject>> responseAsync,
+    private void onProvideNextcloudSessionHandler(UserNextcloud.RequestBody userBody, AsyncResult<HttpResponse<JsonObject>> responseAsync,
                                                   Promise<JsonObject> promise) {
         if (responseAsync.failed()) {
             String messageToFormat = "[Nextcloud@%s::provideNextcloudSession] An error has occurred during fetching endpoint : %s";
@@ -66,9 +65,10 @@ public class DefaultTokenProviderService implements TokenProviderService {
             } else {
                 OCSResponse ocsResponse = new OCSResponse(response.body().getJsonObject(Field.OCS, new JsonObject()));
                 UserNextcloud.TokenProvider tokenProvider = new UserNextcloud.TokenProvider()
-                        .setLoginName(userBody.userId())
+                        .setUserId(userBody.userId())
+                        .setUserName(userBody.displayName())
                         .setToken(ocsResponse.data().getString(Field.APPPASSWORD, ""));
-                this.persistToken(userId, tokenProvider)
+                this.persistToken(tokenProvider)
                         .onSuccess(promise::complete)
                         .onFailure(promise::fail);
             }
@@ -78,22 +78,21 @@ public class DefaultTokenProviderService implements TokenProviderService {
     /**
      * persist its user session plus It's token to database
      *
-     * @param   userId          User identifier
      * @param   tokenProvider   Token provider with OCS response received {@link UserNextcloud.TokenProvider}
      * @return  Future JsonObject SQL reply
      */
-    private Future<JsonObject> persistToken(String userId, UserNextcloud.TokenProvider tokenProvider) {
+    private Future<JsonObject> persistToken(UserNextcloud.TokenProvider tokenProvider) {
         Promise<JsonObject> promise = Promise.promise();
-        String query = "INSERT INTO " + Nextcloud.DB_SCHEMA + ".user (user_id, login, password, last_modified) " +
+        String query = "INSERT INTO " + Nextcloud.DB_SCHEMA + ".user (user_id, username, password, last_modified) " +
                 " VALUES (?, ?, ?, now()) " +
                 " ON CONFLICT (user_id) " +
-                " DO UPDATE SET login = ?, password = ?, last_modified = now()";
+                " DO UPDATE SET username = ?, password = ?, last_modified = now()";
 
         JsonArray param = new JsonArray()
-                .add(userId)
-                .add(tokenProvider.loginName())
+                .add(tokenProvider.userId())
+                .add(tokenProvider.userName())
                 .add(tokenProvider.token())
-                .add(tokenProvider.loginName())
+                .add(tokenProvider.userName())
                 .add(tokenProvider.token());
 
         Sql.getInstance().prepared(query, param, SqlResult.validUniqueResultHandler(PromiseHelper.handlerJsonObject(promise)));

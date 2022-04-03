@@ -9,11 +9,10 @@ public interface UserService {
     /**
      * add and/or provide new user nextcloud and its session
      *
-     * @param   userId      User identifier (ent part)
-     * @param   userBody    User Body request {@link UserNextcloud.RequestBody}
+     * @param   userBody        User Body request {@link UserNextcloud.RequestBody}
      * @return  Future Instance of User creation response {@link JsonObject}
      */
-    Future<JsonObject> provideUserSession(String userId, UserNextcloud.RequestBody userBody);
+    Future<JsonObject> provideUserSession(UserNextcloud.RequestBody userBody);
 
     /**
      * provide new nextcloud user

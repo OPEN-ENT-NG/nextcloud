@@ -6,7 +6,6 @@ import fr.openent.nextcloud.core.constants.Field;
 import fr.openent.nextcloud.core.enums.EditableDataField;
 import fr.openent.nextcloud.helper.HttpResponseHelper;
 import fr.openent.nextcloud.helper.PromiseHelper;
-import fr.openent.nextcloud.helper.StringHelper;
 import fr.openent.nextcloud.model.OCSResponse;
 import fr.openent.nextcloud.model.UserNextcloud;
 import fr.openent.nextcloud.service.ServiceFactory;
@@ -43,10 +42,10 @@ public class DefaultUserService implements UserService {
     }
 
     @Override
-    public Future<JsonObject> provideUserSession(String userId, UserNextcloud.RequestBody userBody) {
+    public Future<JsonObject> provideUserSession(UserNextcloud.RequestBody userBody) {
         Promise<JsonObject> promise = Promise.promise();
         this.getUserInfo(userBody.userId())
-               .compose(userNextcloud -> resolveUserSession(userId, userBody, userNextcloud))
+               .compose(userNextcloud -> resolveUserSession(userBody, userNextcloud))
                .onSuccess(res -> promise.complete())
                .onFailure(promise::fail);
         return promise.future();
@@ -61,22 +60,19 @@ public class DefaultUserService implements UserService {
      *
      *  If none is existent, we create a new user and we provide its session
      *
-     * @param   userId          User identifier (ENT part)
      * @param   userBody        User Body request {@link UserNextcloud.RequestBody}
      * @param   userNextcloud   user nextcloud info {@link UserNextcloud}
      * @return  Empty response (succeed will resolve user's session by persisting it via database)
      */
-    private Future<Void> resolveUserSession(String userId, UserNextcloud.RequestBody userBody, UserNextcloud userNextcloud) {
+    private Future<Void> resolveUserSession(UserNextcloud.RequestBody userBody, UserNextcloud userNextcloud) {
         Promise<Void> promise = Promise.promise();
-        // correct format string user login identifier nextcloud
-        userBody.setUserId(StringHelper.removeAccent(userBody.userId()));
         if (userNextcloud.id() != null) {
-            this.getUserSession(userId)
+            this.getUserSession(userBody.userId())
                     .onSuccess(userSession -> {
                         if (userSession.isEmpty()) {
                             userBody.setPassword(generateUserPassword());
                             this.changeUserPassword(userBody)
-                                    .compose(res -> this.tokenProviderService.provideNextcloudSession(userId, userBody))
+                                    .compose(res -> this.tokenProviderService.provideNextcloudSession(userBody))
                                     .onSuccess(res -> promise.complete())
                                     .onFailure(promise::fail);
                         } else {
@@ -88,7 +84,7 @@ public class DefaultUserService implements UserService {
             // case no exist, we create a user and its session token
             userBody.setPassword(generateUserPassword());
             this.addNewUser(userBody)
-                    .compose(res -> this.tokenProviderService.provideNextcloudSession(userId, userBody))
+                    .compose(res -> this.tokenProviderService.provideNextcloudSession(userBody))
                     .onSuccess(res -> promise.complete())
                     .onFailure(promise::fail);
         }
@@ -180,7 +176,7 @@ public class DefaultUserService implements UserService {
                 JsonObject userSession = event.right().getValue();
                 UserNextcloud.TokenProvider tokenProvider = new UserNextcloud.TokenProvider()
                         .setUserId(userSession.getString(Field.USER_ID, null))
-                        .setLoginName(userSession.getString(Field.LOGIN, null))
+                        .setUserName(userSession.getString(Field.USERNAME, null))
                         .setToken(userSession.getString(Field.PASSWORD, null));
                 promise.complete(tokenProvider);
             }

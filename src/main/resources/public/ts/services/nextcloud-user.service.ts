@@ -10,9 +10,7 @@ export interface INextcloudUserService {
 export const nextcloudUserService: INextcloudUserService = {
 
     resolveUser: async (userid: string): Promise<AxiosResponse> => {
-        const param: string = `?userid=${userid}`;
-        const body: {userid: string} = {userid: userid};
-        return http.post(decodeURI(`/nextcloud/user/provide/token${param}`), body);
+        return http.get(decodeURI(`/nextcloud/user/${userid}/provide/token`));
     },
 
     getUserInfo: async (userid: string): Promise<UserNextcloud> => {

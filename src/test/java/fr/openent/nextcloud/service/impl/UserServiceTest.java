@@ -1,10 +1,7 @@
 package fr.openent.nextcloud.service.impl;
 
-import fr.openent.nextcloud.model.UserNextcloud;
 import fr.openent.nextcloud.service.ServiceFactory;
-import fr.openent.nextcloud.service.TokenProviderService;
 import fr.openent.nextcloud.service.UserService;
-import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -15,8 +12,6 @@ import org.entcore.common.sql.Sql;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Mockito;
-import org.mockito.stubbing.Answer;
 import org.powermock.reflect.Whitebox;
 
 @RunWith(VertxUnitRunner.class)
