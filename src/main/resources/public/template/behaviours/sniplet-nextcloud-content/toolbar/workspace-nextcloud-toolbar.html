@@ -8,7 +8,7 @@
             </button>
 
             <!-- properties file -->
-            <div ng-if="vm.toolbar.hasOneDocumentSelected(vm.selectedDocuments)">
+            <div id="nextcloud-toolbar-properties" ng-if="vm.toolbar.hasOneDocumentSelected(vm.selectedDocuments)">
                 <button ng-click="vm.toolbar.toggleRenameView(true, vm.selectedDocuments)" class="cell">
                     <i18n>workspace.properties</i18n>
                 </button>
