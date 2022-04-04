@@ -124,7 +124,7 @@ export const workspaceNextcloudContent = {
         init: async function (): Promise<void> {
             lang.addBundle('/nextcloud/i18n', () => {
                 this.vm = new ViewModel(this, nextcloudService);
-                this.vm.toolbar = new ToolbarSnipletViewModel(this.vm);
+                this.vm.toolbar = new ToolbarSnipletViewModel(this);
             });
         },
     }

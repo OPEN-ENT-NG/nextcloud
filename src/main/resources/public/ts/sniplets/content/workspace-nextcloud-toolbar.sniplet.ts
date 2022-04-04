@@ -1,6 +1,8 @@
 import {SyncDocument} from "../../models";
 import {Behaviours, model} from "entcore";
 import {NEXTCLOUD_APP} from "../../nextcloud.behaviours";
+import {AxiosError} from "axios";
+import {safeApply} from "../../utils/safe-apply.utils";
 
 declare let window: any;
 
@@ -24,12 +26,14 @@ interface IViewModel {
 
 export class ToolbarSnipletViewModel implements IViewModel {
     private vm: any;
+    private scope: any;
 
     lightbox: ILightboxViewModel;
     currentDocument: SyncDocument;
 
-    constructor(vm) {
-        this.vm = vm;
+    constructor(scope) {
+        this.scope = scope;
+        this.vm = scope.vm;
         this.lightbox = {
             properties: false
         };
@@ -66,14 +70,29 @@ export class ToolbarSnipletViewModel implements IViewModel {
         const oldDocumentToRename: SyncDocument = this.vm.selectedDocuments[0];
         if (oldDocumentToRename) {
             // we take old document path and we replace the matched file name by the new one
-            const targetDocument: string = this.currentDocument.path.replace(oldDocumentToRename.name, this.currentDocument.name);
-            console.log("old: ", oldDocumentToRename.path);
-            console.log("target: ", targetDocument);
-            // this.vm.nextcloudService.moveDocument(model.me.login, oldDocumentToRename.path, targetDocument)
+            const targetDocument: string = decodeURI(this.currentDocument.path).replace(oldDocumentToRename.name, this.currentDocument.name);
+            this.vm.nextcloudService.moveDocument(model.me.userId, oldDocumentToRename.path, targetDocument)
+                .then(() => {
+                    Behaviours.applicationsBehaviours[NEXTCLOUD_APP].nextcloudService.sendOpenFolderDocument(this.vm.parentDocument);
+                    this.toggleRenameView(false);
+                    this.vm.selectedDocuments = [];
+                    safeApply(this.scope);
+                })
+                .catch((err: AxiosError) => {
+                    const message: string = "Error while attempting to rename document from content";
+                    console.error(`${message}${err.message}: ${this.getErrorMessage(err)}`);
+                    this.toggleRenameView(false);
+                    this.vm.selectedDocuments = [];
+                    safeApply(this.scope);
+                });
+        }
+    }
 
-            Behaviours.applicationsBehaviours[NEXTCLOUD_APP].nextcloudService.sendOpenFolderDocument(this.vm.parentDocument);
-            this.toggleRenameView(false);
-            this.vm.selectedDocuments = [];
+    getErrorMessage(err: AxiosError): string {
+        if (err && err.response && err.response.data.message) {
+            return err.response.data.message;
+        } else {
+            return "";
         }
     }
 
