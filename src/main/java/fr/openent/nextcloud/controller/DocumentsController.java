@@ -1,10 +1,10 @@
 package fr.openent.nextcloud.controller;
 
 import fr.openent.nextcloud.core.constants.Field;
+import fr.openent.nextcloud.helper.FileHelper;
 import fr.openent.nextcloud.security.OwnerFilter;
 import fr.openent.nextcloud.service.DocumentsService;
 import fr.openent.nextcloud.service.ServiceFactory;
-
 import fr.openent.nextcloud.service.UserService;
 import fr.wseduc.rs.ApiDoc;
 import fr.wseduc.rs.Delete;
@@ -17,18 +17,22 @@ import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.json.JsonObject;
 import org.entcore.common.controller.ControllerHelper;
 import org.entcore.common.http.filter.ResourceFilter;
+import org.entcore.common.storage.Storage;
 import org.entcore.common.user.UserUtils;
 
 import java.util.List;
+
 
 public class DocumentsController extends ControllerHelper {
 
     private final DocumentsService documentsService;
     private final UserService userService;
+    private final Storage storage;
 
     public DocumentsController(ServiceFactory serviceFactory) {
         this.documentsService = serviceFactory.documentsService();
         this.userService = serviceFactory.userService();
+        this.storage = serviceFactory.storage();
     }
 
     @Get("/files/user/:userid")
@@ -128,6 +132,25 @@ public class DocumentsController extends ControllerHelper {
         }
     }
 
+    @Put("/files/user/:userid/upload")
+    @ApiDoc("Upload file")
+    @SecuredAction(value = "", type = ActionType.RESOURCE)
+    @ResourceFilter(OwnerFilter.class)
+    public void uploadDocuments(HttpServerRequest request) {
+        request.pause();
+        String path = request.getParam(Field.PATH);
+        UserUtils.getUserInfos(eb, request, user ->
+                userService.getUserSession(user.getUserId())
+                        .compose(userSession -> {
+                            request.resume();
+                            return FileHelper.uploadMultipleFiles(Field.FILECOUNT, request, storage, vertx)
+                                    .compose(files -> documentsService.uploadFiles(userSession, files, storage, path)
+                                            .onSuccess(res -> renderJson(request, res))
+                                            .onFailure(err -> renderError(request, new JsonObject().put(Field.ERROR, err))));
+                        })
+                        .onFailure(err -> renderError(request, new JsonObject().put(Field.MESSAGE, err.getMessage()))));
+
+    }
 
 
 

@@ -1,18 +1,15 @@
 package fr.openent.nextcloud.service.impl;
-
 import fr.openent.nextcloud.config.NextcloudConfig;
 import fr.openent.nextcloud.core.constants.Field;
 import fr.openent.nextcloud.core.enums.NextcloudHttpMethod;
 import fr.openent.nextcloud.core.enums.XmlnsAttr;
-import fr.openent.nextcloud.helper.DocumentHelper;
-import fr.openent.nextcloud.helper.HttpResponseHelper;
-import fr.openent.nextcloud.helper.PromiseHelper;
-import fr.openent.nextcloud.helper.XMLHelper;
+import fr.openent.nextcloud.helper.*;
 import fr.openent.nextcloud.model.Document;
 import fr.openent.nextcloud.model.UserNextcloud;
 import fr.openent.nextcloud.model.XmlnsOptions;
 import fr.openent.nextcloud.service.DocumentsService;
 import fr.openent.nextcloud.service.ServiceFactory;
+
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
@@ -24,9 +21,9 @@ import io.vertx.core.logging.LoggerFactory;
 import io.vertx.ext.web.client.HttpResponse;
 import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.codec.BodyCodec;
+import org.entcore.common.storage.Storage;
 
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.List;
 
 public class DefaultDocumentsService implements DocumentsService {
@@ -265,19 +262,82 @@ public class DefaultDocumentsService implements DocumentsService {
         }
     }
 
+    /**
+     * Upload multiple files to the nextcloud
+     * @param userSession      User session
+     * @param files            List of files to upload
+     * @param storage          Storage manager
+     * @param path             Final path on Nextcloud
+     * @return                 Future JsonArray with data on the uploaded files
+     */
     @Override
-    public Future<JsonObject> uploadFile(String userId, String path) {
+    public Future<JsonArray> uploadFiles(UserNextcloud.TokenProvider userSession, List<Attachment> files, Storage storage, String path) {
+        Promise<JsonArray> promise = Promise.promise();
+        Future<JsonObject> current = Future.succeededFuture();
+        JsonArray stateUploadedFiles = new JsonArray();
+        for (Attachment file : files) {
+            current = current.compose(res -> {
+                if (res != null) {
+                    stateUploadedFiles.add(res);
+                }
+                return this.uploadFile(userSession, storage, file, path);
+            });
+        }
+        current
+                .onSuccess(res -> {
+                    stateUploadedFiles.add(res);
+                    promise.complete(stateUploadedFiles);
+                })
+                .onFailure(err -> {
+                    String messageToFormat = "[Nextcloud@%s::uploadFiles] An error has occurred during uploading files : %s";
+                    PromiseHelper.reject(log, messageToFormat, this.getClass().getSimpleName(), err, promise);
+                });
+        return promise.future();
+    }
+
+    /**
+     * upload file
+     *  @param user         User session token
+     *  @param storage      Storage manager
+     *  @param file         Data about the file to upload
+     *  @param path         Path where files will be uploaded on the nextcloud
+     */
+    @Override
+    public Future<JsonObject> uploadFile(UserNextcloud.TokenProvider user, Storage storage, Attachment file, String path) {
+        //Final path on the nextcloud server
+        String finalPath = (path != null ? path + "/" : "" ) + file.metadata().filename();
         Promise<JsonObject> promise = Promise.promise();
-        this.client.put(NextcloudHttpMethod.PROPFIND.method(), nextcloudConfig.host() +
-                        nextcloudConfig.webdavEndpoint() + "/" + userId + (path != null ? "/" + path : "" ))
-                .basicAuthentication(this.nextcloudConfig.username(), this.nextcloudConfig.password())
-                .as(BodyCodec.string(StandardCharsets.UTF_8.toString()))
-                .sendBuffer(Buffer.buffer(""), responseAsync -> {
-                    if (responseAsync.failed()) {
-                        // on error
+        this.listFiles(user, finalPath) //check if the file currently exists on the nextcloud server
+                .onSuccess(files -> {
+                    if (files.isEmpty()) {
+                        //Read the file on the vertx container, id is needed to locate it
+                        storage.readFile(file.id(), res -> {
+                            this.client.putAbs(nextcloudConfig.host() + nextcloudConfig.webdavEndpoint() + "/" + user.userId() + "/" + finalPath)
+                                    .basicAuthentication(this.nextcloudConfig.username(), this.nextcloudConfig.password())
+                                    .basicAuthentication(user.userId(), user.token())
+                                    .as(BodyCodec.jsonObject())
+                                    .sendBuffer(res, responseAsync -> {
+                                        if (responseAsync.failed()) {
+                                            String messageToFormat = "[Nextcloud@%s::uploadFile] An error has occurred during uploading file : %s";
+                                            PromiseHelper.reject(log, messageToFormat, this.getClass().getSimpleName(), responseAsync.cause(), promise);
+                                        } else {
+                                            promise.complete(new JsonObject()
+                                                    .put(Field.NAME, file.metadata().filename())
+                                                    .put(Field.STATUSCODE, responseAsync.result().statusCode()));
+                                        }
+                                    });
+                        });
+
                     } else {
-                        // on success
+                        promise.complete(new JsonObject()
+                                .put(Field.NAME, file.metadata().filename())
+                                .put(Field.ERROR, "nextcloud.file.already.exist"));
                     }
+                    storage.removeFile(file.id(), null);
+                })
+                .onFailure(err -> {
+                    promise.complete(new JsonObject().put(Field.ERROR, err));
+                    storage.removeFile(file.id(), null);
                 });
         return promise.future();
     }

@@ -20,13 +20,17 @@ public class Field {
     public static final String RELATIVE = "relative";
     public static final String TOTAL = "total";
     public static final String KEY = "key";
+    public static final String FILECOUNT = "File-Count";
     public static final String VALUE = "value";
     public static final String APPPASSWORD = "apppassword";
     public static final String FILENAME = "fileName";
+    public static final String FILENAMELOWER = "filename";
     public static final String FILE = "file";
+    public static final String CHARSET = "charset";
     public static final String FILES = "files";
     public static final String DIR = "dir";
     public static final String DESTINATION = "destination";
+    public static final String ERROR = "error";
 
     public static final String STATUS = "status";
     public static final String STATUSCODE = "statuscode";
@@ -34,6 +38,9 @@ public class Field {
     public static final String TOTALITEMS = "totalitems";
     public static final String ITEMSPERPAGE = "itemsperpage";
     public static final String META = "meta";
+    public static final String METADATA = "metadata";
+    public static final String CONTENTTRANSFERTENCODING = "content-transfer-encoding";
+    public static final String CONTENT_TYPE = "content-type";
     public static final String PATH = "path";
     public static final String PATHFILE = "pathFile";
     public static final String DESTPATH = "destPath";

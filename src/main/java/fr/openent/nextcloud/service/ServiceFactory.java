@@ -49,6 +49,10 @@ public class ServiceFactory {
         return this.webClient;
     }
 
+    public Storage storage() {
+        return this.storage;
+    }
+
     public NextcloudConfig nextcloudConfig() {return this.nextcloudConfig;}
 
     public EventBus eventBus() {
