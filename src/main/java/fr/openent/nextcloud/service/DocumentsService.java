@@ -1,10 +1,12 @@
 package fr.openent.nextcloud.service;
 
+import fr.openent.nextcloud.helper.Attachment;
 import fr.openent.nextcloud.model.UserNextcloud;
 import io.vertx.core.Future;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import org.entcore.common.storage.Storage;
 
 import java.util.List;
 
@@ -48,12 +50,30 @@ public interface DocumentsService {
      */
     Future<JsonObject> moveDocument(UserNextcloud.TokenProvider userSession, String path, String destPath);
 
+    /**
+     * delete documents
+     *
+     * @param userSession   User Session {@link UserNextcloud.TokenProvider}
+     * @param paths         list of paths / documents to delete
+     */
+    Future<JsonObject> deleteDocuments(UserNextcloud.TokenProvider userSession, List<String> paths);
 
     /**
      * upload file
-     *
-     * @param userId    User identifier
-     * @param path      path of nextcloud's user
+     *  @param user         User identifier
+     *  @param path         File's path in the vertx container
+     *  @param storage      Storage manager
+     *  @param filename     The name of the uploaded file
      */
-    Future<JsonObject> uploadFile(String userId, String path);
+    Future<JsonObject> uploadFile(UserNextcloud.TokenProvider user, String path, Storage storage, String filename);
+
+    /**
+     * upload files
+     *  @param userSession      User session
+     *  @param files            List of files to upload
+     *  @param storage          Storage manager
+     *  @param path             Final path on Nextcloud
+     *  @return                 Future of uploaded files
+     */
+    Future<JsonArray> uploadFiles(UserNextcloud.TokenProvider userSession, List<Attachment> files, Storage storage, String path);
 }

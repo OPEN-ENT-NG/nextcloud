@@ -1,18 +1,15 @@
 package fr.openent.nextcloud.service.impl;
-
 import fr.openent.nextcloud.config.NextcloudConfig;
 import fr.openent.nextcloud.core.constants.Field;
 import fr.openent.nextcloud.core.enums.NextcloudHttpMethod;
 import fr.openent.nextcloud.core.enums.XmlnsAttr;
-import fr.openent.nextcloud.helper.DocumentHelper;
-import fr.openent.nextcloud.helper.HttpResponseHelper;
-import fr.openent.nextcloud.helper.PromiseHelper;
-import fr.openent.nextcloud.helper.XMLHelper;
+import fr.openent.nextcloud.helper.*;
 import fr.openent.nextcloud.model.Document;
 import fr.openent.nextcloud.model.UserNextcloud;
 import fr.openent.nextcloud.model.XmlnsOptions;
 import fr.openent.nextcloud.service.DocumentsService;
 import fr.openent.nextcloud.service.ServiceFactory;
+
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
@@ -24,6 +21,7 @@ import io.vertx.core.logging.LoggerFactory;
 import io.vertx.ext.web.client.HttpResponse;
 import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.codec.BodyCodec;
+import org.entcore.common.storage.Storage;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -189,6 +187,7 @@ public class DefaultDocumentsService implements DocumentsService {
         return promise.future();
     }
 
+
     /**
      * Proceed async event after HTTP MOVE documents API endpoint has been sent
      *
@@ -211,19 +210,132 @@ public class DefaultDocumentsService implements DocumentsService {
     }
 
     @Override
-    public Future<JsonObject> uploadFile(String userId, String path) {
+    public Future<JsonObject> deleteDocuments(UserNextcloud.TokenProvider userSession, List<String> paths) {
         Promise<JsonObject> promise = Promise.promise();
-        this.client.put(NextcloudHttpMethod.PROPFIND.method(), nextcloudConfig.host() +
-                        nextcloudConfig.webdavEndpoint() + "/" + userId + (path != null ? "/" + path : "" ))
-                .basicAuthentication(this.nextcloudConfig.username(), this.nextcloudConfig.password())
-                .as(BodyCodec.string(StandardCharsets.UTF_8.toString()))
-                .sendBuffer(Buffer.buffer(""), responseAsync -> {
-                    if (responseAsync.failed()) {
-                        // on error
-                    } else {
-                        // on success
-                    }
+
+        Future<Void> current = Future.succeededFuture();
+
+        for (String path : paths) {
+            current = current.compose(v -> this.deleteDocument(userSession, path));
+        }
+        current
+                .onSuccess(res -> promise.complete(new JsonObject().put(Field.STATUS, Field.OK)))
+                .onFailure(err -> {
+                    String messageToFormat = "[Nextcloud@%s::deleteDocuments] An error has occurred during deleting document(s): %s";
+//                    PromiseHelper.reject(log, messageToFormat, this.getClass().getSimpleName(), err, promise);
                 });
+        return promise.future();
+    }
+
+    /**
+     * method that delete document / path of folder within document(s)
+     *
+     * @param   userSession     User Session {@link UserNextcloud.TokenProvider}
+     * @param   path            path to delete
+     */
+    private Future<Void> deleteDocument(UserNextcloud.TokenProvider userSession, String path) {
+        Promise<Void> promise = Promise.promise();
+        this.client.deleteAbs(nextcloudConfig.host() + nextcloudConfig.webdavEndpoint() + "/" + userSession.userId() + "/" + path)
+                .basicAuthentication(userSession.userId(), userSession.token())
+                .send(responseAsync -> onDeleteDocumentHandler(responseAsync, promise));
+        return promise.future();
+    }
+
+    /**
+     * Proceed async event after HTTP DELETE document API endpoint has been sent
+     *
+     * @param   responseAsync   HttpResponse of string depending on its state {@link AsyncResult}
+     * @param   promise         Promise that could be completed or fail sending {@link JsonObject}
+     */
+    private void onDeleteDocumentHandler(AsyncResult<HttpResponse<Buffer>> responseAsync, Promise<Void> promise) {
+        if (responseAsync.failed()) {
+            String messageToFormat = "[Nextcloud@%s::onDeleteDocumentHandler] An error has occurred during fetching endpoint : %s";
+            PromiseHelper.reject(log, messageToFormat, this.getClass().getSimpleName(), responseAsync, promise);
+        } else {
+            HttpResponse<Buffer> response = responseAsync.result();
+            if (response.statusCode() != 204) {
+                String messageToFormat = "[Nextcloud@%s::onDeleteDocumentHandler] Response status is not a HTTP 204 : %s : %s";
+                HttpResponseHelper.reject(log, messageToFormat, this.getClass().getSimpleName(), response, promise);
+            } else {
+                promise.complete();
+            }
+        }
+    }
+
+    /**
+     * Upload multiple files to the nextcloud
+     * @param userSession      User session
+     * @param files            List of files to upload
+     * @param storage          Storage manager
+     * @param path             Final path on Nextcloud
+     * @return                 Future JsonArray with data on the uploaded files
+     */
+    @Override
+    public Future<JsonArray> uploadFiles(UserNextcloud.TokenProvider userSession, List<Attachment> files, Storage storage, String path) {
+        Promise<JsonArray> promise = Promise.promise();
+        Future<JsonObject> current = Future.succeededFuture();
+        JsonArray answer = new JsonArray();
+        for (Attachment file : files) {
+            current = current.compose(v -> {
+                if (v != null) {
+                    answer.add(v);
+                }
+                return this.uploadFile(userSession, file.id(),
+                        storage,
+                        (path != null ? path + "/" : "" ) + file.metadata().filename()
+                );
+            });
+        }
+        current
+                .onSuccess(res -> {
+                    answer.add(res);
+                    promise.complete(answer);
+                })
+                .onFailure(err -> {
+                    log.error("[Nextcloud@%s::deleteDocuments] An error has occurred during uploading files");
+                });
+        return promise.future();
+    }
+
+    /**
+     * Upload one file to the nextcloud server
+     * @param user         User identifier
+     * @param path         File's path in the vertx container
+     * @param storage      Storage manager
+     * @param filename     The name of the uploaded file
+     * @return             Future JsonObject with data on the uploaded file
+     */
+    @Override
+    public Future<JsonObject> uploadFile(UserNextcloud.TokenProvider user, String path, Storage storage, String filename) {
+        Promise<JsonObject> promise = Promise.promise();
+        this.listFiles(user, path)
+                .onSuccess(files -> {
+                    if (files.isEmpty()) {
+                        storage.readFile(path, res -> {
+                            this.client.putAbs(nextcloudConfig.host() + nextcloudConfig.webdavEndpoint() + "/" + user.userId() + "/" + filename)
+                                    .basicAuthentication(this.nextcloudConfig.username(), this.nextcloudConfig.password())
+                                    .basicAuthentication(user.userId(), user.token())
+                                    .as(BodyCodec.jsonObject())
+                                    .sendBuffer(res, responseAsync -> {
+                                        if (responseAsync.failed()) {
+                                            promise.fail(new JsonObject("[Nextcloud@%s::uploadFile] An error has occurred during fetching endpoint").encode());
+                                        } else {
+                                            promise.complete(new JsonObject()
+                                                    .put("name", filename)
+                                                    .put("statusCode", responseAsync.result().statusCode()));
+                                            storage.removeFile(path, err -> log.error("Deleting file" + path));
+                                        }
+                                    });
+                        });
+
+                    } else {
+                        promise.complete(new JsonObject()
+                                .put("name", path)
+                                .put("error", "nextcloud.file.already.exist\""));
+                    }
+                })
+                .onFailure(err -> promise.complete(new JsonObject().put("error", err)));
+
         return promise.future();
     }
 

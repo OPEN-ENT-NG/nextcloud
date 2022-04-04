@@ -41,6 +41,7 @@ class ViewModel implements IViewModel {
         nextcloudService.listDocument(model.me.userId,null)
             .then((documents: Array<SyncDocument>) => {
                 this.documents = documents.filter((syncDocument: SyncDocument) => syncDocument.name != model.me.userId);
+                this.parentDocument = new SyncDocument().initParent();
                 safeApply(scope);
             })
             .catch((err: AxiosError) => {
@@ -124,7 +125,7 @@ export const workspaceNextcloudContent = {
         init: async function (): Promise<void> {
             lang.addBundle('/nextcloud/i18n', () => {
                 this.vm = new ViewModel(this, nextcloudService);
-                this.vm.toolbar = new ToolbarSnipletViewModel(this.vm);
+                this.vm.toolbar = new ToolbarSnipletViewModel(this);
             });
         },
     }

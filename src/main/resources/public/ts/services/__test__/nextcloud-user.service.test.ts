@@ -10,14 +10,13 @@ describe('NextcloudUserService', () => {
         const userId = "userId"
         const body = {userid: "userId"};
 
-        mock.onGet(`/nextcloud/user/userId/provide/token`, body).reply(200, data);
+        mock.onGet(`/nextcloud/user/userId/provide/token`).reply(200, data);
 
 
         nextcloudUserService.resolveUser(userId).then(response => {
             expect(response.data).toEqual(data);
             expect(response.status).toEqual(200);
-            expect(response.config.url).toEqual(`/nextcloud/user/provide/token?userid=userId`);
-            expect(response.config.data).toEqual(JSON.stringify(body));
+            expect(response.config.url).toEqual(`/nextcloud/user/userId/provide/token`);
             done();
         });
     });
