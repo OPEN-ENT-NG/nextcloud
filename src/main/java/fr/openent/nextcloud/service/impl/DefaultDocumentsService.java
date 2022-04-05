@@ -26,6 +26,7 @@ import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.codec.BodyCodec;
 
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.List;
 
 public class DefaultDocumentsService implements DocumentsService {
@@ -189,6 +190,7 @@ public class DefaultDocumentsService implements DocumentsService {
         return promise.future();
     }
 
+
     /**
      * Proceed async event after HTTP MOVE documents API endpoint has been sent
      *
@@ -206,6 +208,59 @@ public class DefaultDocumentsService implements DocumentsService {
                 HttpResponseHelper.reject(log, messageToFormat, this.getClass().getSimpleName(), response, promise);
             } else {
                 promise.complete(new JsonObject().put(Field.STATUS, Field.OK));
+            }
+        }
+    }
+
+    @Override
+    public Future<JsonObject> deleteDocuments(UserNextcloud.TokenProvider userSession, List<String> paths) {
+        Promise<JsonObject> promise = Promise.promise();
+
+        Future<Void> current = Future.succeededFuture();
+
+        for (String path : paths) {
+            current = current.compose(v -> this.deleteDocument(userSession, path));
+        }
+        current
+                .onSuccess(res -> promise.complete(new JsonObject().put(Field.STATUS, Field.OK)))
+                .onFailure(err -> {
+                    String messageToFormat = "[Nextcloud@%s::deleteDocuments] An error has occurred during deleting document(s): %s";
+                    PromiseHelper.reject(log, messageToFormat, this.getClass().getSimpleName(), err, promise);
+                });
+        return promise.future();
+    }
+
+    /**
+     * method that delete document / path of folder within document(s)
+     *
+     * @param   userSession     User Session {@link UserNextcloud.TokenProvider}
+     * @param   path            path to delete
+     */
+    private Future<Void> deleteDocument(UserNextcloud.TokenProvider userSession, String path) {
+        Promise<Void> promise = Promise.promise();
+        this.client.deleteAbs(nextcloudConfig.host() + nextcloudConfig.webdavEndpoint() + "/" + userSession.userId() + "/" + path)
+                .basicAuthentication(userSession.userId(), userSession.token())
+                .send(responseAsync -> onDeleteDocumentHandler(responseAsync, promise));
+        return promise.future();
+    }
+
+    /**
+     * Proceed async event after HTTP DELETE document API endpoint has been sent
+     *
+     * @param   responseAsync   HttpResponse of string depending on its state {@link AsyncResult}
+     * @param   promise         Promise that could be completed or fail sending {@link JsonObject}
+     */
+    private void onDeleteDocumentHandler(AsyncResult<HttpResponse<Buffer>> responseAsync, Promise<Void> promise) {
+        if (responseAsync.failed()) {
+            String messageToFormat = "[Nextcloud@%s::onDeleteDocumentHandler] An error has occurred during fetching endpoint : %s";
+            PromiseHelper.reject(log, messageToFormat, this.getClass().getSimpleName(), responseAsync, promise);
+        } else {
+            HttpResponse<Buffer> response = responseAsync.result();
+            if (response.statusCode() != 204) {
+                String messageToFormat = "[Nextcloud@%s::onDeleteDocumentHandler] Response status is not a HTTP 204 : %s : %s";
+                HttpResponseHelper.reject(log, messageToFormat, this.getClass().getSimpleName(), response, promise);
+            } else {
+                promise.complete();
             }
         }
     }

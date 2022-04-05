@@ -35,6 +35,7 @@ public class Field {
     public static final String ITEMSPERPAGE = "itemsperpage";
     public static final String META = "meta";
     public static final String PATH = "path";
+    public static final String PATHFILE = "pathFile";
     public static final String DESTPATH = "destPath";
     public static final String OCS = "ocs";
 

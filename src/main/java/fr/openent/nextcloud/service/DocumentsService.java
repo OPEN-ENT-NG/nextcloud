@@ -48,6 +48,13 @@ public interface DocumentsService {
      */
     Future<JsonObject> moveDocument(UserNextcloud.TokenProvider userSession, String path, String destPath);
 
+    /**
+     * delete documents
+     *
+     * @param userSession   User Session {@link UserNextcloud.TokenProvider}
+     * @param paths         list of paths / documents to delete
+     */
+    Future<JsonObject> deleteDocuments(UserNextcloud.TokenProvider userSession, List<String> paths);
 
     /**
      * upload file
