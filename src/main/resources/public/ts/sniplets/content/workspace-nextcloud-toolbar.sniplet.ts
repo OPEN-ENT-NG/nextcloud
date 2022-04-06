@@ -8,6 +8,7 @@ declare let window: any;
 
 interface ILightboxViewModel {
     properties: boolean;
+    delete: boolean;
 }
 
 interface IViewModel {
@@ -22,6 +23,10 @@ interface IViewModel {
     // properties action
     toggleRenameView(state: boolean, selectedDocuments: Array<SyncDocument>): void;
     renameDocument();
+
+    // delete documents action
+    toggleDeleteView(state: boolean): void;
+    deleteDocuments();
 }
 
 export class ToolbarSnipletViewModel implements IViewModel {
@@ -35,7 +40,8 @@ export class ToolbarSnipletViewModel implements IViewModel {
         this.scope = scope;
         this.vm = scope.vm;
         this.lightbox = {
-            properties: false
+            properties: false,
+            delete: false
         };
         this.currentDocument = null;
     }
@@ -94,6 +100,28 @@ export class ToolbarSnipletViewModel implements IViewModel {
         } else {
             return "";
         }
+    }
+
+    toggleDeleteView(state: boolean): void {
+        this.lightbox.delete = state;
+    }
+
+    deleteDocuments(): void {
+        const paths: Array<string> = this.vm.selectedDocuments.map((selectedDocument: SyncDocument) => selectedDocument.path);
+        this.vm.nextcloudService.deleteDocuments(model.me.userId, paths)
+            .then(() => {
+                Behaviours.applicationsBehaviours[NEXTCLOUD_APP].nextcloudService.sendOpenFolderDocument(this.vm.parentDocument);
+                this.toggleDeleteView(false);
+                this.vm.selectedDocuments = [];
+                safeApply(this.scope);
+            })
+            .catch((err: AxiosError) => {
+                const message: string = "Error while attempting to delete documents from content";
+                console.error(`${message}${err.message}: ${this.getErrorMessage(err)}`);
+                this.toggleDeleteView(false);
+                this.vm.selectedDocuments = [];
+                safeApply(this.scope);
+            });
     }
 
 

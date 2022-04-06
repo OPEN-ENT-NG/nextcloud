@@ -1,32 +1,28 @@
-<lightbox show="vm.toolbar.lightbox.properties" class="" on-close="vm.toolbar.toggleRenameView(false)">
-    <div class="horizontal-spacing twelve cell">
+<lightbox show="vm.toolbar.lightbox.delete" class="" on-close="vm.toolbar.toggleDeleteView(false)">
+    <div class="horizontal-spacing-twice">
         <!-- Lightbox title -->
-        <section class="">
-            <h3>
-                <i18n>presences.collective.absences.delete</i18n>
-            </h3>
-        </section>
+        <h2>
+            <i18n>remove</i18n>
+        </h2>
 
         <!-- Confirm deletion body text -->
-        <section class="">
-            <div class="">
-                <i18n>presences.collective.absences.form.delete.confirm.1</i18n>
-            </div>
-        </section>
+        <div class="row">
+            <i18n>workspace.sniplet.documents.confirm.remove</i18n>
+            <hr />
+        </div>
 
         <!-- Footer/buttons -->
-        <section class="body row">
-            <div class="">
-                <!-- delete-->
-                <button data-ng-click="vm.deleteCollectiveAbsence()" class="right-magnet">
-                    <i18n>presences.collective.absences.form.delete</i18n>
-                </button>
+        <div class="lightbox-buttons fluid">
 
-                <!-- cancel -->
-                <button ng-click="vm.toolbar.toggleRenameView(false)" class="right-magnet">
-                    <i18n>presences.collective.absences.form.cancel</i18n>
-                </button>
-            </div>
-        </section>
+            <!-- delete -->
+            <button class="nextcloud-button-confirm right-magnet" ng-click="vm.toolbar.deleteDocuments()">
+                <i18n>workspace.delete.confirm.action</i18n>
+            </button>
+
+            <!-- cancel -->
+            <button class="nextcloud-button-cancel cancel right-magnet" ng-click="vm.toolbar.toggleDeleteView(false)">
+                <i18n>cancel</i18n>
+            </button>
+        </div>
     </div>
 </lightbox>
