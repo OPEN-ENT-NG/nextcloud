@@ -47,6 +47,12 @@ public class PromiseHelper {
         promise.fail(responseAsync.cause());
     }
 
+    public static void reject(Logger log, String messageToFormat, String className, Throwable err, Promise<?> promise) {
+        String message = String.format(messageToFormat, className, err.getMessage());
+        log.error(message);
+        promise.fail(err.getMessage());
+    }
+
     public static void reject(Logger log, String messageToFormat, String className, Either<String, ?> either, Promise<?> promise) {
         String message = String.format(messageToFormat, className, either.left().getValue());
         log.error(message);

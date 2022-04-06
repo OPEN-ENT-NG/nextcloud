@@ -7,6 +7,7 @@ import fr.openent.nextcloud.service.ServiceFactory;
 
 import fr.openent.nextcloud.service.UserService;
 import fr.wseduc.rs.ApiDoc;
+import fr.wseduc.rs.Delete;
 import fr.wseduc.rs.Get;
 import fr.wseduc.rs.Put;
 import fr.wseduc.security.ActionType;
@@ -88,7 +89,7 @@ public class DocumentsController extends ControllerHelper {
     }
 
     @Put("/files/user/:userid/move")
-    @ApiDoc("Upload file")
+    @ApiDoc("Move documents file")
     @SecuredAction(value = "", type = ActionType.RESOURCE)
     @ResourceFilter(OwnerFilter.class)
     public void moveDocuments(HttpServerRequest request) {
@@ -102,6 +103,24 @@ public class DocumentsController extends ControllerHelper {
                                 String formattedDestPath = destPath.replace(" ", "%20");
                                 return documentsService.moveDocument(userSession, formattedPath, formattedDestPath);
                             })
+                            .onSuccess(res -> renderJson(request, res))
+                            .onFailure(err -> renderError(request, new JsonObject().put(Field.MESSAGE, err.getMessage()))));
+        } else {
+            badRequest(request);
+        }
+    }
+
+
+    @Delete("/files/user/:userid/delete")
+    @ApiDoc("delete documents API")
+    @SecuredAction(value = "", type = ActionType.RESOURCE)
+    @ResourceFilter(OwnerFilter.class)
+    public void deleteDocuments(HttpServerRequest request) {
+        List<String> paths = request.params().getAll(Field.PATH);
+        if ((paths != null && !paths.isEmpty())) {
+            UserUtils.getUserInfos(eb, request, user ->
+                    userService.getUserSession(user.getUserId())
+                            .compose(userSession -> documentsService.deleteDocuments(userSession, paths))
                             .onSuccess(res -> renderJson(request, res))
                             .onFailure(err -> renderError(request, new JsonObject().put(Field.MESSAGE, err.getMessage()))));
         } else {

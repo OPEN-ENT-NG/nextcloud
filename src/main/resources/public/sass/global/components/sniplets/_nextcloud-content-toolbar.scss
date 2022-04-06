@@ -4,15 +4,34 @@
     max-height: 150px;
   }
   .nextcloud-button {
-    background: $orange;
-    padding: 8px 18px 10px;
-    color: $white;
-    margin-right: 2px;
-    font-size: 14px;
-    &:hover {
-      background-color: $dark-accent;
-      box-shadow: none;
-      color: $white;
+    @mixin size-button() {
+      padding: 8px 18px 10px;
+      margin-right: 2px;
+      font-size: 14px;
     }
+
+    &-confirm {
+      @include size-button();
+      background: $orange;
+      color: $white;
+      &:hover {
+        background-color: $dark-accent;
+        box-shadow: none;
+        color: $white;
+      }
+    }
+
+    &-cancel {
+      @include size-button();
+      border: none;
+      box-shadow: none;
+      color: $orange;
+      background: $light-grey;
+      &:hover {
+        background: $orange;
+        color: $white;
+      }
+    }
+
   }
 }
