@@ -6,19 +6,29 @@ import {safeApply} from "../../utils/safe-apply.utils";
 import {INextcloudService, nextcloudService} from "../../services";
 import {ToolbarSnipletViewModel} from "./workspace-nextcloud-toolbar.sniplet";
 import {AxiosError} from "axios";
+import {UploadFileSnipletViewModel} from "./workspace-nextcloud-upload-file.sniplet";
 
 declare let window: any;
 
 interface IViewModel {
+    // util
+    safeApply(): void;
+
     initDraggable(): void;
     onSelectContent(document: SyncDocument): void;
     onOpenContent(document: SyncDocument): void;
     getFile(document: SyncDocument): string;
-    draggable: Draggable;
 
+    draggable: Draggable;
+    lockDropzone: boolean;
     parentDocument: SyncDocument;
     documents: Array<SyncDocument>;
     selectedDocuments: Array<SyncDocument>;
+
+    // dropzone
+    isDropzoneEnabled(): boolean;
+    canDropOnFolder(): boolean;
+    onCannotDropFile(): void;
 }
 
 class ViewModel implements IViewModel {
@@ -27,6 +37,7 @@ class ViewModel implements IViewModel {
 
     subscriptions: Subscription = new Subscription();
     draggable: Draggable;
+    lockDropzone: boolean;
 
     parentDocument: SyncDocument;
     documents: Array<SyncDocument>;
@@ -71,6 +82,10 @@ class ViewModel implements IViewModel {
         });
     }
 
+    safeApply(): void {
+        safeApply(this.scope);
+    }
+
     initDraggable(): void {
         // use this const to make it accessible to its folderTree inner context
         const viewModel: IViewModel = this;
@@ -83,8 +98,11 @@ class ViewModel implements IViewModel {
            },
            dragEndHandler(event: DragEvent, content?: any): void {
                console.log("finishDrag: ", content, " event: ", event);
+               viewModel.lockDropzone = false;
+               viewModel.safeApply();
            },
            dragStartHandler(event: DragEvent, content?: any): void {
+               viewModel.lockDropzone = true;
                console.log("itemDrag: ", content, " event: ", event);
                try {
                    event.dataTransfer.setData('application/json', JSON.stringify(content));
@@ -115,6 +133,18 @@ class ViewModel implements IViewModel {
     getFile(document: SyncDocument): string {
         return this.nextcloudService.getFile(model.me.userId, document.name, document.path, document.contentType);
     }
+
+    isDropzoneEnabled(): boolean {
+        return !this.lockDropzone;
+    }
+
+    canDropOnFolder(): boolean {
+        return true;
+    }
+
+    onCannotDropFile(): void {
+
+    }
 }
 
 export const workspaceNextcloudContent = {
@@ -126,6 +156,7 @@ export const workspaceNextcloudContent = {
             lang.addBundle('/nextcloud/i18n', () => {
                 this.vm = new ViewModel(this, nextcloudService);
                 this.vm.toolbar = new ToolbarSnipletViewModel(this);
+                this.vm.upload = new UploadFileSnipletViewModel(this);
             });
         },
     }

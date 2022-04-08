@@ -11,6 +11,6 @@ export const nextcloudBehaviours = {
     nextcloudService: new NextcloudEventService,
     sniplets: {
         'nextcloud-folder/workspace-nextcloud-folder': workspaceNextcloudFolder,
-        'nextcloud-content/workspace-nextcloud-content': workspaceNextcloudContent,
+        'nextcloud-content/content/workspace-nextcloud-content': workspaceNextcloudContent,
     }
 };

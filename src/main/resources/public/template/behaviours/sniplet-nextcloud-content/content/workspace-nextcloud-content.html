@@ -1,4 +1,13 @@
 <div id="nextcloud-content" class="sniplet nextcloud">
+    <!-- dropzone action file -->
+    <dropzone-overlay
+            ng-if="vm.isDropzoneEnabled()"
+            on-import="vm.upload.onImportFiles($event)"
+            can-drop="vm.canDropOnFolder()"
+            on-cannot-drop="vm.onCannotDropFile()">
+    </dropzone-overlay>
+
+    <!-- list of documents -->
     <article class="icons-view no-overflow no-margin-bottom ng-scope height-minus300" ng-show="vm.documents.length > 0">
         <explorer class="radius explorer-hover"
                   ng-repeat="content in vm.documents"
@@ -49,5 +58,8 @@
 
     <!-- toolbar -->
     <div ng-include="'/nextcloud/public/template/behaviours/sniplet-nextcloud-content/toolbar/workspace-nextcloud-toolbar.html'"></div>
+
+    <!-- upload file popup -->
+    <div ng-include="'/nextcloud/public/template/behaviours/sniplet-nextcloud-content/content/workspace-nextcloud-upload-file.html'"></div>
 </div>
 
