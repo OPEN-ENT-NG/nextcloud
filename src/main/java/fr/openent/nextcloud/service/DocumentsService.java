@@ -1,10 +1,12 @@
 package fr.openent.nextcloud.service;
 
+import fr.openent.nextcloud.helper.Attachment;
 import fr.openent.nextcloud.model.UserNextcloud;
 import io.vertx.core.Future;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import org.entcore.common.storage.Storage;
 
 import java.util.List;
 
@@ -58,9 +60,20 @@ public interface DocumentsService {
 
     /**
      * upload file
-     *
-     * @param userId    User identifier
-     * @param path      path of nextcloud's user
+     *  @param user         User session token
+     *  @param storage      Storage manager
+     *  @param file         Data about the file to upload
+     *  @param path         Path where files will be uploaded on the nextcloud
      */
-    Future<JsonObject> uploadFile(String userId, String path);
+    Future<JsonObject> uploadFile(UserNextcloud.TokenProvider user, Storage storage, Attachment file, String path);
+
+    /**
+     * upload files
+     *  @param userSession      User session
+     *  @param files            List of files to upload
+     *  @param storage          Storage manager
+     *  @param path             Final path on Nextcloud
+     *  @return                 Future of uploaded files
+     */
+    Future<JsonArray> uploadFiles(UserNextcloud.TokenProvider userSession, List<Attachment> files, Storage storage, String path);
 }
