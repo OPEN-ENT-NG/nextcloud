@@ -311,7 +311,7 @@ public class DefaultDocumentsService implements DocumentsService {
                 .onSuccess(files -> {
                     if (files.isEmpty()) {
                         //Read the file on the vertx container, id is needed to locate it
-                        storage.readFile(file.id(), res -> {
+                        storage.readFile(file.id(), res ->
                             this.client.putAbs(nextcloudConfig.host() + nextcloudConfig.webdavEndpoint() + "/" + user.userId() + "/" + finalPath)
                                     .basicAuthentication(this.nextcloudConfig.username(), this.nextcloudConfig.password())
                                     .basicAuthentication(user.userId(), user.token())
@@ -325,8 +325,7 @@ public class DefaultDocumentsService implements DocumentsService {
                                                     .put(Field.NAME, file.metadata().filename())
                                                     .put(Field.STATUSCODE, responseAsync.result().statusCode()));
                                         }
-                                    });
-                        });
+                                    }));
 
                     } else {
                         promise.complete(new JsonObject()

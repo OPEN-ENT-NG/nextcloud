@@ -148,10 +148,8 @@ public class DocumentsController extends ControllerHelper {
                                             .onSuccess(res -> renderJson(request, res))
                                             .onFailure(err -> renderError(request, new JsonObject().put(Field.ERROR, err))));
                         })
-                        .onFailure(err -> renderError(request, new JsonObject().put(Field.MESSAGE, err.getMessage()))));
+                        .onSuccess(res -> renderJson(request, res))
+                        .onFailure(err -> renderError(request, new JsonObject().put(Field.ERROR, err))));
 
     }
-
-
-
 }

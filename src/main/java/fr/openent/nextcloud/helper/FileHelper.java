@@ -22,7 +22,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import static fr.wseduc.webutils.Utils.isNotEmpty;
 
 public class FileHelper {
-    private static Logger log = LoggerFactory.getLogger(FileHelper.class);
+    private static final Logger log = LoggerFactory.getLogger(FileHelper.class);
 
     private FileHelper() {
         throw new IllegalStateException("Utility class");
@@ -60,7 +60,6 @@ public class FileHelper {
         for (int i = 0; i < Integer.parseInt(totalFilesToUpload); i++) {
             fileIds.add(UUID.randomUUID().toString());
         }
-        String path = " ";
 
         // return empty arrayList if no header is sent (meaning no files to upload)
         if (totalFilesToUpload.isEmpty() || Integer.parseInt(totalFilesToUpload) == 0) {
@@ -71,7 +70,7 @@ public class FileHelper {
         List<Attachment> listMetadata = new ArrayList<>();
         request.exceptionHandler(event -> {
             String messageToFormat = "[Nextcloud@%s::uploadMultipleFiles] An error has occurred during http request process: %s";
-            PromiseHelper.reject(log, messageToFormat, String.valueOf(FileHelper.class), event.getCause(), promise);
+            PromiseHelper.reject(log, messageToFormat, FileHelper.class.getSimpleName(), event.getCause(), promise);
         });
         request.pause();
 
@@ -85,7 +84,7 @@ public class FileHelper {
 
             upload.exceptionHandler(err -> {
                 String messageToFormat = "[Nextcloud@%s::uploadMultipleFiles] An exception has occurred during http upload process: %s";
-                PromiseHelper.reject(log, messageToFormat, String.valueOf(FileHelper.class), err, promise);
+                PromiseHelper.reject(log, messageToFormat, FileHelper.class.getSimpleName(), err, promise);
             });
             upload.endHandler(aVoid -> {
                 if (incrementFile.get() == Integer.parseInt(totalFilesToUpload) && !responseSent.get()) {
@@ -99,7 +98,7 @@ public class FileHelper {
         List<Future<String>> makeFolders = new ArrayList<>();
 
         for (int i = 0; i < fileIds.size(); i++) {
-            makeFolders.add(makeFolder(storage, vertx, fileIds, path, i));
+            makeFolders.add(makeFolder(storage, vertx, fileIds, i));
         }
 
         FutureHelper.all(makeFolders).onSuccess(success -> {
@@ -107,28 +106,28 @@ public class FileHelper {
             request.resume();
         }).onFailure(failure -> {
             String messageToFormat = "[Nextcloud@%s::uploadMultipleFiles] An exception has occurred during creating folders: %s";
-            PromiseHelper.reject(log, messageToFormat, String.valueOf(FileHelper.class), failure, promise);
+            PromiseHelper.reject(log, messageToFormat, FileHelper.class.getSimpleName(), failure, promise);
         });
 
         return promise.future();
     }
 
-    private static Future<String> makeFolder(Storage storage, Vertx vertx, List<String> fileIds, String path, int i) {
+    private static Future<String> makeFolder(Storage storage, Vertx vertx, List<String> fileIds, int i) {
         Promise<String> promise = Promise.promise();
+        String path = " ";
         try {
             path = getFilePath(fileIds.get(i), storage.getBucket());
         } catch (FileNotFoundException e) {
-            log.error(e.getMessage());
-            promise.fail(e.getMessage());
-            return promise.future();
+            String messageToFormat = "[Nextcloud@%s::makeFolder] error while creation path : %s";
+            PromiseHelper.reject(log, messageToFormat, FileHelper.class.getSimpleName(), e, promise);
         }
         String finalPath = path;
         mkdirsIfNotExists(vertx.fileSystem(), path, event -> {
             if (event.succeeded()) {
                 promise.complete(finalPath);
             } else {
-                String messageToFormat = "[Nextcloud@%s::makeFolder] error while creation folder";
-                PromiseHelper.reject(log, messageToFormat, String.valueOf(FileHelper.class), event.cause(), promise);
+                String messageToFormat = "[Nextcloud@%s::makeFolder] error while creation folder : %s";
+                PromiseHelper.reject(log, messageToFormat, FileHelper.class.getSimpleName(), event.cause(), promise);
             }
         });
         return promise.future();
@@ -164,7 +163,7 @@ public class FileHelper {
             }
 
         }
-        throw new FileNotFoundException("[Nextcloud@%s::getFilePath]Invalid file : " + file);
+        throw new FileNotFoundException(String.format("[Nextcloud@::getFilePath]Invalid file : %s", file));
     }
 
 
