@@ -144,9 +144,7 @@ public class DocumentsController extends ControllerHelper {
                         .compose(userSession -> {
                             request.resume();
                             return FileHelper.uploadMultipleFiles(Field.FILECOUNT, request, storage, vertx)
-                                    .compose(files -> documentsService.uploadFiles(userSession, files, storage, path)
-                                            .onSuccess(res -> renderJson(request, res))
-                                            .onFailure(err -> renderError(request, new JsonObject().put(Field.ERROR, err))));
+                                    .compose(files -> documentsService.uploadFiles(userSession, files, storage, path));
                         })
                         .onSuccess(res -> renderJson(request, res))
                         .onFailure(err -> renderError(request, new JsonObject().put(Field.ERROR, err))));

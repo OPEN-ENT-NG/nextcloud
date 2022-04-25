@@ -332,11 +332,11 @@ public class DefaultDocumentsService implements DocumentsService {
                                 .put(Field.NAME, file.metadata().filename())
                                 .put(Field.ERROR, "nextcloud.file.already.exist"));
                     }
-                    storage.removeFile(file.id(), null);
+                    storage.removeFile(file.id(), e -> {});
                 })
                 .onFailure(err -> {
                     promise.complete(new JsonObject().put(Field.ERROR, err));
-                    storage.removeFile(file.id(), null);
+                    storage.removeFile(file.id(), e -> {});
                 });
         return promise.future();
     }
