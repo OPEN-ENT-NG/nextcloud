@@ -21,15 +21,21 @@ import io.vertx.core.logging.LoggerFactory;
 import io.vertx.ext.web.client.HttpResponse;
 import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.codec.BodyCodec;
+import org.entcore.common.bus.WorkspaceHelper;
 import org.entcore.common.storage.Storage;
+import org.entcore.common.user.UserInfos;
 
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Paths;
 import java.util.List;
+import java.util.UUID;
 
 public class DefaultDocumentsService implements DocumentsService {
     private final Logger log = LoggerFactory.getLogger(DefaultDocumentsService.class);
     private final WebClient client;
     private final NextcloudConfig nextcloudConfig;
+    private final Storage storage;
+    private final WorkspaceHelper workspaceHelper;
 
     private static final String DOWNLOAD_ENDPOINT = "/index.php/apps/files/ajax/download.php";
 
@@ -37,6 +43,8 @@ public class DefaultDocumentsService implements DocumentsService {
     public DefaultDocumentsService(ServiceFactory serviceFactory) {
         this.client = serviceFactory.webClient();
         this.nextcloudConfig = serviceFactory.nextcloudConfig();
+        this.storage = serviceFactory.storage();
+        this.workspaceHelper = serviceFactory.workspaceHelper();
     }
     
     /**
@@ -127,8 +135,8 @@ public class DefaultDocumentsService implements DocumentsService {
     }
 
     @Override
-    public Future<Buffer> getFile(UserNextcloud.TokenProvider userSession, String path) {
-        Promise<Buffer> promise = Promise.promise();
+    public Future<HttpResponse<Buffer>> getFile(UserNextcloud.TokenProvider userSession, String path) {
+        Promise<HttpResponse<Buffer>> promise = Promise.promise();
         this.client.getAbs(nextcloudConfig.host() + nextcloudConfig.webdavEndpoint() + "/" +
                         userSession.userId() + (path != null ? "/" + path : "" ))
                 .basicAuthentication(userSession.userId(), userSession.token())
@@ -142,7 +150,7 @@ public class DefaultDocumentsService implements DocumentsService {
      * @param   responseAsync   HttpResponse of string depending on its state {@link AsyncResult}
      * @param   promise         Promise that could be completed or fail sending {@link Buffer}
      */
-    private void proceedGetFile(AsyncResult<HttpResponse<Buffer>> responseAsync, Promise<Buffer> promise) {
+    private void proceedGetFile(AsyncResult<HttpResponse<Buffer>> responseAsync, Promise<HttpResponse<Buffer>> promise) {
         if (responseAsync.failed()) {
             String messageToFormat = "[Nextcloud@%s::proceedGetFile] An error has occurred during fetching endpoint : %s";
             PromiseHelper.reject(log, messageToFormat, this.getClass().getSimpleName(), responseAsync, promise);
@@ -152,14 +160,14 @@ public class DefaultDocumentsService implements DocumentsService {
                 String messageToFormat = "[Nextcloud@%s::proceedGetFile] Response status is not a HTTP 200 : %s : %s";
                 HttpResponseHelper.reject(log, messageToFormat, this.getClass().getSimpleName(), response, promise);
             } else {
-                promise.complete(response.body());
+                promise.complete(response);
             }
         }
     }
 
     @Override
-    public Future<Buffer> getFiles(UserNextcloud.TokenProvider userSession, String path, List<String> files) {
-        Promise<Buffer> promise = Promise.promise();
+    public Future<HttpResponse<Buffer>> getFiles(UserNextcloud.TokenProvider userSession, String path, List<String> files) {
+        Promise<HttpResponse<Buffer>> promise = Promise.promise();
         this.client.getAbs(nextcloudConfig.host() + DOWNLOAD_ENDPOINT)
                 .basicAuthentication(userSession.userId(), userSession.token())
                 .addQueryParam(Field.DIR, path)
@@ -266,12 +274,11 @@ public class DefaultDocumentsService implements DocumentsService {
      * Upload multiple files to the nextcloud
      * @param userSession      User session
      * @param files            List of files to upload
-     * @param storage          Storage manager
      * @param path             Final path on Nextcloud
      * @return                 Future JsonArray with data on the uploaded files
      */
     @Override
-    public Future<JsonArray> uploadFiles(UserNextcloud.TokenProvider userSession, List<Attachment> files, Storage storage, String path) {
+    public Future<JsonArray> uploadFiles(UserNextcloud.TokenProvider userSession, List<Attachment> files, String path) {
         Promise<JsonArray> promise = Promise.promise();
         Future<JsonObject> current = Future.succeededFuture();
         JsonArray stateUploadedFiles = new JsonArray();
@@ -280,7 +287,7 @@ public class DefaultDocumentsService implements DocumentsService {
                 if (res != null) {
                     stateUploadedFiles.add(res);
                 }
-                return this.uploadFile(userSession, storage, file, path);
+                return this.uploadFile(userSession, file, path);
             });
         }
         current
@@ -294,16 +301,69 @@ public class DefaultDocumentsService implements DocumentsService {
                 });
         return promise.future();
     }
+    /**
+     *
+     * @param userSession       User session
+     * @param filesPath         Path of all the files to move
+     * @return                  Future of the move's state
+     */
+    @Override
+    public Future<JsonObject> moveDocumentENT(UserNextcloud.TokenProvider userSession, UserInfos user, List<String> filesPath, String parentId) {
+        Promise<JsonObject> promise = Promise.promise();
+        Future<JsonObject> current = Future.succeededFuture();
+
+        for (String file : filesPath) {
+            current = current.compose(v -> moveLocal(userSession, user, file, parentId));
+        }
+        current.onSuccess(res -> promise.complete(new JsonObject().put(Field.STATUS, Field.OK)))
+                .onFailure(err -> {
+                    String messageToFormat = "[Nextcloud@%s::moveDocumentENT] An error has occurred during deleting document(s): %s";
+                    PromiseHelper.reject(log, messageToFormat, this.getClass().getSimpleName(), err, promise);
+                });
+        return promise.future();
+    }
+
+    private Future<JsonObject> moveLocal(UserNextcloud.TokenProvider userSession, UserInfos user, String filePath, String parentId) {
+        return copyLocal(userSession, user, filePath, parentId)
+                .onSuccess(res -> deleteDocument(userSession, filePath));
+    }
+
+    private Future<JsonObject> copyLocal(UserNextcloud.TokenProvider userSession, UserInfos user, String filePath, String parentId) {
+        Promise<JsonObject> promise = Promise.promise();
+        getFile(userSession, filePath)
+                .onSuccess(buffer -> {
+                    JsonObject uploaded = new JsonObject()
+                            .put("parentId", parentId)
+                            .put("_id", UUID.randomUUID().toString());
+                    String fileName = Paths.get(filePath).toString();
+                    storage.writeBuffer(uploaded.getString("_id"), buffer.bodyAsBuffer(), null, fileName, res -> {
+                        workspaceHelper.addDocument(uploaded
+                                        .put("metadata", res.getJsonObject("metadata")),
+                                user,
+                                fileName,
+                                null,
+                                false,
+                                null,
+                                e -> {}
+                        );
+                    });
+                    promise.complete();
+                })
+                .onFailure(err -> {
+                    String messageToFormat = "[Nextcloud@%s::moveLocal] An error has occurred while moving files : %s";
+                    PromiseHelper.reject(log, messageToFormat, this.getClass().getSimpleName(), err, promise);
+                });
+        return promise.future();
+    }
 
     /**
      * upload file
      *  @param user         User session token
-     *  @param storage      Storage manager
      *  @param file         Data about the file to upload
      *  @param path         Path where files will be uploaded on the nextcloud
      */
     @Override
-    public Future<JsonObject> uploadFile(UserNextcloud.TokenProvider user, Storage storage, Attachment file, String path) {
+    public Future<JsonObject> uploadFile(UserNextcloud.TokenProvider user, Attachment file, String path) {
         //Final path on the nextcloud server
         String finalPath = (path != null ? path + "/" : "" ) + file.metadata().filename();
         Promise<JsonObject> promise = Promise.promise();

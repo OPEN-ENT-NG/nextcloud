@@ -2,11 +2,16 @@ package fr.openent.nextcloud.service;
 
 import fr.openent.nextcloud.helper.Attachment;
 import fr.openent.nextcloud.model.UserNextcloud;
+import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
+import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import io.vertx.ext.web.client.HttpResponse;
+import org.entcore.common.bus.WorkspaceHelper;
 import org.entcore.common.storage.Storage;
+import org.entcore.common.user.UserInfos;
 
 import java.util.List;
 
@@ -28,7 +33,7 @@ public interface DocumentsService {
      * @param path          path of nextcloud's user
      * @return  Future containing Buffer of file {@link Buffer}
      */
-    Future<Buffer> getFile(UserNextcloud.TokenProvider userSession, String path);
+    Future<HttpResponse<Buffer>> getFile(UserNextcloud.TokenProvider userSession, String path);
 
     /**
      * download multiple files (.zip given)
@@ -38,7 +43,7 @@ public interface DocumentsService {
      * @param files             List of wanted file to download
      * @return  Future containing Buffer of file {@link Buffer}
      */
-    Future<Buffer> getFiles(UserNextcloud.TokenProvider userSession, String path, List<String> files);
+    Future<HttpResponse<Buffer>> getFiles(UserNextcloud.TokenProvider userSession, String path, List<String> files);
 
     /**
      * Move Document
@@ -61,19 +66,25 @@ public interface DocumentsService {
     /**
      * upload file
      *  @param user         User session token
-     *  @param storage      Storage manager
      *  @param file         Data about the file to upload
      *  @param path         Path where files will be uploaded on the nextcloud
      */
-    Future<JsonObject> uploadFile(UserNextcloud.TokenProvider user, Storage storage, Attachment file, String path);
+    Future<JsonObject> uploadFile(UserNextcloud.TokenProvider user, Attachment file, String path);
 
     /**
      * upload files
      *  @param userSession      User session
      *  @param files            List of files to upload
-     *  @param storage          Storage manager
      *  @param path             Final path on Nextcloud
      *  @return                 Future of uploaded files
      */
-    Future<JsonArray> uploadFiles(UserNextcloud.TokenProvider userSession, List<Attachment> files, Storage storage, String path);
+    Future<JsonArray> uploadFiles(UserNextcloud.TokenProvider userSession, List<Attachment> files, String path);
+
+    /**
+     *
+     * @param userSession       User session
+     * @param filesPath         Path of all the files to move
+     * @return                  Future of the move's state
+     */
+    Future<JsonObject> moveDocumentENT(UserNextcloud.TokenProvider userSession, UserInfos user, List<String> filesPath,  String parentId);
 }

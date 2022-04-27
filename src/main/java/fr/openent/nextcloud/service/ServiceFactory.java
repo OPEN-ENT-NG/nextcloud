@@ -8,6 +8,7 @@ import fr.wseduc.mongodb.MongoDb;
 import io.vertx.core.Vertx;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.ext.web.client.WebClient;
+import org.entcore.common.bus.WorkspaceHelper;
 import org.entcore.common.neo4j.Neo4j;
 import org.entcore.common.sql.Sql;
 import org.entcore.common.storage.Storage;
@@ -51,6 +52,10 @@ public class ServiceFactory {
 
     public Storage storage() {
         return this.storage;
+    }
+
+    public WorkspaceHelper workspaceHelper() {
+        return new WorkspaceHelper(eventBus(), storage);
     }
 
     public NextcloudConfig nextcloudConfig() {return this.nextcloudConfig;}
