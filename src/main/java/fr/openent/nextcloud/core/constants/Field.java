@@ -13,15 +13,19 @@ public class Field {
     public static final String DISPLAYNAMECAMEL = "displayName";
     public static final String EMAIL = "email";
     public static final String PHONE = "phone";
+    public static final String UNDERSCORE_ID = "_id";
+    public static final String PARENT_ID = "parentId";
     public static final String ADDRESS = "address";
     public static final String USED = "used";
     public static final String QUOTA = "quota";
     public static final String FREE = "free";
+    public static final String APP = "nextcloud";
     public static final String RELATIVE = "relative";
     public static final String TOTAL = "total";
     public static final String KEY = "key";
     public static final String FILECOUNT = "File-Count";
     public static final String VALUE = "value";
+    public static final String LISTFILES = "List-Files";
     public static final String APPPASSWORD = "apppassword";
     public static final String FILENAME = "fileName";
     public static final String FILENAMELOWER = "filename";
@@ -32,6 +36,7 @@ public class Field {
     public static final String DESTINATION = "destination";
     public static final String ERROR = "error";
 
+
     public static final String STATUS = "status";
     public static final String STATUSCODE = "statuscode";
     public static final String MESSAGE = "message";
@@ -41,6 +46,8 @@ public class Field {
     public static final String METADATA = "metadata";
     public static final String CONTENTTRANSFERTENCODING = "content-transfer-encoding";
     public static final String CONTENT_TYPE = "content-type";
+    public static final String CONTENT_DISPOSITION = "Content-Disposition";
+    public static final String CONTENT_TYPE_HEADER = "Content-Type";
     public static final String PATH = "path";
     public static final String PATHFILE = "pathFile";
     public static final String DESTPATH = "destPath";

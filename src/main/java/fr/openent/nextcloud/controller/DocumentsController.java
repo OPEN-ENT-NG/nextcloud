@@ -6,10 +6,7 @@ import fr.openent.nextcloud.security.OwnerFilter;
 import fr.openent.nextcloud.service.DocumentsService;
 import fr.openent.nextcloud.service.ServiceFactory;
 import fr.openent.nextcloud.service.UserService;
-import fr.wseduc.rs.ApiDoc;
-import fr.wseduc.rs.Delete;
-import fr.wseduc.rs.Get;
-import fr.wseduc.rs.Put;
+import fr.wseduc.rs.*;
 import fr.wseduc.security.ActionType;
 import fr.wseduc.security.SecuredAction;
 import io.vertx.core.http.HttpServerRequest;
@@ -59,10 +56,10 @@ public class DocumentsController extends ControllerHelper {
         UserUtils.getUserInfos(eb, request, user ->
                 userService.getUserSession(user.getUserId())
                         .compose(userSession -> documentsService.getFile(userSession, path.replace(" ", "%20")))
-                        .onSuccess(file -> request.response()
+                        .onSuccess(fileResponse -> request.response()
                                 .putHeader("Content-type", contentType + "; charset=utf-8")
                                 .putHeader("Content-Disposition", "attachment; filename=" + fileName)
-                                .end(file))
+                                .end(fileResponse.body()))
                         .onFailure(err -> renderError(request)));
     }
 
@@ -77,14 +74,14 @@ public class DocumentsController extends ControllerHelper {
             UserUtils.getUserInfos(eb, request, user ->
                     userService.getUserSession(user.getUserId())
                             .compose(userSession -> documentsService.getFiles(userSession, path, files))
-                            .onSuccess(file -> {
+                            .onSuccess(fileResponse -> {
                                 String pathName = path.equals("/") ? user.getLogin() : path;
                                 HttpServerResponse resp = request.response();
                                 resp.putHeader("Content-Disposition", "attachment; filename=\"" + pathName + ".zip\"");
                                 resp.putHeader("Content-Type", "application/octet-stream");
                                 resp.putHeader("Content-Description", "File Transfer");
                                 resp.putHeader("Content-Transfer-Encoding", "binary");
-                                resp.end(file);
+                                resp.end(fileResponse.body());
                             })
                             .onFailure(err -> renderError(request)));
         } else {
@@ -144,10 +141,47 @@ public class DocumentsController extends ControllerHelper {
                         .compose(userSession -> {
                             request.resume();
                             return FileHelper.uploadMultipleFiles(Field.FILECOUNT, request, storage, vertx)
-                                    .compose(files -> documentsService.uploadFiles(userSession, files, storage, path));
+                                    .compose(files -> documentsService.uploadFiles(userSession, files, path));
                         })
                         .onSuccess(res -> renderJson(request, res))
-                        .onFailure(err -> renderError(request, new JsonObject().put(Field.ERROR, err))));
+                        .onFailure(err -> renderError(request, new JsonObject().put(Field.ERROR, err.getMessage()))));
 
     }
+
+    @Put("/files/user/:userid/move/local")
+    @ApiDoc("Copy a file from Nextcloud to ENT storage")
+    @SecuredAction(value = "", type = ActionType.RESOURCE)
+    @ResourceFilter(OwnerFilter.class)
+    public void moveToLocal(HttpServerRequest request) {
+        List<String> listFiles = request.params().getAll(Field.PATH);
+        String parentId = request.params().get(Field.PARENT_ID);
+        if (!listFiles.isEmpty())
+            UserUtils.getUserInfos(eb, request, user -> {
+                userService.getUserSession(user.getUserId())
+                        .compose(userSession -> documentsService.moveDocumentENT(userSession, user, listFiles, parentId))
+                        .onSuccess(res -> renderJson(request, res))
+                        .onFailure(err -> renderError(request, new JsonObject().put(Field.ERROR, err.getMessage())));
+            });
+        else
+            badRequest(request);
+    }
+
+    @Put("/files/user/:userid/copy/local")
+    @ApiDoc("Copy a file from Nextcloud to ENT storage")
+    @SecuredAction(value = "", type = ActionType.RESOURCE)
+    @ResourceFilter(OwnerFilter.class)
+    public void copyToLocal(HttpServerRequest request) {
+        List<String> listFiles = request.params().getAll(Field.PATH);
+        String parentId = request.params().get(Field.PARENT_ID);
+        if (!listFiles.isEmpty())
+            UserUtils.getUserInfos(eb, request, user -> {
+                userService.getUserSession(user.getUserId())
+                        .compose(userSession -> documentsService.copyDocumentENT(userSession, user, listFiles, parentId))
+                        .onSuccess(res -> renderJson(request, res))
+                        .onFailure(err -> renderError(request, new JsonObject().put(Field.ERROR, err.getMessage())));
+            });
+        else
+            badRequest(request);
+    }
+
 }
