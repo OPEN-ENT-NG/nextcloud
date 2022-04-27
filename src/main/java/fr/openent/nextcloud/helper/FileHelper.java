@@ -1,14 +1,18 @@
 package fr.openent.nextcloud.helper;
 
+import fr.openent.nextcloud.core.constants.Field;
 import fr.wseduc.swift.utils.FileUtils;
 import fr.wseduc.webutils.DefaultAsyncResult;
 import io.vertx.core.*;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.file.FileSystem;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
+import org.entcore.common.bus.WorkspaceHelper;
 import org.entcore.common.storage.Storage;
+import org.entcore.common.user.UserInfos;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -166,5 +170,40 @@ public class FileHelper {
         throw new FileNotFoundException(String.format("[Nextcloud@::getFilePath]Invalid file : %s", file));
     }
 
+    public static Future<JsonObject> writeBuffer(Storage storage, final Buffer buff, final String contentType, final String filename) {
+        Promise<JsonObject> promise = Promise.promise();
 
+        storage.writeBuffer(buff, contentType, filename, res -> {
+            if (!Field.ERROR.equals(res.getString(Field.STATUS))) {
+                promise.complete(res);
+            } else {
+                promise.fail(String.format("[Nextcloud@%s::writeBuffer] Error while storing file to workspace)", FileHelper.class.getName()));
+            }
+        });
+
+        return promise.future();
+    }
+
+    /**
+     * Handler which adds document into the MongoDB after downloading it from the NC server
+     * @param uploaded      Data about the download (metadata, title ...)
+     * @param user          User infos
+     * @param fileName      Name of the file on the NC server
+     * @return              The handler
+     */
+    public static Future<JsonObject> addFileReference(JsonObject uploaded, UserInfos user, String fileName,
+                                                      WorkspaceHelper workspaceHelper) {
+        Promise<JsonObject> promise = Promise.promise();
+        workspaceHelper.addDocument(uploaded, user, fileName, Field.APP, false, null,
+                resDoc -> {
+                    if (resDoc.succeeded()) {
+                        promise.complete(resDoc.result().body());
+                    } else {
+                        String messageToFormat = "[Nextcloud@%s::addDocument] Error while adding document : %s";
+                        PromiseHelper.reject(log, messageToFormat, FileHelper.class.getSimpleName(), resDoc, promise);
+                    }});
+//            moveFileHandler(promise, user, parentId)
+
+        return promise.future();
+    }
 }
