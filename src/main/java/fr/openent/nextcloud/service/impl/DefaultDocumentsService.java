@@ -312,10 +312,20 @@ public class DefaultDocumentsService implements DocumentsService {
         Promise<JsonObject> promise = Promise.promise();
         Future<JsonObject> current = Future.succeededFuture();
 
+        JsonObject result = new JsonObject();
+
         for (String file : filesPath) {
-            current = current.compose(v -> moveLocal(userSession, user, file, parentId));
+            current = current.compose(v -> {
+                Promise<JsonObject> promiseResult = Promise.promise();
+                moveLocal(userSession, user, file, parentId).onComplete(e -> {
+                    if (e.succeeded()) result.put(file, e.result());
+                    else result.put(file, "Error");
+                    promiseResult.complete();
+                });
+                return promiseResult.future();
+            });
         }
-        current.onSuccess(res -> promise.complete(new JsonObject().put(Field.STATUS, Field.OK)))
+        current.onSuccess(res -> promise.complete(result))
                 .onFailure(err -> {
                     String messageToFormat = "[Nextcloud@%s::moveDocumentENT] An error has occurred during deleting document(s): %s";
                     PromiseHelper.reject(log, messageToFormat, this.getClass().getSimpleName(), err, promise);
@@ -324,8 +334,17 @@ public class DefaultDocumentsService implements DocumentsService {
     }
 
     private Future<JsonObject> moveLocal(UserNextcloud.TokenProvider userSession, UserInfos user, String filePath, String parentId) {
-        return copyLocal(userSession, user, filePath, parentId)
-                .onSuccess(res -> deleteDocument(userSession, filePath));
+        Promise<JsonObject> promise = Promise.promise();
+        copyLocal(userSession, user, filePath, parentId)
+                .onSuccess(res -> {
+                    promise.complete(res);
+                    deleteDocument(userSession, filePath);
+                })
+                .onFailure(err -> {
+                    String messageToFormat = "[Nextcloud@%s::moveLocal] An error has occurred during moving document(s): %s";
+                    PromiseHelper.reject(log, messageToFormat, this.getClass().getSimpleName(), err, promise);
+                });
+        return promise.future();
     }
 
     private Future<JsonObject> copyLocal(UserNextcloud.TokenProvider userSession, UserInfos user, String filePath, String parentId) {
@@ -333,27 +352,68 @@ public class DefaultDocumentsService implements DocumentsService {
         getFile(userSession, filePath)
                 .onSuccess(buffer -> {
                     JsonObject uploaded = new JsonObject()
-                            .put("parentId", parentId)
-                            .put("_id", UUID.randomUUID().toString());
+                            .put(Field.PARENT_ID, parentId)
+                            .put(Field.UNDERSCORE_ID, UUID.randomUUID().toString());
                     String fileName = Paths.get(filePath).toString();
-                    storage.writeBuffer(uploaded.getString("_id"), buffer.bodyAsBuffer(), null, fileName, res -> {
-                        workspaceHelper.addDocument(uploaded
-                                        .put("metadata", res.getJsonObject("metadata")),
-                                user,
-                                fileName,
-                                null,
-                                false,
-                                null,
-                                e -> {}
-                        );
-                    });
-                    promise.complete();
+                    storage.writeBuffer(uploaded.getString(Field.UNDERSCORE_ID),
+                            buffer.bodyAsBuffer(),
+                            buffer.headers().get(Field.CONTENT_TYPE_HEADER),
+                            fileName,
+                            addFileHandler(promise, uploaded, user, fileName, parentId));
                 })
                 .onFailure(err -> {
-                    String messageToFormat = "[Nextcloud@%s::moveLocal] An error has occurred while moving files : %s";
+                    String messageToFormat = "[Nextcloud@%s::moveLocal] An error has occurred while retrieving nextcloud file : %s";
                     PromiseHelper.reject(log, messageToFormat, this.getClass().getSimpleName(), err, promise);
                 });
         return promise.future();
+    }
+
+    io.vertx.core.Handler<io.vertx.core.json.JsonObject> addFileHandler (Promise<JsonObject> promise,
+                                                                        JsonObject uploaded,
+                                                                         UserInfos user,
+                                                                         String fileName,
+                                                                         String parentId) {
+        return res -> {
+            if (!res.getString(Field.STATUS).equals(Field.ERROR)) {
+                workspaceHelper.addDocument(
+                        uploaded.put(Field.METADATA, res.getJsonObject(Field.METADATA)),
+                        user,
+                        fileName,
+                        Field.APP,
+                        false,
+                        null,
+                        moveFileHandler(promise, user, parentId));
+            } else {
+                promise.fail(String.format("[Nextcloud@%s::moveLocal] An error has occurred during adding document)", this.getClass().getSimpleName()));
+            }
+
+        };
+    }
+
+    io.vertx.core.Handler<io.vertx.core.AsyncResult<io.vertx.core.eventbus.Message<io.vertx.core.json.JsonObject>>> moveFileHandler(
+            Promise<JsonObject> promise,
+            UserInfos user,
+            String parentId
+    ) {
+        return result -> {
+            if (result.succeeded()) {
+                if (parentId != null)
+                    workspaceHelper.moveDocument(result.result().body().getString(Field.UNDERSCORE_ID),
+                            parentId,
+                            user,
+                            e -> {
+                                if (e.failed()) {
+                                    String messageToFormat = "[Nextcloud@%s::moveLocal] An error has occurred during moving document(s): %s";
+                                    PromiseHelper.reject(log, messageToFormat, this.getClass().getSimpleName(), e, promise);
+                                }
+                                else
+                                    promise.complete(new JsonObject().put(Field.STATUS, "OK"));
+                            });
+            } else {
+                String messageToFormat = "[Nextcloud@%s::moveLocal] An error has occurred during moving document(s): %s";
+                PromiseHelper.reject(log, messageToFormat, this.getClass().getSimpleName(), result.cause(), promise);
+            }
+        };
     }
 
     /**

@@ -13,10 +13,13 @@ public class Field {
     public static final String DISPLAYNAMECAMEL = "displayName";
     public static final String EMAIL = "email";
     public static final String PHONE = "phone";
+    public static final String UNDERSCORE_ID = "_id";
+    public static final String PARENT_ID = "parentId";
     public static final String ADDRESS = "address";
     public static final String USED = "used";
     public static final String QUOTA = "quota";
     public static final String FREE = "free";
+    public static final String APP = "nextcloud";
     public static final String RELATIVE = "relative";
     public static final String TOTAL = "total";
     public static final String KEY = "key";
