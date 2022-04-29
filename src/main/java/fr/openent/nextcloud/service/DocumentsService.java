@@ -2,15 +2,11 @@ package fr.openent.nextcloud.service;
 
 import fr.openent.nextcloud.helper.Attachment;
 import fr.openent.nextcloud.model.UserNextcloud;
-import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
-import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.client.HttpResponse;
-import org.entcore.common.bus.WorkspaceHelper;
-import org.entcore.common.storage.Storage;
 import org.entcore.common.user.UserInfos;
 
 import java.util.List;
@@ -80,11 +76,24 @@ public interface DocumentsService {
      */
     Future<JsonArray> uploadFiles(UserNextcloud.TokenProvider userSession, List<Attachment> files, String path);
 
+
     /**
-     *
+     * Copy all the files listed in the filesPath from nextcloud to local.
      * @param userSession       User session
+     * @param user              User infos
      * @param filesPath         Path of all the files to move
-     * @return                  Future of the move's state
+     * @param parentId          Id of the previous folder if moving in a folder
+     * @return                  Future Json with the infos about every move
      */
-    Future<JsonObject> moveDocumentENT(UserNextcloud.TokenProvider userSession, UserInfos user, List<String> filesPath,  String parentId);
+    Future<JsonObject> copyDocumentENT(UserNextcloud.TokenProvider userSession, UserInfos user, List<String> filesPath, String parentId);
+
+    /**
+     * Move all the files listed in the filesPath from nextcloud to local.
+     * @param userSession       User session
+     * @param user              User infos
+     * @param filesPath         Path of all the files to move
+     * @param parentId          Id of the previous folder if moving in a folder
+     * @return                  Future Json with the infos about every move
+     */
+    Future<JsonObject> moveDocumentENT(UserNextcloud.TokenProvider userSession, UserInfos user, List<String> filesPath, String parentId);
 }
