@@ -341,9 +341,9 @@ public class DefaultDocumentsService implements DocumentsService {
      */
     @Override
     public Future<JsonObject> moveDocumentENT(UserNextcloud.TokenProvider userSession,
-                                             UserInfos user,
-                                             List<String> filesPath,
-                                             String parentId) {
+                                              UserInfos user,
+                                              List<String> filesPath,
+                                              String parentId) {
         Promise<JsonObject> promise = Promise.promise();
         Future<JsonObject> current = Future.succeededFuture();
 
@@ -396,7 +396,7 @@ public class DefaultDocumentsService implements DocumentsService {
 
                     })
                     .onFailure(err -> {
-                        String messageToFormat = "[Nextcloud@%s::copyHandler] An error has occurred while retrieving datas from file: %s";
+                        String messageToFormat = "[Nextcloud@%s::copyHandler] An error has occurred while retrieving data from file: %s";
                         PromiseHelper.reject(log, messageToFormat, this.getClass().getSimpleName(), err, promiseResult);
                     });
             return promiseResult.future();
@@ -573,17 +573,6 @@ public class DefaultDocumentsService implements DocumentsService {
             }
         };
     }
-
-//    @Override
-//    public void createFolder(JsonObject folder, String userId, String userName, Handler<Either<String, JsonObject>> handler) {
-//        JsonObject action = new JsonObject()
-//                .put("action", "addFolder")
-//                .put("name", folder.getString("name"))
-//                .put("owner", userId)
-//                .put("ownerName", userName)
-//                .put("parentFolderId", folder.getString("parent_id"));
-//        ebHandling(action, "create", handler);
-//    }
 
     /**
      * upload file

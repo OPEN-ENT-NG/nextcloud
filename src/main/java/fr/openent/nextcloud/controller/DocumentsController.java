@@ -154,13 +154,11 @@ public class DocumentsController extends ControllerHelper {
     @ResourceFilter(OwnerFilter.class)
     public void moveToLocal(HttpServerRequest request) {
         List<String> listFiles = request.params().getAll(Field.PATH);
-        String parentId = request.params().get("parentId");
+        String parentId = request.params().get(Field.PARENT_ID);
         if (!listFiles.isEmpty())
             UserUtils.getUserInfos(eb, request, user -> {
                 userService.getUserSession(user.getUserId())
-                        .compose(userSession -> {
-                            return documentsService.moveDocumentENT(userSession, user, listFiles, parentId);
-                        })
+                        .compose(userSession -> documentsService.moveDocumentENT(userSession, user, listFiles, parentId))
                         .onSuccess(res -> renderJson(request, res))
                         .onFailure(err -> renderError(request, new JsonObject().put(Field.ERROR, err.getMessage())));
             });
@@ -174,13 +172,11 @@ public class DocumentsController extends ControllerHelper {
     @ResourceFilter(OwnerFilter.class)
     public void copyToLocal(HttpServerRequest request) {
         List<String> listFiles = request.params().getAll(Field.PATH);
-        String parentId = request.params().get("parentId");
+        String parentId = request.params().get(Field.PARENT_ID);
         if (!listFiles.isEmpty())
             UserUtils.getUserInfos(eb, request, user -> {
                 userService.getUserSession(user.getUserId())
-                        .compose(userSession -> {
-                            return documentsService.copyDocumentENT(userSession, user, listFiles, parentId);
-                        })
+                        .compose(userSession -> documentsService.copyDocumentENT(userSession, user, listFiles, parentId))
                         .onSuccess(res -> renderJson(request, res))
                         .onFailure(err -> renderError(request, new JsonObject().put(Field.ERROR, err.getMessage())));
             });
