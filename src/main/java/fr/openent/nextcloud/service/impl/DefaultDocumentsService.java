@@ -12,6 +12,7 @@ import fr.openent.nextcloud.service.ServiceFactory;
 
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
+import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonArray;
@@ -319,7 +320,7 @@ public class DefaultDocumentsService implements DocumentsService {
 
         JsonObject result = new JsonObject();
         for (String file : filesPath) {
-            current = current.compose(copyHandler(userSession, user, file, result, parentId));
+            current = current.compose(v -> copyHandler(userSession, user, file, result, parentId));
         }
         current.onSuccess(res -> promise.complete(result))
                 .onFailure(err -> {
@@ -349,7 +350,7 @@ public class DefaultDocumentsService implements DocumentsService {
 
         JsonObject result = new JsonObject();
         for (String file : filesPath) {
-            current = current.compose(moveHandler(userSession, user, file, result, parentId));
+            current = current.compose(v -> moveHandler(userSession, user, file, result, parentId));
         }
         current.onSuccess(res -> promise.complete(result))
                 .onFailure(err -> {
@@ -367,17 +368,60 @@ public class DefaultDocumentsService implements DocumentsService {
      * @param parentId          Id of the previous folder if moving in a folder
      * @return                  Future Json with the infos about every move
      */
-    private java.util.function.Function<JsonObject, Future<JsonObject>> copyHandler(UserNextcloud.TokenProvider userSession,
+    private Future<JsonObject> copyHandler(UserNextcloud.TokenProvider userSession,
                                                                             UserInfos user,
                                                                             String file,
                                                                             JsonObject result,
                                                                             String parentId) {
-        return v -> {
-            Promise<JsonObject> promiseResult = Promise.promise();
-            listFiles(userSession, file)
-                    .onSuccess(res -> {
+        Promise<JsonObject> promiseResult = Promise.promise();
+        listFiles(userSession, file)
+                .onSuccess(res -> {
+                    if (!res.getJsonObject(0).getBoolean(Field.ISFOLDER)) {
+                        copyLocal(userSession, user, file, parentId).onComplete(status -> {
+                            if (status.succeeded()) {
+                                result.put(file, status.result());
+                            }
+                            else {
+                                result.put(file, status.cause().getMessage());
+                            }
+                            promiseResult.complete();
+                        });
+                    }
+                    else {
+                        //TODO Gérer le cas d'import d'un dossier
+                        log.error("Import directory is not handled");
+                        result.put(file, "Import directory is not handled");
+                        promiseResult.complete();
+                    }
+
+                })
+                .onFailure(err -> {
+                    String messageToFormat = "[Nextcloud@%s::copyHandler] An error has occurred while retrieving data from file: %s";
+                    PromiseHelper.reject(log, messageToFormat, this.getClass().getSimpleName(), err, promiseResult);
+                });
+        return promiseResult.future();
+
+    }
+
+    /**
+     * @param userSession       User session
+     * @param user              User infos
+     * @param file              Path of the file you want to move
+     * @param result            Json where status of move is stored
+     * @param parentId          Id of the previous folder if moving in a folder
+     * @return                  Future Json with the infos about every move
+     */
+    private Future<JsonObject> moveHandler(UserNextcloud.TokenProvider userSession,
+                                                                             UserInfos user,
+                                                                             String file,
+                                                                             JsonObject result,
+                                                                             String parentId) {
+        Promise<JsonObject> promiseResult = Promise.promise();
+        listFiles(userSession, file)
+                .onSuccess(res -> {
+                    if (!res.isEmpty()) {
                         if (!res.getJsonObject(0).getBoolean(Field.ISFOLDER)) {
-                            copyLocal(userSession, user, file, parentId).onComplete(status -> {
+                            moveLocal(userSession, user, file, parentId).onComplete(status -> {
                                 if (status.succeeded()) {
                                     result.put(file, status.result());
                                 }
@@ -393,65 +437,19 @@ public class DefaultDocumentsService implements DocumentsService {
                             result.put(file, "Import directory is not handled");
                             promiseResult.complete();
                         }
-
-                    })
-                    .onFailure(err -> {
-                        String messageToFormat = "[Nextcloud@%s::copyHandler] An error has occurred while retrieving data from file: %s";
-                        PromiseHelper.reject(log, messageToFormat, this.getClass().getSimpleName(), err, promiseResult);
-                    });
-            return promiseResult.future();
-        };
-    }
-
-    /**
-     * @param userSession       User session
-     * @param user              User infos
-     * @param file              Path of the file you want to move
-     * @param result            Json where status of move is stored
-     * @param parentId          Id of the previous folder if moving in a folder
-     * @return                  Future Json with the infos about every move
-     */
-    private java.util.function.Function<JsonObject, Future<JsonObject>> moveHandler(UserNextcloud.TokenProvider userSession,
-                                                                             UserInfos user,
-                                                                             String file,
-                                                                             JsonObject result,
-                                                                             String parentId) {
-        return v -> {
-            Promise<JsonObject> promiseResult = Promise.promise();
-            listFiles(userSession, file)
-                    .onSuccess(res -> {
-                        if (!res.isEmpty()) {
-                            if (!res.getJsonObject(0).getBoolean(Field.ISFOLDER)) {
-                                moveLocal(userSession, user, file, parentId).onComplete(status -> {
-                                    if (status.succeeded()) {
-                                        result.put(file, status.result());
-                                    }
-                                    else {
-                                        result.put(file, status.cause().getMessage());
-                                    }
-                                    promiseResult.complete();
-                                });
-                            }
-                            else {
-                                //TODO Gérer le cas d'import d'un dossier
-                                log.error("Import directory is not handled");
-                                result.put(file, "Import directory is not handled");
-                                promiseResult.complete();
-                            }
-                        }
-                        else {
-                            result.put(file, "File does not exist on Nextcloud server");
-                            promiseResult.complete();
-                        }
+                    }
+                    else {
+                        result.put(file, "File does not exist on Nextcloud server");
+                        promiseResult.complete();
+                    }
 
 
-                    })
-                    .onFailure(err -> {
-                        String messageToFormat = "[Nextcloud@%s::copyHandler] An error has occurred while retrieving datas from file: %s";
-                        PromiseHelper.reject(log, messageToFormat, this.getClass().getSimpleName(), err, promiseResult);
-                    });
-            return promiseResult.future();
-        };
+                })
+                .onFailure(err -> {
+                    String messageToFormat = "[Nextcloud@%s::copyHandler] An error has occurred while retrieving datas from file: %s";
+                    PromiseHelper.reject(log, messageToFormat, this.getClass().getSimpleName(), err, promiseResult);
+                });
+        return promiseResult.future();
     }
 
     /**
@@ -515,11 +513,11 @@ public class DefaultDocumentsService implements DocumentsService {
      * @param parentId      Id of the previous folder if moving in a folder
      * @return              The handler
      */
-    private io.vertx.core.Handler<io.vertx.core.json.JsonObject> addFileHandler (Promise<JsonObject> promise,
-                                                                        JsonObject uploaded,
-                                                                         UserInfos user,
-                                                                         String fileName,
-                                                                         String parentId) {
+    private Handler<JsonObject> addFileHandler (Promise<JsonObject> promise,
+                                                JsonObject uploaded,
+                                                UserInfos user,
+                                                String fileName,
+                                                String parentId) {
         return res -> {
             if (!res.getString(Field.STATUS).equals(Field.ERROR)) {
                 workspaceHelper.addDocument(
@@ -543,7 +541,7 @@ public class DefaultDocumentsService implements DocumentsService {
      * @param parentId      Id of the previous folder if moving in a folder
      * @return              The handler
      */
-    private io.vertx.core.Handler<io.vertx.core.AsyncResult<io.vertx.core.eventbus.Message<io.vertx.core.json.JsonObject>>> moveFileHandler(
+    private Handler<AsyncResult<io.vertx.core.eventbus.Message<JsonObject>>> moveFileHandler(
             Promise<JsonObject> promise,
             UserInfos user,
             String parentId
