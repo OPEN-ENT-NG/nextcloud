@@ -15,6 +15,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.eventbus.Message;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
@@ -541,7 +542,7 @@ public class DefaultDocumentsService implements DocumentsService {
      * @param parentId      Id of the previous folder if moving in a folder
      * @return              The handler
      */
-    private Handler<AsyncResult<io.vertx.core.eventbus.Message<JsonObject>>> moveFileHandler(
+    private Handler<AsyncResult<Message<JsonObject>>> moveFileHandler(
             Promise<JsonObject> promise,
             UserInfos user,
             String parentId
