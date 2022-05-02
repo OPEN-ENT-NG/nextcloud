@@ -10,11 +10,13 @@ import fr.openent.nextcloud.model.XmlnsOptions;
 import fr.openent.nextcloud.service.DocumentsService;
 import fr.openent.nextcloud.service.ServiceFactory;
 
+import fr.wseduc.webutils.Either;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -31,6 +33,9 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
+
+import static fr.wseduc.webutils.Utils.handlerToAsyncHandler;
 
 public class DefaultDocumentsService implements DocumentsService {
     private final Logger log = LoggerFactory.getLogger(DefaultDocumentsService.class);
@@ -38,7 +43,8 @@ public class DefaultDocumentsService implements DocumentsService {
     private final NextcloudConfig nextcloudConfig;
     private final Storage storage;
     private final WorkspaceHelper workspaceHelper;
-
+    private final EventBus eb;
+    private final String WORKSPACE_BUS_ADDRESS = "org.entcore.workspace";
     private static final String DOWNLOAD_ENDPOINT = "/index.php/apps/files/ajax/download.php";
 
 
@@ -47,6 +53,7 @@ public class DefaultDocumentsService implements DocumentsService {
         this.nextcloudConfig = serviceFactory.nextcloudConfig();
         this.storage = serviceFactory.storage();
         this.workspaceHelper = serviceFactory.workspaceHelper();
+        this.eb = serviceFactory.eventBus();
     }
     
     /**
@@ -390,6 +397,8 @@ public class DefaultDocumentsService implements DocumentsService {
                     }
                     else {
                         //TODO Gérer le cas d'import d'un dossier
+                        List<String> dirFiles = res.stream().map(json -> new JsonObject(json.toString()).getString("displayname")).collect(Collectors.toList());
+                        copyDocumentENT()
                         log.error("Import directory is not handled");
                         result.put(file, "Import directory is not handled");
                         promiseResult.complete();
@@ -434,6 +443,16 @@ public class DefaultDocumentsService implements DocumentsService {
                         }
                         else {
                             //TODO Gérer le cas d'import d'un dossier
+                            List<String> dirFiles = res.stream().map(json -> new JsonObject(json.toString()).getString("displayname")).collect(Collectors.toList());
+                            dirFiles.remove(0);
+                            JsonObject folder = new JsonObject()
+                                            .put(Field.NAME, res.getJsonObject(0).getString(Field.DISPLAYNAME))
+                                            .put(Field.PARENT_ID, parentId);
+                            createFolder(folder, user.getUserId(), user.getUsername(), folderRes -> {
+                                if (folderRes.isRight()) {
+
+                                }
+                            });
                             log.error("Import directory is not handled");
                             result.put(file, "Import directory is not handled");
                             promiseResult.complete();
@@ -451,6 +470,29 @@ public class DefaultDocumentsService implements DocumentsService {
                     PromiseHelper.reject(log, messageToFormat, this.getClass().getSimpleName(), err, promiseResult);
                 });
         return promiseResult.future();
+    }
+
+    public void createFolder(JsonObject folder, String userId, String userName, Handler<Either<String, JsonObject>> handler) {
+        JsonObject action = new JsonObject()
+                .put("action", "addFolder")
+                .put("name", folder.getString("name"))
+                .put("owner", userId)
+                .put("ownerName", userName)
+                .put("parentFolderId", folder.getString("parent_id"));
+        ebHandling(action, "create", handler);
+    }
+
+    private void ebHandling(JsonObject action, String functionName, Handler<Either<String, JsonObject>> handler) {
+        eb.request(WORKSPACE_BUS_ADDRESS, action, handlerToAsyncHandler(message -> {
+            JsonObject body = message.body();
+            if (!"ok".equals(body.getString("status"))) {
+                String errorMessage = "[DefaultDocumentService@" + functionName + "] An error occurred when calling document by event bus : ";
+                String errorEb = message.body().getString("message");
+                handler.handle(new Either.Left<>(errorMessage + errorEb));
+            } else {
+                handler.handle(new Either.Right<>(message.body()));
+            }
+        }));
     }
 
     /**
@@ -488,7 +530,7 @@ public class DefaultDocumentsService implements DocumentsService {
         getFile(userSession, filePath)
                 .onSuccess(buffer -> {
                     JsonObject uploaded = new JsonObject()
-                            .put(Field.PARENT_ID, parentId)
+                            .put(Field.PARENTID, parentId)
                             .put(Field.UNDERSCORE_ID, UUID.randomUUID().toString());
                     String fileName = Paths.get(filePath).toString();
 

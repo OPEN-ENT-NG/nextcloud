@@ -154,7 +154,7 @@ public class DocumentsController extends ControllerHelper {
     @ResourceFilter(OwnerFilter.class)
     public void moveToWorkspace(HttpServerRequest request) {
         List<String> listFiles = request.params().getAll(Field.PATH);
-        String parentId = request.params().get(Field.PARENT_ID);
+        String parentId = request.params().get(Field.PARENTID);
         if (!listFiles.isEmpty())
             UserUtils.getUserInfos(eb, request, user ->
                 userService.getUserSession(user.getUserId())
@@ -171,7 +171,7 @@ public class DocumentsController extends ControllerHelper {
     @ResourceFilter(OwnerFilter.class)
     public void copyToWorkspace(HttpServerRequest request) {
         List<String> listFiles = request.params().getAll(Field.PATH);
-        String parentId = request.params().get(Field.PARENT_ID);
+        String parentId = request.params().get(Field.PARENTID);
         if (!listFiles.isEmpty())
             UserUtils.getUserInfos(eb, request, user ->
                 userService.getUserSession(user.getUserId())

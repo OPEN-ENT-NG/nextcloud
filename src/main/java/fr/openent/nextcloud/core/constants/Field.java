@@ -14,7 +14,8 @@ public class Field {
     public static final String EMAIL = "email";
     public static final String PHONE = "phone";
     public static final String UNDERSCORE_ID = "_id";
-    public static final String PARENT_ID = "parentId";
+    public static final String PARENTID = "parentId";
+    public static final String PARENT_ID = "parent_id";
     public static final String ADDRESS = "address";
     public static final String USED = "used";
     public static final String QUOTA = "quota";
