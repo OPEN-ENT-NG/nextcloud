@@ -327,6 +327,7 @@ public class DefaultDocumentsService implements DocumentsService {
                     PromiseHelper.reject(log, messageToFormat, this.getClass().getSimpleName(), err, promise);
 
                 });
+
         return promise.future();
     }
 
@@ -373,11 +374,31 @@ public class DefaultDocumentsService implements DocumentsService {
                                                                             String parentId) {
         return v -> {
             Promise<JsonObject> promiseResult = Promise.promise();
-            copyLocal(userSession, user, file, parentId).onComplete(status -> {
-                if (status.succeeded()) result.put(file, status.result());
-                else result.put(file, status.cause().getMessage());
-                promiseResult.complete();
-            });
+            listFiles(userSession, file)
+                    .onSuccess(res -> {
+                        if (!res.getJsonObject(0).getBoolean(Field.ISFOLDER)) {
+                            copyLocal(userSession, user, file, parentId).onComplete(status -> {
+                                if (status.succeeded()) {
+                                    result.put(file, status.result());
+                                }
+                                else {
+                                    result.put(file, status.cause().getMessage());
+                                }
+                                promiseResult.complete();
+                            });
+                        }
+                        else {
+                            //TODO Gérer le cas d'import d'un dossier
+                            log.error("Import directory is not handled");
+                            result.put(file, "Import directory is not handled");
+                            promiseResult.complete();
+                        }
+
+                    })
+                    .onFailure(err -> {
+                        String messageToFormat = "[Nextcloud@%s::copyHandler] An error has occurred while retrieving datas from file: %s";
+                        PromiseHelper.reject(log, messageToFormat, this.getClass().getSimpleName(), err, promiseResult);
+                    });
             return promiseResult.future();
         };
     }
@@ -397,11 +418,31 @@ public class DefaultDocumentsService implements DocumentsService {
                                                                              String parentId) {
         return v -> {
             Promise<JsonObject> promiseResult = Promise.promise();
-            moveLocal(userSession, user, file, parentId).onComplete(status -> {
-                if (status.succeeded()) result.put(file, status.result());
-                else result.put(file, status.cause().getMessage());
-                promiseResult.complete();
-            });
+            listFiles(userSession, file)
+                    .onSuccess(res -> {
+                        if (!res.getJsonObject(0).getBoolean(Field.ISFOLDER)) {
+                            moveLocal(userSession, user, file, parentId).onComplete(status -> {
+                                if (status.succeeded()) {
+                                    result.put(file, status.result());
+                                }
+                                else {
+                                    result.put(file, status.cause().getMessage());
+                                }
+                                promiseResult.complete();
+                            });
+                        }
+                        else {
+                            //TODO Gérer le cas d'import d'un dossier
+                            log.error("Import directory is not handled");
+                            result.put(file, "Import directory is not handled");
+                            promiseResult.complete();
+                        }
+
+                    })
+                    .onFailure(err -> {
+                        String messageToFormat = "[Nextcloud@%s::copyHandler] An error has occurred while retrieving datas from file: %s";
+                        PromiseHelper.reject(log, messageToFormat, this.getClass().getSimpleName(), err, promiseResult);
+                    });
             return promiseResult.future();
         };
     }
@@ -444,6 +485,7 @@ public class DefaultDocumentsService implements DocumentsService {
                             .put(Field.PARENT_ID, parentId)
                             .put(Field.UNDERSCORE_ID, UUID.randomUUID().toString());
                     String fileName = Paths.get(filePath).toString();
+
                     storage.writeBuffer(uploaded.getString(Field.UNDERSCORE_ID),
                             buffer.bodyAsBuffer(),
                             buffer.headers().get(Field.CONTENT_TYPE_HEADER),
