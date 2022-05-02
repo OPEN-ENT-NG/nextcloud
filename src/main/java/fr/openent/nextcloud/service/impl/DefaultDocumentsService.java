@@ -420,23 +420,30 @@ public class DefaultDocumentsService implements DocumentsService {
             Promise<JsonObject> promiseResult = Promise.promise();
             listFiles(userSession, file)
                     .onSuccess(res -> {
-                        if (!res.getJsonObject(0).getBoolean(Field.ISFOLDER)) {
-                            moveLocal(userSession, user, file, parentId).onComplete(status -> {
-                                if (status.succeeded()) {
-                                    result.put(file, status.result());
-                                }
-                                else {
-                                    result.put(file, status.cause().getMessage());
-                                }
+                        if (!res.isEmpty()) {
+                            if (!res.getJsonObject(0).getBoolean(Field.ISFOLDER)) {
+                                moveLocal(userSession, user, file, parentId).onComplete(status -> {
+                                    if (status.succeeded()) {
+                                        result.put(file, status.result());
+                                    }
+                                    else {
+                                        result.put(file, status.cause().getMessage());
+                                    }
+                                    promiseResult.complete();
+                                });
+                            }
+                            else {
+                                //TODO Gérer le cas d'import d'un dossier
+                                log.error("Import directory is not handled");
+                                result.put(file, "Import directory is not handled");
                                 promiseResult.complete();
-                            });
+                            }
                         }
                         else {
-                            //TODO Gérer le cas d'import d'un dossier
-                            log.error("Import directory is not handled");
-                            result.put(file, "Import directory is not handled");
+                            result.put(file, "File does not exist on Nextcloud server");
                             promiseResult.complete();
                         }
+
 
                     })
                     .onFailure(err -> {
