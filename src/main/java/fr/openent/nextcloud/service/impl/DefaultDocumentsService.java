@@ -30,6 +30,7 @@ import org.entcore.common.storage.Storage;
 import org.entcore.common.user.UserInfos;
 
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.UUID;
@@ -387,7 +388,7 @@ public class DefaultDocumentsService implements DocumentsService {
                 .onSuccess(res -> {
                     if (!res.isEmpty()){
                         if (!res.getJsonObject(0).getBoolean(Field.ISFOLDER)) {
-                            copyLocal(userSession, user, file, parentId).onComplete(status -> {
+                            copyLocal(userSession, user, res.getJsonObject(0).getString(Field.DISPLAYNAME), parentId).onComplete(status -> {
                                 if (status.succeeded()) {
                                     result.put(file, status.result());
                                 }
@@ -399,7 +400,6 @@ public class DefaultDocumentsService implements DocumentsService {
                         }
                         else {
                             //TODO Gérer le cas d'import d'un dossier
-                            List<String> dirFiles = res.stream().map(json -> new JsonObject(json.toString()).getString("displayname")).collect(Collectors.toList());
                             log.error("Import directory is not handled");
                             result.put(file, "Import directory is not handled");
                             promiseResult.complete();
@@ -438,7 +438,7 @@ public class DefaultDocumentsService implements DocumentsService {
                 .onSuccess(res -> {
                     if (!res.isEmpty()) {
                         if (!res.getJsonObject(0).getBoolean(Field.ISFOLDER)) {
-                            moveLocal(userSession, user, file, parentId).onComplete(status -> {
+                            moveLocal(userSession, user, res.getJsonObject(0).getString(Field.DISPLAYNAME), parentId).onComplete(status -> {
                                 if (status.succeeded()) {
                                     result.put(file, status.result());
                                 }
@@ -450,16 +450,6 @@ public class DefaultDocumentsService implements DocumentsService {
                         }
                         else {
                             //TODO Gérer le cas d'import d'un dossier
-                            List<String> dirFiles = res.stream().map(json -> new JsonObject(json.toString()).getString("displayname")).collect(Collectors.toList());
-                            dirFiles.remove(0);
-                            JsonObject folder = new JsonObject()
-                                            .put(Field.NAME, res.getJsonObject(0).getString(Field.DISPLAYNAME))
-                                            .put(Field.PARENT_ID, parentId);
-                            createFolder(folder, user.getUserId(), user.getUsername(), folderRes -> {
-                                if (folderRes.isRight()) {
-
-                                }
-                            });
                             log.error("Import directory is not handled");
                             result.put(file, "Import directory is not handled");
                             promiseResult.complete();
@@ -539,13 +529,9 @@ public class DefaultDocumentsService implements DocumentsService {
                     JsonObject uploaded = new JsonObject()
                             .put(Field.PARENTID, parentId)
                             .put(Field.UNDERSCORE_ID, UUID.randomUUID().toString());
-                    String fileName = Paths.get(filePath).toString();
-
-                    storage.writeBuffer(uploaded.getString(Field.UNDERSCORE_ID),
-                            buffer.bodyAsBuffer(),
-                            buffer.headers().get(Field.CONTENT_TYPE_HEADER),
-                            fileName,
-                            addFileHandler(promise, uploaded, user, fileName, parentId));
+                    storage.writeBuffer(uploaded.getString(Field.UNDERSCORE_ID), buffer.bodyAsBuffer(),
+                            buffer.headers().get(Field.CONTENT_TYPE_HEADER), filePath,
+                            addFileHandler(promise, uploaded, user, filePath, parentId));
                 })
                 .onFailure(err -> {
                     String messageToFormat = "[Nextcloud@%s::copyLocal] An error has occurred while retrieving nextcloud file : %s";
@@ -570,14 +556,8 @@ public class DefaultDocumentsService implements DocumentsService {
                                                 String parentId) {
         return res -> {
             if (!res.getString(Field.STATUS).equals(Field.ERROR)) {
-                workspaceHelper.addDocument(
-                        uploaded.put(Field.METADATA, res.getJsonObject(Field.METADATA)),
-                        user,
-                        fileName,
-                        Field.APP,
-                        false,
-                        null,
-                        moveFileHandler(promise, user, parentId));
+                workspaceHelper.addDocument(uploaded.put(Field.METADATA, res.getJsonObject(Field.METADATA)),
+                        user, fileName, Field.APP, false, null, moveFileHandler(promise, user, parentId));
             } else {
                 promise.fail(String.format("[Nextcloud@%s::addFileHandler] An error has occurred during adding document)", this.getClass().getSimpleName()));
             }
@@ -600,9 +580,7 @@ public class DefaultDocumentsService implements DocumentsService {
             if (result.succeeded()) {
                 if (parentId != null) {
                     workspaceHelper.moveDocument(result.result().body().getString(Field.UNDERSCORE_ID),
-                            parentId,
-                            user,
-                            moveStatus -> {
+                            parentId, user, moveStatus -> {
                                 if (moveStatus.failed()) {
                                     String messageToFormat = "[Nextcloud@%s::moveFileHandler] An error has occurred during moving document(s): %s";
                                     PromiseHelper.reject(log, messageToFormat, this.getClass().getSimpleName(), moveStatus, promise);
