@@ -125,6 +125,8 @@ public class DocumentsController extends ControllerHelper {
             UserUtils.getUserInfos(eb, request, user ->
                     userService.getUserSession(user.getUserId())
                             .compose(userSession -> documentsService.deleteDocuments(userSession, paths))
+                            .onComplete(e ->  {
+                            })
                             .onSuccess(res -> renderJson(request, res))
                             .onFailure(err -> renderError(request, new JsonObject().put(Field.MESSAGE, err.getMessage()))));
         } else {
