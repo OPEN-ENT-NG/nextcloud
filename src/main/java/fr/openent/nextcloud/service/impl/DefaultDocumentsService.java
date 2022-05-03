@@ -382,24 +382,31 @@ public class DefaultDocumentsService implements DocumentsService {
                                                                             JsonObject result,
                                                                             String parentId) {
         Promise<JsonObject> promiseResult = Promise.promise();
+        //The listFiles function here is called to gather data on one specific file.
         listFiles(userSession, file)
                 .onSuccess(res -> {
-                    if (!res.getJsonObject(0).getBoolean(Field.ISFOLDER)) {
-                        copyLocal(userSession, user, file, parentId).onComplete(status -> {
-                            if (status.succeeded()) {
-                                result.put(file, status.result());
-                            }
-                            else {
-                                result.put(file, status.cause().getMessage());
-                            }
+                    if (!res.isEmpty()){
+                        if (!res.getJsonObject(0).getBoolean(Field.ISFOLDER)) {
+                            copyLocal(userSession, user, file, parentId).onComplete(status -> {
+                                if (status.succeeded()) {
+                                    result.put(file, status.result());
+                                }
+                                else {
+                                    result.put(file, status.cause().getMessage());
+                                }
+                                promiseResult.complete();
+                            });
+                        }
+                        else {
+                            //TODO Gérer le cas d'import d'un dossier
+                            List<String> dirFiles = res.stream().map(json -> new JsonObject(json.toString()).getString("displayname")).collect(Collectors.toList());
+                            log.error("Import directory is not handled");
+                            result.put(file, "Import directory is not handled");
                             promiseResult.complete();
-                        });
+                        }
                     }
                     else {
-                        //TODO Gérer le cas d'import d'un dossier
-                        List<String> dirFiles = res.stream().map(json -> new JsonObject(json.toString()).getString("displayname")).collect(Collectors.toList());
-                        log.error("Import directory is not handled");
-                        result.put(file, "Import directory is not handled");
+                        result.put(file, "File does not exist on Nextcloud server");
                         promiseResult.complete();
                     }
 
@@ -426,6 +433,7 @@ public class DefaultDocumentsService implements DocumentsService {
                                                                              JsonObject result,
                                                                              String parentId) {
         Promise<JsonObject> promiseResult = Promise.promise();
+        //The listFiles function here is called to gather data on one specific file.
         listFiles(userSession, file)
                 .onSuccess(res -> {
                     if (!res.isEmpty()) {
