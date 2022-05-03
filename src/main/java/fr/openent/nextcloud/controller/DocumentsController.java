@@ -148,38 +148,36 @@ public class DocumentsController extends ControllerHelper {
 
     }
 
-    @Put("/files/user/:userid/move/local")
-    @ApiDoc("Copy a file from Nextcloud to ENT storage")
+    @Put("/files/user/:userid/move/workspace")
+    @ApiDoc("Move a file from Nextcloud to ENT workspace")
     @SecuredAction(value = "", type = ActionType.RESOURCE)
     @ResourceFilter(OwnerFilter.class)
-    public void moveToLocal(HttpServerRequest request) {
+    public void moveToWorkspace(HttpServerRequest request) {
         List<String> listFiles = request.params().getAll(Field.PATH);
         String parentId = request.params().get(Field.PARENT_ID);
         if (!listFiles.isEmpty())
-            UserUtils.getUserInfos(eb, request, user -> {
+            UserUtils.getUserInfos(eb, request, user ->
                 userService.getUserSession(user.getUserId())
-                        .compose(userSession -> documentsService.moveDocumentENT(userSession, user, listFiles, parentId))
+                        .compose(userSession -> documentsService.moveDocumentToWorkspace(userSession, user, listFiles, parentId))
                         .onSuccess(res -> renderJson(request, res))
-                        .onFailure(err -> renderError(request, new JsonObject().put(Field.ERROR, err.getMessage())));
-            });
+                        .onFailure(err -> renderError(request, new JsonObject().put(Field.ERROR, err.getMessage()))));
         else
             badRequest(request);
     }
 
-    @Put("/files/user/:userid/copy/local")
-    @ApiDoc("Copy a file from Nextcloud to ENT storage")
+    @Put("/files/user/:userid/copy/workspace")
+    @ApiDoc("Copy a file from Nextcloud to ENT workspace")
     @SecuredAction(value = "", type = ActionType.RESOURCE)
     @ResourceFilter(OwnerFilter.class)
-    public void copyToLocal(HttpServerRequest request) {
+    public void copyToWorkspace(HttpServerRequest request) {
         List<String> listFiles = request.params().getAll(Field.PATH);
         String parentId = request.params().get(Field.PARENT_ID);
         if (!listFiles.isEmpty())
-            UserUtils.getUserInfos(eb, request, user -> {
+            UserUtils.getUserInfos(eb, request, user ->
                 userService.getUserSession(user.getUserId())
-                        .compose(userSession -> documentsService.copyDocumentENT(userSession, user, listFiles, parentId))
+                        .compose(userSession -> documentsService.copyDocumentToWorkspace(userSession, user, listFiles, parentId))
                         .onSuccess(res -> renderJson(request, res))
-                        .onFailure(err -> renderError(request, new JsonObject().put(Field.ERROR, err.getMessage())));
-            });
+                        .onFailure(err -> renderError(request, new JsonObject().put(Field.ERROR, err.getMessage()))));
         else
             badRequest(request);
     }

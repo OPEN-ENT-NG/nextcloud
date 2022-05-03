@@ -309,13 +309,13 @@ public class DefaultDocumentsService implements DocumentsService {
      * @param userSession       User session
      * @param user              User infos
      * @param filesPath         Path of all the files to move
-     * @param parentId          Id of the previous folder if moving in a folder
+     * @param parentId          Identifier of the previous folder if moving in a folder
      * @return                  Future Json with the infos about every move
      */
-    public Future<JsonObject> copyDocumentENT(UserNextcloud.TokenProvider userSession,
-                                              UserInfos user,
-                                              List<String> filesPath,
-                                              String parentId) {
+    public Future<JsonObject> copyDocumentToWorkspace(UserNextcloud.TokenProvider userSession,
+                                                      UserInfos user,
+                                                      List<String> filesPath,
+                                                      String parentId) {
         Promise<JsonObject> promise = Promise.promise();
         Future<JsonObject> current = Future.succeededFuture();
 
@@ -338,14 +338,14 @@ public class DefaultDocumentsService implements DocumentsService {
      * @param userSession       User session
      * @param user              User infos
      * @param filesPath         Path of all the files to move
-     * @param parentId          Id of the previous folder if moving in a folder
+     * @param parentId          Identifier of the previous folder if moving in a folder
      * @return                  Future Json with the infos about every move
      */
     @Override
-    public Future<JsonObject> moveDocumentENT(UserNextcloud.TokenProvider userSession,
-                                              UserInfos user,
-                                              List<String> filesPath,
-                                              String parentId) {
+    public Future<JsonObject> moveDocumentToWorkspace(UserNextcloud.TokenProvider userSession,
+                                                      UserInfos user,
+                                                      List<String> filesPath,
+                                                      String parentId) {
         Promise<JsonObject> promise = Promise.promise();
         Future<JsonObject> current = Future.succeededFuture();
 
@@ -366,7 +366,7 @@ public class DefaultDocumentsService implements DocumentsService {
      * @param user              User infos
      * @param file              Path of the file you want to move
      * @param result            Json where status of move is stored
-     * @param parentId          Id of the previous folder if moving in a folder
+     * @param parentId          Identifier of the previous folder if moving in a folder
      * @return                  Future Json with the infos about every move
      */
     private Future<JsonObject> copyHandler(UserNextcloud.TokenProvider userSession,
@@ -409,7 +409,7 @@ public class DefaultDocumentsService implements DocumentsService {
      * @param user              User infos
      * @param file              Path of the file you want to move
      * @param result            Json where status of move is stored
-     * @param parentId          Id of the previous folder if moving in a folder
+     * @param parentId          Identifier of the previous folder if moving in a folder
      * @return                  Future Json with the infos about every move
      */
     private Future<JsonObject> moveHandler(UserNextcloud.TokenProvider userSession,
@@ -458,7 +458,7 @@ public class DefaultDocumentsService implements DocumentsService {
      * @param userSession       User session
      * @param user              User infos
      * @param filePath          Path of the file on nextcloud server
-     * @param parentId          Id of the previous folder if moving in a folder
+     * @param parentId          Identifier of the previous folder if moving in a folder
      * @return                  Future with the status of the action
      */
     private Future<JsonObject> moveLocal(UserNextcloud.TokenProvider userSession, UserInfos user, String filePath, String parentId) {
@@ -480,7 +480,7 @@ public class DefaultDocumentsService implements DocumentsService {
      * @param userSession       User session
      * @param user              User infos
      * @param filePath          Path of the file on nextcloud server
-     * @param parentId          Id of the previous folder if moving in a folder
+     * @param parentId          Identifier of the previous folder if moving in a folder
      * @return                  Future with the status of the action
      */
     private Future<JsonObject> copyLocal(UserNextcloud.TokenProvider userSession, UserInfos user, String filePath, String parentId) {
@@ -511,7 +511,7 @@ public class DefaultDocumentsService implements DocumentsService {
      * @param uploaded      Data about the download (metadata, title ...)
      * @param user          User infos
      * @param fileName      Name of the file on the NC server
-     * @param parentId      Id of the previous folder if moving in a folder
+     * @param parentId      Identifier of the previous folder if moving in a folder
      * @return              The handler
      */
     private Handler<JsonObject> addFileHandler (Promise<JsonObject> promise,
@@ -539,7 +539,7 @@ public class DefaultDocumentsService implements DocumentsService {
      * Handler to move document under the parent folder
      * @param promise       Promise
      * @param user          User infos
-     * @param parentId      Id of the previous folder if moving in a folder
+     * @param parentId      Identifier of the previous folder if moving in a folder
      * @return              The handler
      */
     private Handler<AsyncResult<Message<JsonObject>>> moveFileHandler(
