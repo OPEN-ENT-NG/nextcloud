@@ -398,7 +398,6 @@ public class DefaultDocumentsService implements DocumentsService {
                     else {
                         //TODO Gérer le cas d'import d'un dossier
                         List<String> dirFiles = res.stream().map(json -> new JsonObject(json.toString()).getString("displayname")).collect(Collectors.toList());
-                        copyDocumentENT()
                         log.error("Import directory is not handled");
                         result.put(file, "Import directory is not handled");
                         promiseResult.complete();
