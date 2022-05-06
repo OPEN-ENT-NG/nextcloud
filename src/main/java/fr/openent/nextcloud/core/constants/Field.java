@@ -6,6 +6,7 @@ public class Field {
     public static final String DATA = "data";
     public static final String ID = "id";
     public static final String USERID = "userid";
+    public static final String USERID_CAPS = "userId";
     public static final String USER_ID = "user_id";
     public static final String PASSWORD = "password";
     public static final String USERNAME = "username";
@@ -14,6 +15,8 @@ public class Field {
     public static final String DISPLAYNAMECAMEL = "displayName";
     public static final String EMAIL = "email";
     public static final String PHONE = "phone";
+    public static final String DELETE = "delete";
+    public static final String PARENTNAME = "parentName";
     public static final String ACTION = "action";
     public static final String OWNER = "owner";
     public static final String OWNERNAME = "ownerName";
@@ -30,6 +33,7 @@ public class Field {
     public static final String APP = "nextcloud";
     public static final String RELATIVE = "relative";
     public static final String TOTAL = "total";
+    public static final String GROUPID = "groupId";
     public static final String KEY = "key";
     public static final String FILECOUNT = "File-Count";
     public static final String VALUE = "value";
@@ -127,7 +131,6 @@ public class Field {
     public static final String COMMENTSUNREAD = "commentsUnread";
     public static final String OWNERDISPLAYNAME = "ownerDisplayName";
     public static final String SHARETYPE = "shareTypes";
-    
 
 
 

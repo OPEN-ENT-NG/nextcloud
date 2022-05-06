@@ -6,6 +6,7 @@ import fr.wseduc.webutils.DefaultAsyncResult;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.file.FileSystem;
+import io.vertx.core.http.HttpServerFileUpload;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
@@ -82,6 +83,7 @@ public class FileHelper {
             String finalPath = pathIds.get().get(incrementFile.get());
             final JsonObject metadata = FileUtils.metadata(upload);
             listMetadata.add(new Attachment(fileIds.get(incrementFile.get()), new Metadata(metadata)));
+
             upload.streamToFileSystem(finalPath);
             incrementFile.set(incrementFile.get() + 1);
 

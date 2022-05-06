@@ -5,6 +5,7 @@ import fr.openent.nextcloud.service.impl.DefaultDocumentsService;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.eventbus.EventBus;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
@@ -28,7 +29,15 @@ public class EventBusHelper {
                 .put(Field.OWNER, userId)
                 .put(Field.OWNERNAME, userName)
                 .put(Field.PARENTFOLDERID, folder.getString(Field.PARENT_ID));
-        return request(eb, action);
+        return requestJsonObject(eb, action);
+    }
+
+    public static Future<JsonArray> deleteDocument(EventBus eb, String id, String userId) {
+        JsonObject action =  new JsonObject()
+                .put(Field.ACTION, Field.DELETE)
+                .put(Field.ID, id)
+                .put(Field.USERID_CAPS, userId);
+        return requestJsonArray(eb, action);
     }
 
     /**
@@ -37,9 +46,17 @@ public class EventBusHelper {
      * @param action    The action to perform
      * @return          Future with the body of the response from the eb
      */
-    private static Future<JsonObject> request(EventBus eb, JsonObject action) {
+    private static Future<JsonObject> requestJsonObject(EventBus eb, JsonObject action) {
         Promise<JsonObject> promise = Promise.promise();
         eb.request(WORKSPACE_BUS_ADDRESS, action, MessageResponseHandler.messageJsonObjectHandler(PromiseHelper.handlerJsonObject(promise)));
         return promise.future();
     }
+
+    private static Future<JsonArray> requestJsonArray(EventBus eb, JsonObject action) {
+        Promise<JsonArray> promise = Promise.promise();
+        eb.request(WORKSPACE_BUS_ADDRESS, action, MessageResponseHandler.messageJsonArrayHandler(PromiseHelper.handlerJsonArray(promise)));
+        return promise.future();
+    }
+
+
 }
