@@ -51,6 +51,24 @@ will be called to use synchronized documents :
 <sniplet template="nextcloud-folder/workspace-nextcloud-folder" application="nextcloud"></sniplet>
 ```
 
+You also need to add ***"enable-nextcloud": true*** in ent-core.json, under workspace service : 
+```json
+[workspace config]
+    
+  {
+  ...  
+  "name": "org.entcore~workspace~...",
+  "config": {
+          ...
+          "enable-nextcloud": true,
+          ...
+      },
+  ...  
+  }
+
+```
+
+
 
 # Documentation API
 * [OCS](https://docs.nextcloud.com/server/latest/developer_manual/client_apis/OCS/ocs-api-overview.html)
