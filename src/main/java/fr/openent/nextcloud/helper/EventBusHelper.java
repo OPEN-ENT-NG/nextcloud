@@ -10,7 +10,7 @@ import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 
 
-public class EbHelper {
+public class EventBusHelper {
     private static final String WORKSPACE_BUS_ADDRESS = "org.entcore.workspace";
     private static final Logger log = LoggerFactory.getLogger(DefaultDocumentsService.class);
 
@@ -23,12 +23,12 @@ public class EbHelper {
      */
     public static Future<JsonObject> createFolder(EventBus eb, JsonObject folder, String userId, String userName) {
         JsonObject action = new JsonObject()
-                .put(Field.ACTION, "addFolder")
-                .put(Field.NAME, folder.getString("name"))
+                .put(Field.ACTION, Field.ADDFOLDER)
+                .put(Field.NAME, folder.getString(Field.NAME))
                 .put(Field.OWNER, userId)
                 .put(Field.OWNERNAME, userName)
-                .put(Field.PARENTFOLDERID, folder.getString("parent_id"));
-        return ebHandling(eb, action);
+                .put(Field.PARENTFOLDERID, folder.getString(Field.PARENT_ID));
+        return request(eb, action);
     }
 
     /**
@@ -37,17 +37,9 @@ public class EbHelper {
      * @param action    The action to perform
      * @return          Future with the body of the response from the eb
      */
-    private static Future<JsonObject> ebHandling(EventBus eb, JsonObject action) {
+    private static Future<JsonObject> request(EventBus eb, JsonObject action) {
         Promise<JsonObject> promise = Promise.promise();
-        eb.request(WORKSPACE_BUS_ADDRESS, action, message -> {
-            JsonObject body = new JsonObject(message.result().body().toString());
-            if (!message.succeeded() || !"ok".equals(body.getString("status"))) {
-                String messageToFormat = "[Nextcloud@%s::ebHandling] An error occurred when calling document by event bus : %s";
-                PromiseHelper.reject(log, messageToFormat, EbHelper.class.getName(), message, promise);
-            } else {
-                promise.complete(body);
-            }
-        });
+        eb.request(WORKSPACE_BUS_ADDRESS, action, MessageResponseHandler.messageJsonObjectHandler(PromiseHelper.handlerJsonObject(promise)));
         return promise.future();
     }
 }

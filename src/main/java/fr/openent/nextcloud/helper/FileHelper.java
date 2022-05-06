@@ -177,7 +177,8 @@ public class FileHelper {
             if (!Field.ERROR.equals(res.getString(Field.STATUS))) {
                 promise.complete(res);
             } else {
-                promise.fail(String.format("[Nextcloud@%s::writeBuffer] Error while storing file to workspace)", FileHelper.class.getName()));
+                String messageToFormat = "[Nextcloud@%s::writeBuffer] Error while storing file to workspace : %s";
+                PromiseHelper.reject(log, messageToFormat, FileHelper.class.getSimpleName(), new Exception(res.getString(Field.ERROR)), promise);
             }
         });
 
@@ -202,7 +203,6 @@ public class FileHelper {
                         String messageToFormat = "[Nextcloud@%s::addDocument] Error while adding document : %s";
                         PromiseHelper.reject(log, messageToFormat, FileHelper.class.getSimpleName(), resDoc, promise);
                     }});
-//            moveFileHandler(promise, user, parentId)
 
         return promise.future();
     }
