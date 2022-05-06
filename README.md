@@ -52,7 +52,8 @@ will be called to use synchronized documents :
 ```
 
 You also need to add ***"enable-nextcloud": true*** in ent-core.json, under workspace service : 
-```json
+<pre>
+json
 [workspace config]
     
   {
@@ -66,9 +67,7 @@ You also need to add ***"enable-nextcloud": true*** in ent-core.json, under work
   ...  
   }
 
-```
-
-
+</pre>
 
 # Documentation API
 * [OCS](https://docs.nextcloud.com/server/latest/developer_manual/client_apis/OCS/ocs-api-overview.html)
