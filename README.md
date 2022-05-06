@@ -54,18 +54,16 @@ will be called to use synchronized documents :
 You also need to add ***"enable-nextcloud": true*** in ent-core.json, under workspace service : 
 <pre>
 [workspace config]
-    
-  {
-  ...  
-  "name": "org.entcore~workspace~...",
-  "config": {
-          ...
-          "enable-nextcloud": true,
-          ...
-      },
-  ...  
-  }
-
+{
+    ...
+    "name": "org.entcore~workspace~...",
+    "config": {
+        ...
+        "enable-nextcloud": true,
+        ...
+    },
+    ...
+}
 </pre>
 
 # Documentation API
