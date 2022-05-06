@@ -53,7 +53,6 @@ will be called to use synchronized documents :
 
 You also need to add ***"enable-nextcloud": true*** in ent-core.json, under workspace service : 
 <pre>
-json
 [workspace config]
     
   {
