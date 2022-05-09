@@ -11,6 +11,7 @@ import {Draggable, SyncDocument} from "../models";
 import {INextcloudUserService, nextcloudUserService} from "../services";
 import {UserNextcloud} from "../models/nextcloud-user.model";
 import {Subscription} from "rxjs";
+import rights from "../rights";
 
 declare let window: any;
 
@@ -233,10 +234,12 @@ export const workspaceNextcloudFolder = {
     that: null,
     controller: {
         init: function (): void {
-            lang.addBundle('/nextcloud/i18n', async () => {
-                await nextcloudUserService.resolveUser(model.me.userId);
-                this.vm = new ViewModel(this, nextcloudService, nextcloudUserService);
-            });
+            if (model.me.hasWorkflow(rights.workflow.access)) {
+                lang.addBundle('/nextcloud/i18n', async () => {
+                    await nextcloudUserService.resolveUser(model.me.userId);
+                    this.vm = new ViewModel(this, nextcloudService, nextcloudUserService);
+                });
+            }
         }
     }
 };
