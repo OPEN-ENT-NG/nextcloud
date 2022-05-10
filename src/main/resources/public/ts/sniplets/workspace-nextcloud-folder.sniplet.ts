@@ -169,11 +169,21 @@ class ViewModel implements IViewModel {
         const viewModel: IViewModel = this;
         const $workspaceFolderTree: JQuery = $(WorkspaceEntcoreUtils.$ENTCORE_WORKSPACE);
         // case nextcloud folder tree is interacted
-        $($nextcloudFolder).click(this.switchWorkspaceTreeHandler());
+        // checking if listener does not exist in order to create one
+        if (!(<any>$)._data($($nextcloudFolder)[0], "events").click) {
+            $($nextcloudFolder).click(this.switchWorkspaceTreeHandler());
+        }
+
         // case entcore workspace folder tree is interacted
-        $workspaceFolderTree.click(this.switchNextcloudTreeHandler(viewModel));
+        // checking if listener does not exist in order to create one
+        if (!(<any>$)._data($workspaceFolderTree.get(0), "events")) {
+            $workspaceFolderTree.click(this.switchNextcloudTreeHandler(viewModel));
+        }
     }
 
+    /**
+     * Remove workspace tree and use nextcloud tree instead.
+     */
     private switchWorkspaceTreeHandler() {
         return function (): void {
             const $workspaceFolderTree: JQuery = $(WorkspaceEntcoreUtils.$ENTCORE_WORKSPACE + ' li > a');
@@ -195,13 +205,17 @@ class ViewModel implements IViewModel {
         };
     }
 
+    /**
+     * Remove nextcloud tree and use workspace tree instead.
+     */
     private switchNextcloudTreeHandler(viewModel: IViewModel) {
         return function (): void {
             // go back to workspace content display
             // clear nextCloudTree interaction
             viewModel.openedFolder = [];
             viewModel.selectedFolder = null;
-            arguments[0].currentTarget.classList.add('selected');
+
+            arguments[0].target.parentElement.classList.add('selected');
 
             // display workspace buttons interactions
             WorkspaceEntcoreUtils.toggleProgressBarDisplay(true);
@@ -210,6 +224,9 @@ class ViewModel implements IViewModel {
             // display workspace contents (search bar, menu, list of folder/files...) interactions
             WorkspaceEntcoreUtils.toggleWorkspaceContentDisplay(true);
             template.open('documents', `icons`);
+
+            const $workspaceFolderTree: JQuery = $(WorkspaceEntcoreUtils.$ENTCORE_WORKSPACE);
+            $workspaceFolderTree.off();
         };
     }
 
