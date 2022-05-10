@@ -2,15 +2,14 @@ package fr.openent.nextcloud.controller;
 
 import fr.openent.nextcloud.core.constants.Field;
 import fr.openent.nextcloud.model.UserNextcloud;
+import fr.openent.nextcloud.security.CanAccessNextcloud;
 import fr.openent.nextcloud.security.OwnerFilter;
 import fr.openent.nextcloud.service.ServiceFactory;
 import fr.openent.nextcloud.service.UserService;
 import fr.wseduc.rs.ApiDoc;
 import fr.wseduc.rs.Get;
-import fr.wseduc.rs.Post;
 import fr.wseduc.security.ActionType;
 import fr.wseduc.security.SecuredAction;
-import fr.wseduc.webutils.request.RequestUtils;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.json.JsonObject;
 import org.entcore.common.controller.ControllerHelper;
@@ -29,7 +28,7 @@ public class UserController extends ControllerHelper {
     @Get("/user/:userid/provide/token")
     @ApiDoc("Provide nextcloud token")
     @SecuredAction(value = "", type = ActionType.RESOURCE)
-    @ResourceFilter(OwnerFilter.class)
+    @ResourceFilter(CanAccessNextcloud.class)
     public void provideUserSession(HttpServerRequest request) {
         UserUtils.getUserInfos(eb, request, user -> {
             UserNextcloud.RequestBody userCreationBody = new UserNextcloud.RequestBody()
