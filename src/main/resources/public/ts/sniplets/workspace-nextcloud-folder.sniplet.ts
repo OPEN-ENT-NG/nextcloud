@@ -214,9 +214,6 @@ class ViewModel implements IViewModel {
             viewModel.openedFolder = [];
             viewModel.selectedFolder = null;
 
-            console.log("arguments: ", arguments[0]);
-            // const $workspaceFolderTreeList: JQuery = $(WorkspaceEntcoreUtils.$ENTCORE_WORKSPACE + ' li > a');
-            // $workspaceFolderTreeList[0].classList.add("selected");
             arguments[0].target.parentElement.classList.add('selected');
 
             // display workspace buttons interactions
