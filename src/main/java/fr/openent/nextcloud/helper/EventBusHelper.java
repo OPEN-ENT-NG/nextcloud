@@ -46,13 +46,13 @@ public class EventBusHelper {
      * @param action    The action to perform
      * @return          Future with the body of the response from the eb
      */
-    private static Future<JsonObject> requestJsonObject(EventBus eb, JsonObject action) {
+    public static Future<JsonObject> requestJsonObject(EventBus eb, JsonObject action) {
         Promise<JsonObject> promise = Promise.promise();
         eb.request(WORKSPACE_BUS_ADDRESS, action, MessageResponseHandler.messageJsonObjectHandler(PromiseHelper.handlerJsonObject(promise)));
         return promise.future();
     }
 
-    private static Future<JsonArray> requestJsonArray(EventBus eb, JsonObject action) {
+    public static Future<JsonArray> requestJsonArray(EventBus eb, JsonObject action) {
         Promise<JsonArray> promise = Promise.promise();
         eb.request(WORKSPACE_BUS_ADDRESS, action, MessageResponseHandler.messageJsonArrayHandler(PromiseHelper.handlerJsonArray(promise)));
         return promise.future();

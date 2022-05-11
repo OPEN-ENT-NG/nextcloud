@@ -182,14 +182,13 @@ public class DocumentsController extends ControllerHelper {
             badRequest(request);
     }
 
-    @Put("/files/user/:userid/nextcloud/move")
+    @Put("/files/user/:userid/workspace/move/cloud")
     @ApiDoc("Move a file from ENT workspace to cloud")
     @SecuredAction(value = "", type = ActionType.RESOURCE)
     @ResourceFilter(OwnerFilter.class)
     public void moveToCloud(HttpServerRequest request) {
         List<String> listFiles = request.params().getAll(Field.ID);
         String parentId = request.params().get(Field.PARENTNAME);
-        //TODO rename parent id to parent name
         if (!listFiles.isEmpty())
             UserUtils.getUserInfos(eb, request, user ->
                     userService.getUserSession(user.getUserId())

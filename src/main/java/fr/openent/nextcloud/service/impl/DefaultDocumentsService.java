@@ -625,7 +625,7 @@ public class DefaultDocumentsService implements DocumentsService {
     public Future<JsonObject> moveFilesFromWorkspaceToNC(UserNextcloud.TokenProvider userSession, UserInfos user, List<String> idList, String parentName) {
         Promise<JsonObject> promise = Promise.promise();
 
-        Future<JsonObject> current = Future.succeededFuture();
+        Future<Void> current = Future.succeededFuture();
         JsonObject result = new JsonObject();
         for (String id : idList) {
             current = current.compose(v -> moveFromWorkspaceToNC(userSession, id, parentName, result));
@@ -647,8 +647,8 @@ public class DefaultDocumentsService implements DocumentsService {
      * @param result        JsonObject containing all the status about the move
      * @return              Future Json with status of the move.
      */
-    private Future<JsonObject> moveFromWorkspaceToNC(UserNextcloud.TokenProvider userSession, String id, String parentName, JsonObject result) {
-        Promise<JsonObject> promise = Promise.promise();
+    private Future<Void> moveFromWorkspaceToNC(UserNextcloud.TokenProvider userSession, String id, String parentName, JsonObject result) {
+        Promise<Void> promise = Promise.promise();
 
         sendWorkspaceFileToNC(userSession, id, parentName)
                 .compose(deleteStatus -> {
@@ -676,7 +676,7 @@ public class DefaultDocumentsService implements DocumentsService {
         String finalPath = (parentName != null ? parentName + "/" : "" );
 
         workspaceHelper.readDocument(id, file -> {
-            if (file != null){
+            if (file != null) {
                 this.client.putAbs(nextcloudConfig.host() + nextcloudConfig.webdavEndpoint() + "/" + userSession.userId() + "/" +
                                 finalPath + file.getDocument().getString(Field.NAME))
                         .basicAuthentication(userSession.userId(), userSession.token())
