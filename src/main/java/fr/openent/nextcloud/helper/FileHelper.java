@@ -82,6 +82,7 @@ public class FileHelper {
             String finalPath = pathIds.get().get(incrementFile.get());
             final JsonObject metadata = FileUtils.metadata(upload);
             listMetadata.add(new Attachment(fileIds.get(incrementFile.get()), new Metadata(metadata)));
+
             upload.streamToFileSystem(finalPath);
             incrementFile.set(incrementFile.get() + 1);
 

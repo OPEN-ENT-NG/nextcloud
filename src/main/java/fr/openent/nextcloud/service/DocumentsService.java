@@ -96,4 +96,14 @@ public interface DocumentsService {
      * @return                  Future Json with the infos about every move
      */
     Future<JsonObject> moveDocumentToWorkspace(UserNextcloud.TokenProvider userSession, UserInfos user, List<String> filesPath, String parentId);
+
+    /**
+     * Move all the files listed in id idList from workspace to Nextcloud
+     * @param userSession   User session
+     * @param user          User infos
+     * @param idList        Identifier of all the files to move
+     * @param parentName    Name of the parent folder in nextcloud
+     * @return              Future Json with all the status infos about the move.
+     */
+    Future<JsonObject> moveFilesFromWorkspaceToNC(UserNextcloud.TokenProvider userSession, UserInfos user, List<String> idList, String parentName);
 }
