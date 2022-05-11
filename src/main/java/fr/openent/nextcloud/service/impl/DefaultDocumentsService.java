@@ -14,6 +14,7 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
@@ -25,6 +26,7 @@ import org.entcore.common.bus.WorkspaceHelper;
 import org.entcore.common.storage.Storage;
 import org.entcore.common.user.UserInfos;
 
+import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
@@ -34,6 +36,8 @@ public class DefaultDocumentsService implements DocumentsService {
     private final NextcloudConfig nextcloudConfig;
     private final Storage storage;
     private final WorkspaceHelper workspaceHelper;
+    private final EventBus eventBus;
+
     private static final String DOWNLOAD_ENDPOINT = "/index.php/apps/files/ajax/download.php";
 
 
@@ -42,6 +46,7 @@ public class DefaultDocumentsService implements DocumentsService {
         this.nextcloudConfig = serviceFactory.nextcloudConfig();
         this.storage = serviceFactory.storage();
         this.workspaceHelper = serviceFactory.workspaceHelper();
+        this.eventBus = serviceFactory.eventBus();
     }
     
     /**
@@ -322,7 +327,6 @@ public class DefaultDocumentsService implements DocumentsService {
                 .onFailure(err -> {
                     String messageToFormat = "[Nextcloud@%s::copyDocumentToWorkspace] An error has occurred during copy : %s";
                     PromiseHelper.reject(log, messageToFormat, this.getClass().getSimpleName(), err, promise);
-
                 });
 
         return promise.future();
@@ -507,7 +511,7 @@ public class DefaultDocumentsService implements DocumentsService {
                 )
                 .compose(writeInfo -> {
                     writeInfo.put(Field.PARENTID, parentId);
-                    return FileHelper.addFileReference(writeInfo, user, filePath, workspaceHelper);
+                    return FileHelper.addFileReference(writeInfo, user, filePath.replace("%20", " "), workspaceHelper);
                 })
                 .compose(resDoc -> moveUnderParent(workspaceHelper, user, parentId, resDoc))
                 .onSuccess(promise::complete)
@@ -609,5 +613,93 @@ public class DefaultDocumentsService implements DocumentsService {
                 });
         return promise.future();
     }
+
+    /**
+     * Move all the files listed in id idList from workspace to Nextcloud
+     * @param userSession   User session
+     * @param user          User infos
+     * @param idList        Identifier of all the files to move
+     * @param parentName    Name of the parent folder in nextcloud
+     * @return              Future Json with all the status infos about the move.
+     */
+    @Override
+    public Future<JsonObject> moveFilesFromWorkspaceToNC(UserNextcloud.TokenProvider userSession, UserInfos user, List<String> idList, String parentName) {
+        Promise<JsonObject> promise = Promise.promise();
+
+        Future<Void> current = Future.succeededFuture();
+        JsonObject result = new JsonObject();
+        for (String id : idList) {
+            current = current.compose(v -> moveFromWorkspaceToNC(userSession, id, parentName, result));
+        }
+        current.onSuccess(res -> promise.complete(result))
+                .onFailure(err -> {
+                    String messageToFormat = "[Nextcloud@%s::moveFilesFromWorkspaceToNC] An error has occurred while moving documents : %s";
+                    PromiseHelper.reject(log, messageToFormat, this.getClass().getSimpleName(), err, promise);
+                });
+
+        return promise.future();
+    }
+
+    /**
+     * Move one file from workspace to Nextcloud
+     * @param userSession   User session
+     * @param id            Identifier of the file
+     * @param parentName    Name of the parent folder in Nextcloud
+     * @param result        JsonObject containing all the status about the move
+     * @return              Future Json with status of the move.
+     */
+    private Future<Void> moveFromWorkspaceToNC(UserNextcloud.TokenProvider userSession, String id, String parentName, JsonObject result) {
+        Promise<Void> promise = Promise.promise();
+
+        sendWorkspaceFileToNC(userSession, id, parentName)
+                .compose(deleteStatus -> {
+                    result.put(id, deleteStatus);
+                    return EventBusHelper.deleteDocument(eventBus, id, userSession.userId());
+                })
+                .onSuccess(res -> promise.complete())
+                .onFailure(err -> {
+                    String messageToFormat = "[Nextcloud@%s::moveFromWorkspaceToNC] An error has occurred while moving file : %s";
+                    PromiseHelper.reject(log, messageToFormat, this.getClass().getSimpleName(), err, promise);
+                });
+
+        return promise.future();
+    }
+
+    /**
+     * Retrieve a file from workspace and send it to Nextcloud.
+     * @param userSession   User session
+     * @param id            Identifier of the file
+     * @param parentName    Name of the parent folder in Nextcloud
+     * @return              Future Json with result of the upload
+     */
+    private Future<JsonObject> sendWorkspaceFileToNC(UserNextcloud.TokenProvider userSession, String id, String parentName) {
+        Promise<JsonObject> promise = Promise.promise();
+        String finalPath = (parentName != null ? parentName + "/" : "" );
+
+        workspaceHelper.readDocument(id, file -> {
+            if (file != null) {
+                String docName = file.getDocument().getString(Field.NAME).replace(" ", "%20");
+                this.client.putAbs(nextcloudConfig.host() + nextcloudConfig.webdavEndpoint() + "/" + userSession.userId() + "/" +
+                                finalPath + docName)
+                        .basicAuthentication(userSession.userId(), userSession.token())
+                        .sendBuffer(file.getData(), responseAsync -> {
+                            if (responseAsync.failed()) {
+                                String messageToFormat = "[Nextcloud@%s::sendWorkspaceFileToNC] An error has occurred during uploading file : %s";
+                                PromiseHelper.reject(log, messageToFormat, this.getClass().getSimpleName(), responseAsync.cause(), promise);
+                            } else {
+                                promise.complete(new JsonObject().put(Field.STATUSCODE, responseAsync.result().statusCode()));
+                            }
+                        });
+            } else {
+                String messageToFormat = "[Nextcloud@%s::sendWorkspaceFileToNC] An error has occurred during uploading file : %s";
+                PromiseHelper.reject(log, messageToFormat, this.getClass().getSimpleName(), new Exception("file.not.found"), promise);
+            }
+        });
+
+        return promise.future();
+    }
+
+
+
 
 }
