@@ -55,7 +55,7 @@ public class DefaultDocumentsService implements DocumentsService {
     public Future<JsonArray> listFiles(UserNextcloud.TokenProvider userSession, String path) {
         Promise<JsonArray> promise = Promise.promise();
         this.client.rawAbs(NextcloudHttpMethod.PROPFIND.method(), nextcloudConfig.host() +
-                        nextcloudConfig.webdavEndpoint() + "/" + userSession.userId() + (path != null ? "/" + path : "" ))
+                        nextcloudConfig.webdavEndpoint() + "/" + userSession.userId() + (path != null ? "/" + path.replace(" ", "%20") : "" ))
                 .basicAuthentication(userSession.userId(), userSession.token())
                 .as(BodyCodec.string(StandardCharsets.UTF_8.toString()))
                 .sendBuffer(Buffer.buffer(getListFilesPropsBody()), responseAsync -> proceedListFiles(responseAsync, promise));
