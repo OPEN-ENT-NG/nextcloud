@@ -9,10 +9,10 @@ export class NextcloudEventService {
     // sending document observable
     private documentSubject = new Subject<{parentDocument: SyncDocument, documents: Array<SyncDocument>}>();
 
-    private contentContext: any;
+    private contentContext: SyncDocument;
 
     constructor() {
-        this.contentContext = {};
+        this.contentContext = null;
     }
 
     sendDocuments(documents: {parentDocument: SyncDocument, documents: Array<SyncDocument>}): void {
@@ -31,11 +31,11 @@ export class NextcloudEventService {
         return this.openFolderSubject.asObservable();
     }
 
-    getContentContext(): void {
+    getContentContext(): SyncDocument {
         return this.contentContext;
     }
 
-    setContentContext(content: any): void {
+    setContentContext(content: SyncDocument): void {
         this.contentContext = content;
     }
 }

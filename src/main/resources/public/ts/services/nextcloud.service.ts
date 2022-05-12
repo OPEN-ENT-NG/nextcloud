@@ -6,6 +6,8 @@ export interface INextcloudService {
     listDocument(userid: string, path?: string): Promise<Array<SyncDocument>>;
     uploadDocuments(userid: string, files: Array<File>): Promise<AxiosResponse>;
     moveDocument(userid: string, path: string, destPath: string): Promise<AxiosResponse>;
+    moveDocumentNextcloudToWorkspace(userid: string, paths: Array<string>, parentId?: string): Promise<AxiosResponse>;
+    moveDocumentWorkspaceToCloud(userid: string, ids: Array<string>, cloudDocumentName: string): Promise<AxiosResponse>;
     deleteDocuments(userid: string, path: Array<string>): Promise<AxiosResponse>;
     getFile(userid: string, fileName: string, path: string, contentType: string): string;
     getFiles(userid: string, path: string, files: Array<string>): string;
@@ -31,6 +33,20 @@ export const nextcloudService: INextcloudService = {
     moveDocument: (userid: string, path: string, destPath: string): Promise<AxiosResponse> => {
         const urlParam: string = `?path=${path}&destPath=${destPath}`
         return http.put(`/nextcloud/files/user/${userid}/move${urlParam}`);
+    },
+
+    moveDocumentNextcloudToWorkspace: (userid: string, paths: Array<string>, parentId?: string): Promise<AxiosResponse> => {
+        let urlParams: URLSearchParams = new URLSearchParams();
+        paths.forEach((path: string) => urlParams.append('path', path));
+        const parentIdParam: string = parentId ? `&parentId=${parentId}` : '';
+        return http.put(`/nextcloud/files/user/${userid}/move/workspace?${urlParams}${parentIdParam}`);
+    },
+
+    moveDocumentWorkspaceToCloud: (userid: string, ids: Array<string>, cloudDocumentName: string): Promise<AxiosResponse> => {
+        let urlParams: URLSearchParams = new URLSearchParams();
+        ids.forEach((path: string) => urlParams.append('id', path));
+        const parentDocumentNameParam: string = cloudDocumentName ? `&parentName=${cloudDocumentName}` : '';
+        return http.put(`/nextcloud/files/user/${userid}/workspace/move/cloud?${urlParams}${parentDocumentNameParam}`);
     },
 
     deleteDocuments(userid: string, paths: Array<string>): Promise<AxiosResponse> {

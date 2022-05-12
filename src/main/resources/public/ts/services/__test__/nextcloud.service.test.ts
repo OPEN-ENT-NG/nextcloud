@@ -113,4 +113,38 @@ describe('NextcloudService', () => {
 
         done();
     });
+
+    it('Test Put moving document to nextcloud to workspace should have paths appeared in URL request', done => {
+        const mock = new MockAdapter(axios);
+        const data = {response: true};
+
+        const userId = "userId";
+        const paths = ["path", "path1", "path2"];
+        const parentId = "myParentId";
+
+        let spy = jest.spyOn(axios, "put");
+        mock.onPut('/nextcloud/files/user/userId/move/workspace?path=path&path=path1&path=path2&parentId=myParentId')
+            .reply(200, data);
+
+        nextcloudService.moveDocumentNextcloudToWorkspace(userId, paths, parentId).then(() => {
+            expect(spy).toHaveBeenCalledWith( '/nextcloud/files/user/userId/move/workspace?path=path&path=path1&path=path2&parentId=myParentId');
+            done();
+        });
+    });
+
+    it('Test Put moving document to nextcloud to workspace should have paths appeared in URL request without parentId', done => {
+        const mock = new MockAdapter(axios);
+        const data = {response: true};
+
+        const userId = "userId";
+        const paths = ["path", "path1", "path2"];
+
+        let spy = jest.spyOn(axios, "put");
+        mock.onPut('/nextcloud/files/user/userId/move/workspace?path=path&path=path1&path=path2').reply(200, data);
+
+        nextcloudService.moveDocumentNextcloudToWorkspace(userId, paths).then(() => {
+            expect(spy).toHaveBeenCalledWith( '/nextcloud/files/user/userId/move/workspace?path=path&path=path1&path=path2');
+            done();
+        });
+    });
 });
