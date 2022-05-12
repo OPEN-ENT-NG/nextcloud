@@ -28,7 +28,9 @@ import org.entcore.common.user.UserInfos;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class DefaultDocumentsService implements DocumentsService {
     private final Logger log = LoggerFactory.getLogger(DefaultDocumentsService.class);
@@ -481,11 +483,13 @@ public class DefaultDocumentsService implements DocumentsService {
      */
     private Future<JsonObject> retrieveAndDeleteFile(UserNextcloud.TokenProvider userSession, UserInfos user, String filePath, String parentId) {
         Promise<JsonObject> promise = Promise.promise();
+        Map<String, JsonObject> result = new HashMap<>();
         storeFileWorkspace(userSession, user, filePath, parentId)
-                .onSuccess(res -> {
-                    promise.complete(res);
-                    deleteDocument(userSession, filePath);
+                .compose(res -> {
+                    result.put(Field.RESULT, res);
+                    return deleteDocument(userSession, filePath);
                 })
+                .onSuccess(res -> promise.complete(result.get(Field.RESULT)))
                 .onFailure(err -> {
                     String messageToFormat = "[Nextcloud@%s::retrieveAndDeleteFile] An error has occurred during retrieving" + "" +
                             "and deleting document document(s) : %s";
