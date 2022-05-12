@@ -581,8 +581,7 @@ public class DefaultDocumentsService implements DocumentsService {
                     if (files.isEmpty()) {
                         //Read the file on the vertx container, id is needed to locate it
                         storage.readFile(file.id(), res ->
-                            this.client.putAbs(nextcloudConfig.host() + nextcloudConfig.webdavEndpoint() + "/" + user.userId() + "/" + finalPath)
-                                    .basicAuthentication(this.nextcloudConfig.username(), this.nextcloudConfig.password())
+                            this.client.putAbs(nextcloudConfig.host() + nextcloudConfig.webdavEndpoint() + "/" + user.userId() + "/" + finalPath.replace(" ", "%20"))
                                     .basicAuthentication(user.userId(), user.token())
                                     .as(BodyCodec.jsonObject())
                                     .sendBuffer(res, responseAsync -> {
