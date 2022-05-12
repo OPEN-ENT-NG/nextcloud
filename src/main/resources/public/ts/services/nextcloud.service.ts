@@ -21,7 +21,7 @@ export const nextcloudService: INextcloudService = {
 
     uploadDocuments(userid: string, files: Array<File>): Promise<AxiosResponse> {
         const formData: FormData = new FormData();
-        const headers = {'headers': {'Content-type': 'multipart/form-data'}};
+        const headers = {'headers': {'Content-type': 'multipart/form-data', 'File-Count': files.length}};
         files.forEach(file => {
             formData.append('fileToUpload[]', file);
         });
