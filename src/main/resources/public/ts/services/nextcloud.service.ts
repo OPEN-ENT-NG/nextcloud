@@ -21,13 +21,14 @@ export const nextcloudService: INextcloudService = {
             .then((res: AxiosResponse) => res.data.data.map((document: IDocumentResponse) => new SyncDocument().build(document)));
     },
 
-    uploadDocuments(userid: string, files: Array<File>): Promise<AxiosResponse> {
+    uploadDocuments(userid: string, files: Array<File>, path?: string): Promise<AxiosResponse> {
+        const urlParam: string = path ? `?path=${path}` : '';
         const formData: FormData = new FormData();
         const headers = {'headers': {'Content-type': 'multipart/form-data', 'File-Count': files.length}};
         files.forEach(file => {
             formData.append('fileToUpload[]', file);
         });
-        return http.put(`/nextcloud/files/user/${userid}/upload`, formData, headers);
+        return http.put(`/nextcloud/files/user/${userid}/upload${urlParam}`, formData, headers);
     },
 
     moveDocument: (userid: string, path: string, destPath: string): Promise<AxiosResponse> => {
