@@ -2,6 +2,7 @@ import {Behaviours, model} from "entcore";
 import {NEXTCLOUD_APP} from "../../nextcloud.behaviours";
 import {safeApply} from "../../utils/safe-apply.utils";
 import {AxiosError} from "axios";
+import {SyncDocument} from "../../models";
 
 declare let window: any;
 
@@ -55,7 +56,8 @@ export class UploadFileSnipletViewModel implements IViewModel {
     }
 
     onValidImportFiles(): void {
-        this.vm.nextcloudService.uploadDocuments(model.me.userId, this.uploadedDocuments)
+        let selectedFolderFromNextcloudTree: SyncDocument = this.vm.getNextcloudTreeController()['selectedFolder'];
+        this.vm.nextcloudService.uploadDocuments(model.me.userId, this.uploadedDocuments, selectedFolderFromNextcloudTree.path)
             .then(() => Behaviours.applicationsBehaviours[NEXTCLOUD_APP].nextcloudService.sendOpenFolderDocument(this.vm.parentDocument))
             .catch((err: AxiosError) => {
                 const message: string = "Error while uploading files to nextcloud";
