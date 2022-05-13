@@ -6,7 +6,7 @@ import {NEXTCLOUD_APP} from "../nextcloud.behaviours";
 import models = workspace.v2.models;
 import {WorkspaceEntcoreUtils} from "../utils/workspace-entcore.utils";
 import {INextcloudService, nextcloudService} from "../services";
-import {AxiosError} from "axios";
+import {AxiosError, AxiosResponse} from "axios";
 import {Draggable, SyncDocument} from "../models";
 import {INextcloudUserService, nextcloudUserService} from "../services";
 import {UserNextcloud} from "../models/nextcloud-user.model";
@@ -146,8 +146,14 @@ class ViewModel implements IViewModel {
             if (document && (document._id && document.eType === "file")) {
                 if (angular.element(event.target).scope().folder instanceof SyncDocument) {
                     const syncedDocument: SyncDocument = angular.element(event.target).scope().folder;
-                    // todo DRIV-19
-                    nextcloudService.moveDocumentWorkspaceToCloud(model.me.userId, [document._id], syncedDocument.path);
+                    nextcloudService.moveDocumentWorkspaceToCloud(model.me.userId, [document._id], syncedDocument.path)
+                        .then((_: AxiosResponse) => WorkspaceEntcoreUtils.updateWorkspaceDocuments(
+                            WorkspaceEntcoreUtils.workspaceScope()['openedFolder']['folder'])
+                        )
+                        .catch((err: AxiosError) => {
+                            const message: string = "Error while attempting to fetch documents children ";
+                            console.error(message + err.message);
+                        });
                 }
             }
         }

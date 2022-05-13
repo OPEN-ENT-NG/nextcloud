@@ -1,7 +1,8 @@
-import axios from 'axios';
+import axios, {AxiosResponse} from 'axios';
 import MockAdapter from 'axios-mock-adapter';
 import {nextcloudService} from '../nextcloud.service';
 import {IDocumentResponse} from "../../models";
+import http from "axios";
 
 describe('NextcloudService', () => {
     it('Test listDocument method', done => {
@@ -147,4 +148,44 @@ describe('NextcloudService', () => {
             done();
         });
     });
+
+
+    it('Test Put moving document workspace to nextcloud should have paths appeared in URL request with cloud name document', done => {
+        const mock = new MockAdapter(axios);
+
+        const userId = "userId";
+        const ids = ["899de998-af86-4feb-99dc-af86dc8fa57e", "fb3109af-d315-4614-a2e8-239b233cbd4c", "3475ed1a-2345-4558-a6dc-515c331eb11d"];
+        const cloudDocumentName = "Documents/test";
+
+        const expectedEndpoint: string = '/nextcloud/files/user/userId/workspace/move/cloud' +
+            '?id=899de998-af86-4feb-99dc-af86dc8fa57e&id=fb3109af-d315-4614-a2e8-239b233cbd4c&id=3475ed1a-2345-4558-a6dc-515c331eb11d' +
+            '&parentName=Documents/test';
+
+        let spy = jest.spyOn(axios, "put");
+        mock.onPut(expectedEndpoint).reply(200);
+
+        nextcloudService.moveDocumentWorkspaceToCloud(userId, ids, cloudDocumentName).then(() => {
+            expect(spy).toHaveBeenCalledWith(expectedEndpoint);
+            done();
+        });
+    });
+
+    it('Test Put moving document workspace to nextcloud should have paths appeared in URL request without cloud name document', done => {
+        const mock = new MockAdapter(axios);
+
+        const userId = "userId";
+        const ids = ["899de998-af86-4feb-99dc-af86dc8fa57e", "fb3109af-d315-4614-a2e8-239b233cbd4c", "3475ed1a-2345-4558-a6dc-515c331eb11d"];
+
+        const expectedEndpoint: string = '/nextcloud/files/user/userId/workspace/move/cloud' +
+            '?id=899de998-af86-4feb-99dc-af86dc8fa57e&id=fb3109af-d315-4614-a2e8-239b233cbd4c&id=3475ed1a-2345-4558-a6dc-515c331eb11d';
+
+        let spy = jest.spyOn(axios, "put");
+        mock.onPut(expectedEndpoint).reply(200);
+
+        nextcloudService.moveDocumentWorkspaceToCloud(userId, ids).then(() => {
+            expect(spy).toHaveBeenCalledWith(expectedEndpoint);
+            done();
+        });
+    });
+
 });
