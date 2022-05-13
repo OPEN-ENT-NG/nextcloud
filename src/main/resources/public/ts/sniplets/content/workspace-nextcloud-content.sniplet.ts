@@ -11,6 +11,8 @@ import models = workspace.v2.models;
 
 declare let window: any;
 
+const nextcloudTree: string = 'nextcloud-folder-tree';
+
 interface IViewModel {
     // util
     safeApply(): void;
@@ -53,17 +55,7 @@ class ViewModel implements IViewModel {
         this.documents = [new SyncDocument()];
 
         // on init we first sync its main folder content
-        nextcloudService.listDocument(model.me.userId,null)
-            .then((documents: Array<SyncDocument>) => {
-                this.documents = documents.filter((syncDocument: SyncDocument) => syncDocument.name != model.me.userId);
-                this.parentDocument = new SyncDocument().initParent();
-                safeApply(scope);
-            })
-            .catch((err: AxiosError) => {
-                const message: string = "Error while attempting to fetch documents children from content";
-                console.error(message + err.message);
-                return [];
-            });
+        this.initDocumentsContent(nextcloudService, scope);
 
         // on receive documents from folder-tree sniplet
         this.subscriptions.add(Behaviours.applicationsBehaviours[NEXTCLOUD_APP].nextcloudService
@@ -84,6 +76,27 @@ class ViewModel implements IViewModel {
         scope.$parent.$on("$destroy", () => {
             this.subscriptions.unsubscribe();
         });
+    }
+
+    private initDocumentsContent(nextcloudService: INextcloudService, scope) {
+        let selectedFolderFromNextcloudTree: SyncDocument = this.getNextcloudTreeController()['selectedFolder'];
+        nextcloudService.listDocument(model.me.userId, selectedFolderFromNextcloudTree.path)
+            .then((documents: Array<SyncDocument>) => {
+                this.documents = documents
+                    .filter((syncDocument: SyncDocument) => syncDocument.path != selectedFolderFromNextcloudTree.path)
+                    .filter((syncDocument: SyncDocument) => syncDocument.name != model.me.userId);
+                this.parentDocument = new SyncDocument().initParent();
+                safeApply(scope);
+            })
+            .catch((err: AxiosError) => {
+                const message: string = "Error while attempting to fetch documents children from content";
+                console.error(message + err.message);
+                return [];
+            });
+    }
+
+    getNextcloudTreeController(): ng.IScope {
+        return angular.element(document.getElementById(nextcloudTree)).scope()['vm'];
     }
 
     safeApply(): void {
