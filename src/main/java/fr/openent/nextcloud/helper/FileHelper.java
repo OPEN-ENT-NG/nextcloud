@@ -171,9 +171,9 @@ public class FileHelper {
         throw new FileNotFoundException(String.format("[Nextcloud@::getFilePath]Invalid file : %s", file));
     }
 
-    public static Future<JsonObject> writeBuffer(Storage storage, final Buffer buff, final String contentType, final String filename) {
+    public static Future<JsonObject> writeBuffer(Storage storage, Buffer buff, final String contentType, final String filename) {
         Promise<JsonObject> promise = Promise.promise();
-
+        buff = buff == null ? Buffer.buffer(" ") : buff;
         storage.writeBuffer(buff, contentType, filename, res -> {
             if (!Field.ERROR.equals(res.getString(Field.STATUS))) {
                 promise.complete(res);
