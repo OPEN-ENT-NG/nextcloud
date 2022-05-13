@@ -323,7 +323,7 @@ public class DefaultDocumentsService implements DocumentsService {
 
         JsonObject result = new JsonObject();
         for (String file : filesPath) {
-            current = current.compose(v -> copyToWorkspace(userSession, user, file, result, parentId));
+            current = current.compose(v -> copyToWorkspace(userSession, user, file.startsWith("/") ? file.substring(1) : file, result, parentId));
         }
         current.onSuccess(res -> promise.complete(result))
                 .onFailure(err -> {
@@ -351,7 +351,7 @@ public class DefaultDocumentsService implements DocumentsService {
         Future<JsonObject> current = Future.succeededFuture();
         JsonObject result = new JsonObject();
         for (String file : filesPath) {
-            current = current.compose(v -> moveToWorkspace(userSession, user, file, result, parentId));
+            current = current.compose(v -> moveToWorkspace(userSession, user, file.startsWith("/") ? file.substring(1) : file, result, parentId));
         }
         current.onSuccess(res -> promise.complete(result))
                 .onFailure(err -> {
@@ -387,7 +387,7 @@ public class DefaultDocumentsService implements DocumentsService {
                             return;
                         }
                         if (Boolean.FALSE.equals(fileInfo.getJsonObject(0).getBoolean(Field.ISFOLDER))) {
-                            storeFileWorkspace(userSession, user, fileInfo.getJsonObject(0).getString(Field.DISPLAYNAME), parentId).onComplete(status -> {
+                            storeFileWorkspace(userSession, user, file, parentId).onComplete(status -> {
                                 if (status.succeeded()) {
                                     result.put(file, status.result());
                                 }
@@ -443,9 +443,10 @@ public class DefaultDocumentsService implements DocumentsService {
                             return;
                         }
                         if (Boolean.FALSE.equals(fileInfo.getJsonObject(0).getBoolean(Field.ISFOLDER))) {
-                            retrieveAndDeleteFile(userSession, user, fileInfo.getJsonObject(0).getString(Field.DISPLAYNAME), parentId)
+                            retrieveAndDeleteFile(userSession, user, file, parentId)
                                     .onComplete(status -> {
                                 if (status.succeeded()) {
+                                    //
                                     result.put(file, status.result());
                                 } else {
                                     result.put(file, status.cause().getMessage());
@@ -491,8 +492,8 @@ public class DefaultDocumentsService implements DocumentsService {
                 })
                 .onSuccess(res -> promise.complete(result.get(Field.RESULT)))
                 .onFailure(err -> {
-                    String messageToFormat = "[Nextcloud@%s::retrieveAndDeleteFile] An error has occurred during retrieving" + "" +
-                            "and deleting document document(s) : %s";
+                    String messageToFormat = "[Nextcloud@%s::retrieveAndDeleteFile] An error has occurred during retrieving" +
+                            " and deleting document document(s) : %s";
                     PromiseHelper.reject(log, messageToFormat, this.getClass().getSimpleName(), err, promise);
                 });
         return promise.future();
@@ -508,14 +509,15 @@ public class DefaultDocumentsService implements DocumentsService {
      */
     private Future<JsonObject> storeFileWorkspace(UserNextcloud.TokenProvider userSession, UserInfos user, String filePath, String parentId) {
         Promise<JsonObject> promise = Promise.promise();
-
+        String[] splitPath = filePath.split("/");
+        String fileName = splitPath[splitPath.length - 1];
         getFile(userSession, filePath)
                 .compose(buffer ->
-                        FileHelper.writeBuffer(storage, buffer.bodyAsBuffer(), buffer.headers().get(Field.CONTENT_TYPE_HEADER), filePath)
+                        FileHelper.writeBuffer(storage, buffer.bodyAsBuffer(), buffer.headers().get(Field.CONTENT_TYPE_HEADER), fileName)
                 )
                 .compose(writeInfo -> {
                     writeInfo.put(Field.PARENTID, parentId);
-                    return FileHelper.addFileReference(writeInfo, user, filePath.replace("%20", " "), workspaceHelper);
+                    return FileHelper.addFileReference(writeInfo, user, fileName.replace("%20", " "), workspaceHelper);
                 })
                 .compose(resDoc -> moveUnderParent(workspaceHelper, user, parentId, resDoc))
                 .onSuccess(promise::complete)
