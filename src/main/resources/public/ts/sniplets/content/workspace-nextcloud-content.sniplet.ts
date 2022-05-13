@@ -1,12 +1,13 @@
-import {Behaviours, model, idiom as lang} from "entcore";
+import {Behaviours, model, idiom as lang, angular, Document, workspace} from "entcore";
 import {NEXTCLOUD_APP} from "../../nextcloud.behaviours";
 import {Subscription} from "rxjs";
 import {Draggable, SyncDocument} from "../../models";
 import {safeApply} from "../../utils/safe-apply.utils";
 import {INextcloudService, nextcloudService} from "../../services";
 import {ToolbarSnipletViewModel} from "./workspace-nextcloud-toolbar.sniplet";
-import {AxiosError} from "axios";
+import {AxiosError, AxiosResponse} from "axios";
 import {UploadFileSnipletViewModel} from "./workspace-nextcloud-upload-file.sniplet";
+import models = workspace.v2.models;
 
 declare let window: any;
 
@@ -24,6 +25,9 @@ interface IViewModel {
     parentDocument: SyncDocument;
     documents: Array<SyncDocument>;
     selectedDocuments: Array<SyncDocument>;
+
+    // drag & drop action
+    moveDocument(element: any, document: SyncDocument): Promise<void>;
 
     // dropzone
     isDropzoneEnabled(): boolean;
@@ -94,23 +98,20 @@ class ViewModel implements IViewModel {
                return false;
            },
            dragDropHandler(event: DragEvent, content?: any): void {
-               console.log("itemDrop: ", content, " event: ", event);
            },
-           dragEndHandler(event: DragEvent, content?: any): void {
-               console.log("finishDrag: ", content, " event: ", event);
+           async dragEndHandler(event: DragEvent, content?: any): Promise<void> {
+               await viewModel.moveDocument(document.elementFromPoint(event.x, event.y), content);
                viewModel.lockDropzone = false;
                viewModel.safeApply();
            },
            dragStartHandler(event: DragEvent, content?: any): void {
                viewModel.lockDropzone = true;
-               console.log("itemDrag: ", content, " event: ", event);
                try {
                    event.dataTransfer.setData('application/json', JSON.stringify(content));
                } catch (e) {
                    event.dataTransfer.setData('Text', JSON.stringify(content));
                }
-               Behaviours.applicationsBehaviours[NEXTCLOUD_APP]
-                   .nextcloudService.setContentContext("dragging content: " +  content.name);
+               Behaviours.applicationsBehaviours[NEXTCLOUD_APP].nextcloudService.setContentContext(content);
            },
            dropConditionHandler(event: DragEvent, content?: any): boolean {
                return true;
@@ -118,9 +119,38 @@ class ViewModel implements IViewModel {
         }
     }
 
+    async moveDocument(element: any, document: SyncDocument): Promise<void> {
+        let folderContent: any = angular.element(element).scope();
+        if (folderContent && folderContent.folder) {
+            if (folderContent.folder instanceof models.Element) {
+                this.moveDocumentToWorkspace(folderContent.folder, document)
+                    .then(async (_: AxiosResponse) => {
+                        return nextcloudService.listDocument(model.me.userId, this.parentDocument.path ?
+                           this.parentDocument.path : null);
+                    })
+                    .then((syncedDocument: Array<SyncDocument>) => {
+                        this.documents = syncedDocument.filter((syncDocument: SyncDocument) => syncDocument.name != model.me.userId);
+                        this.safeApply();
+                    })
+                    .catch((err: AxiosError) => {
+                        const message: string = "Error while attempting to move nextcloud document to workspace " +
+                            "or update nextcloud list";
+                        console.error(message + err.message);
+                    });
+            }
+            if (folderContent.folder instanceof SyncDocument) {
+                // if interacted into nextcloud
+            }
+        }
+    }
+
+    async moveDocumentToWorkspace(folder: models.Element, document: SyncDocument): Promise<AxiosResponse> {
+        return nextcloudService.moveDocumentNextcloudToWorkspace(model.me.userId, [document.path], folder._id);
+    }
+
     onSelectContent(content: SyncDocument): void {
         this.selectedDocuments = this.documents.filter((document: SyncDocument) => document.selected);
-    };
+    }
 
     onOpenContent(document: SyncDocument): void {
         if (document.isFolder) {
@@ -128,7 +158,7 @@ class ViewModel implements IViewModel {
         } else {
             window.open(this.getFile(document));
         }
-    };
+    }
 
     getFile(document: SyncDocument): string {
         return this.nextcloudService.getFile(model.me.userId, document.name, document.path, document.contentType);

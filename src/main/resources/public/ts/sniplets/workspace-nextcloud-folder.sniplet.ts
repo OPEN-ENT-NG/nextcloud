@@ -20,19 +20,22 @@ const $folderTreeArrows: string = '#nextcloud-folder-tree i';
 const $nextcloudFolder: string = '#nextcloud-folder-tree';
 
 interface IViewModel {
+    documents: Array<SyncDocument>;
+
     initTree(folder: Array<SyncDocument>): void;
     watchFolderState(): void;
     openDocument(folder: any): void;
-    initDraggable(): void;
     setSwitchDisplayHandler(): void;
 
     userInfo: UserNextcloud;
     folderTree: FolderTreeProps;
     selectedFolder: models.Element;
     openedFolder: Array<models.Element>;
-    droppable: Draggable;
 
-    documents: Array<SyncDocument>;
+    // drag & drop actions
+    initDraggable(): void;
+    resolveDragTarget(event: DragEvent): Promise<void>;
+    droppable: Draggable;
 }
 
 class ViewModel implements IViewModel {
@@ -54,6 +57,7 @@ class ViewModel implements IViewModel {
         this.nextcloudService = nextcloudService;
         this.nextcloudUserService = nextcloudUserService;
         this.userInfo = null;
+        this.documents = [];
         this.folderTree = {};
         this.selectedFolder = null;
         this.openedFolder = [];
@@ -62,7 +66,8 @@ class ViewModel implements IViewModel {
         this.nextcloudUserService.getUserInfo(model.me.userId)
             .then((userInfo: UserNextcloud) => {
                 this.userInfo = userInfo;
-                this.initTree([new SyncDocument().initParent()]);
+                this.documents = [new SyncDocument().initParent()];
+                this.initTree(this.documents);
                 this.initDraggable();
                 safeApply(this.scope);
             })
@@ -113,13 +118,13 @@ class ViewModel implements IViewModel {
     }
 
     initDraggable(): void {
+        const viewModel: IViewModel = this;
         this.droppable = {
             dragConditionHandler(event: DragEvent, content?: any): boolean {
                 return false;
             },
-            dragDropHandler(event: DragEvent): void {
-                console.log("FolderTreeitemDrop: ", event.target, "content: ",
-                    Behaviours.applicationsBehaviours[NEXTCLOUD_APP].nextcloudService.getContentContext());
+            async dragDropHandler(event: DragEvent): Promise<void> {
+                await viewModel.resolveDragTarget(event);
             },
             dragEndHandler(event: DragEvent, content?: any): void {},
             dragStartHandler(event: DragEvent, content?: any): void {},
@@ -127,6 +132,24 @@ class ViewModel implements IViewModel {
                 return false;
             }
 
+        }
+    }
+
+    async resolveDragTarget(event: DragEvent): Promise<void> {
+        // case drop concerns nextcloud
+        if (Behaviours.applicationsBehaviours[NEXTCLOUD_APP].nextcloudService.getContentContext()) {
+            // nextcloud context
+        } else {
+            // case drop concerns workspace but we need extra check
+            const document: any = JSON.parse(event.dataTransfer.getData("application/json"));
+            // check if it s a workspace document with its identifier and format file to proceed move to nextcloud
+            if (document && (document._id && document.eType === "file")) {
+                if (angular.element(event.target).scope().folder instanceof SyncDocument) {
+                    const syncedDocument: SyncDocument = angular.element(event.target).scope().folder;
+                    // todo DRIV-19
+                    nextcloudService.moveDocumentWorkspaceToCloud(model.me.userId, [document._id], syncedDocument.path);
+                }
+            }
         }
     }
 
@@ -167,34 +190,37 @@ class ViewModel implements IViewModel {
 
     setSwitchDisplayHandler(): void {
         const viewModel: IViewModel = this;
-        const $workspaceFolderTree: JQuery = $(WorkspaceEntcoreUtils.$ENTCORE_WORKSPACE);
+        const $workspaceFolderTree: JQuery = $(WorkspaceEntcoreUtils.$ENTCORE_WORKSPACE + ' li > a');
         // case nextcloud folder tree is interacted
         // checking if listener does not exist in order to create one
-        if (!(<any>$)._data($($nextcloudFolder)[0], "events").click) {
-            $($nextcloudFolder).click(this.switchWorkspaceTreeHandler());
-        }
+        $($nextcloudFolder)
+            .off('click.workspaceNextcloudHandler')
+            .on('click.workspaceNextcloudHandler', this.switchWorkspaceTreeHandler());
 
         // case entcore workspace folder tree is interacted
-        // checking if listener does not exist in order to create one
-        if (!(<any>$)._data($workspaceFolderTree.get(0), "events")) {
-            $workspaceFolderTree.click(this.switchNextcloudTreeHandler(viewModel));
-        }
+        // we unbind its handler and rebind it in order to keep our list of workspace updated
+        $workspaceFolderTree
+            .off('click.nextcloudHandler')
+            .on('click.nextcloudHandler', this.switchNextcloudTreeHandler(viewModel));
     }
 
     /**
      * Remove workspace tree and use nextcloud tree instead.
      */
     private switchWorkspaceTreeHandler() {
+        const viewModel: IViewModel = this;
         return function (): void {
+            if (!viewModel.selectedFolder) {
+                viewModel.folderTree.openFolder(viewModel.documents[0]);
+            }
+
             const $workspaceFolderTree: JQuery = $(WorkspaceEntcoreUtils.$ENTCORE_WORKSPACE + ' li > a');
 
             // using nextcloud content display
             template.open('documents', `../../../${RootsConst.template}/behaviours/workspace-nextcloud`);
 
             // clear all potential "selected" class workspace folder tree
-            $workspaceFolderTree.each((index: number, element: Element): void => {
-                element.classList.remove("selected");
-            });
+            $workspaceFolderTree.each((index: number, element: Element): void => element.classList.remove("selected"));
 
             // hide workspace progress bar
             WorkspaceEntcoreUtils.toggleProgressBarDisplay(false);
@@ -212,10 +238,12 @@ class ViewModel implements IViewModel {
         return function (): void {
             // go back to workspace content display
             // clear nextCloudTree interaction
-            viewModel.openedFolder = [];
             viewModel.selectedFolder = null;
 
-            arguments[0].target.parentElement.classList.add('selected');
+            arguments[0].currentTarget.classList.add('selected');
+
+            // update workspace folder content
+            WorkspaceEntcoreUtils.updateWorkspaceDocuments(angular.element(arguments[0].target).scope().folder);
 
             // display workspace buttons interactions
             WorkspaceEntcoreUtils.toggleProgressBarDisplay(true);
@@ -223,10 +251,9 @@ class ViewModel implements IViewModel {
             WorkspaceEntcoreUtils.toggleWorkspaceButtonsDisplay(true);
             // display workspace contents (search bar, menu, list of folder/files...) interactions
             WorkspaceEntcoreUtils.toggleWorkspaceContentDisplay(true);
+            // remove any content context cache
+            Behaviours.applicationsBehaviours[NEXTCLOUD_APP].nextcloudService.setContentContext(null);
             template.open('documents', `icons`);
-
-            const $workspaceFolderTree: JQuery = $(WorkspaceEntcoreUtils.$ENTCORE_WORKSPACE);
-            $workspaceFolderTree.off();
         };
     }
 

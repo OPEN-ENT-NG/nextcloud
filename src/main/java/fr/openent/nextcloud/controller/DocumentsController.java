@@ -155,7 +155,7 @@ public class DocumentsController extends ControllerHelper {
     public void moveToWorkspace(HttpServerRequest request) {
         List<String> listFiles = request.params().getAll(Field.PATH);
         String parentId = request.params().get(Field.PARENTID);
-        if (!listFiles.isEmpty())
+        if (Boolean.FALSE.equals(listFiles.isEmpty()))
             UserUtils.getUserInfos(eb, request, user ->
                 userService.getUserSession(user.getUserId())
                         .compose(userSession -> documentsService.moveDocumentToWorkspace(userSession, user, listFiles, parentId))

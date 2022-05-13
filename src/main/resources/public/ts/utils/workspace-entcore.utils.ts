@@ -1,3 +1,6 @@
+import {angular, Folder, workspace} from "entcore";
+import models = workspace.v2.models;
+
 export class WorkspaceEntcoreUtils {
 
     static $ENTCORE_WORKSPACE: string = `div[data-ng-include="'folder-content'"]`;
@@ -34,5 +37,30 @@ export class WorkspaceEntcoreUtils {
         const contentEmptyScreenQuery: string = 'div .toggle-buttons-spacer .emptyscreen';
         Array.from(document.querySelectorAll(contentEmptyScreenQuery))
             .forEach((elem: Element) => (<HTMLElement>elem).style.display =  state ? "flex" : "none");
+    }
+
+    /**
+     * Fetch workspace controller scope
+     */
+    static workspaceScope(): ng.IScope {
+        return angular.element(document.getElementsByClassName("workspace-app")).scope();
+    }
+
+    /**
+     * Update fetch folder content via workspace controller
+     * @param folder folder from workspace controller
+     */
+    static updateWorkspaceDocuments(folder: any | models.Element): void {
+        if (folder && folder instanceof models.Element) {
+            if ("tree" in folder) {
+                WorkspaceEntcoreUtils.workspaceScope()['onTreeInit'](() =>
+                    WorkspaceEntcoreUtils.workspaceScope()['setCurrentTree'](folder['tree']['filter'])
+                )
+            } else if (folder._id && folder.eType === "folder") {
+                WorkspaceEntcoreUtils.workspaceScope()['onTreeInit'](() =>
+                    WorkspaceEntcoreUtils.workspaceScope()['openFolderById'](folder._id)
+                )
+            }
+        }
     }
 }
