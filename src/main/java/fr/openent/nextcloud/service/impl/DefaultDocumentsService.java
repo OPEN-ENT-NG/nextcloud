@@ -685,7 +685,7 @@ public class DefaultDocumentsService implements DocumentsService {
             if (file != null) {
                 String docName = file.getDocument().getString(Field.NAME).replace(" ", "%20");
                 this.client.putAbs(nextcloudConfig.host() + nextcloudConfig.webdavEndpoint() + "/" + userSession.userId() + "/" +
-                                finalPath + docName)
+                                finalPath.replace(" ", "%20") + docName)
                         .basicAuthentication(userSession.userId(), userSession.token())
                         .sendBuffer(file.getData(), responseAsync -> {
                             if (responseAsync.failed()) {
