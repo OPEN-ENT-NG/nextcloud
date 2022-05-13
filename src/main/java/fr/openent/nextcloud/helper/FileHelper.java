@@ -173,7 +173,7 @@ public class FileHelper {
 
     public static Future<JsonObject> writeBuffer(Storage storage, Buffer buff, final String contentType, final String filename) {
         Promise<JsonObject> promise = Promise.promise();
-        buff = buff == null ? Buffer.buffer(" ") : buff;
+        buff = buff == null ? Buffer.buffer("") : buff;
         storage.writeBuffer(buff, contentType, filename, res -> {
             if (!Field.ERROR.equals(res.getString(Field.STATUS))) {
                 promise.complete(res);
