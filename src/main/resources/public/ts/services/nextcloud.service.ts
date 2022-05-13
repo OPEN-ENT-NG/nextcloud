@@ -7,7 +7,7 @@ export interface INextcloudService {
     uploadDocuments(userid: string, files: Array<File>): Promise<AxiosResponse>;
     moveDocument(userid: string, path: string, destPath: string): Promise<AxiosResponse>;
     moveDocumentNextcloudToWorkspace(userid: string, paths: Array<string>, parentId?: string): Promise<AxiosResponse>;
-    moveDocumentWorkspaceToCloud(userid: string, ids: Array<string>, cloudDocumentName: string): Promise<AxiosResponse>;
+    moveDocumentWorkspaceToCloud(userid: string, ids: Array<string>, cloudDocumentName?: string): Promise<AxiosResponse>;
     deleteDocuments(userid: string, path: Array<string>): Promise<AxiosResponse>;
     getFile(userid: string, fileName: string, path: string, contentType: string): string;
     getFiles(userid: string, path: string, files: Array<string>): string;
@@ -42,7 +42,7 @@ export const nextcloudService: INextcloudService = {
         return http.put(`/nextcloud/files/user/${userid}/move/workspace?${urlParams}${parentIdParam}`);
     },
 
-    moveDocumentWorkspaceToCloud: (userid: string, ids: Array<string>, cloudDocumentName: string): Promise<AxiosResponse> => {
+    moveDocumentWorkspaceToCloud: (userid: string, ids: Array<string>, cloudDocumentName?: string): Promise<AxiosResponse> => {
         let urlParams: URLSearchParams = new URLSearchParams();
         ids.forEach((path: string) => urlParams.append('id', path));
         const parentDocumentNameParam: string = cloudDocumentName ? `&parentName=${cloudDocumentName}` : '';
