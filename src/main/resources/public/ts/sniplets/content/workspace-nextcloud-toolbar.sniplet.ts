@@ -1,6 +1,5 @@
 import {SyncDocument} from "../../models";
-import {Behaviours, model} from "entcore";
-import {NEXTCLOUD_APP} from "../../nextcloud.behaviours";
+import {model} from "entcore";
 import {AxiosError} from "axios";
 import {safeApply} from "../../utils/safe-apply.utils";
 
@@ -79,7 +78,13 @@ export class ToolbarSnipletViewModel implements IViewModel {
             const targetDocument: string = decodeURI(this.currentDocument.path).replace(oldDocumentToRename.name, this.currentDocument.name);
             this.vm.nextcloudService.moveDocument(model.me.userId, oldDocumentToRename.path, targetDocument)
                 .then(() => {
-                    Behaviours.applicationsBehaviours[NEXTCLOUD_APP].nextcloudService.sendOpenFolderDocument(this.vm.parentDocument);
+                    return this.vm.nextcloudService.listDocument(model.me.userId, this.vm.parentDocument.path ?
+                        this.vm.parentDocument.path : null);
+                })
+                .then((syncDocuments: Array<SyncDocument>) => {
+                    this.vm.documents = syncDocuments
+                        .filter((syncDocument: SyncDocument) => syncDocument.path != this.vm.parentDocument.path)
+                        .filter((syncDocument: SyncDocument) => syncDocument.name != model.me.userId);
                     this.toggleRenameView(false);
                     this.vm.selectedDocuments = [];
                     safeApply(this.scope);
@@ -110,7 +115,13 @@ export class ToolbarSnipletViewModel implements IViewModel {
         const paths: Array<string> = this.vm.selectedDocuments.map((selectedDocument: SyncDocument) => selectedDocument.path);
         this.vm.nextcloudService.deleteDocuments(model.me.userId, paths)
             .then(() => {
-                Behaviours.applicationsBehaviours[NEXTCLOUD_APP].nextcloudService.sendOpenFolderDocument(this.vm.parentDocument);
+                return this.vm.nextcloudService.listDocument(model.me.userId, this.vm.parentDocument.path ?
+                    this.vm.parentDocument.path : null);
+            })
+            .then((syncDocuments: Array<SyncDocument>) => {
+                this.vm.documents = syncDocuments
+                    .filter((syncDocument: SyncDocument) => syncDocument.path != this.vm.parentDocument.path)
+                    .filter((syncDocument: SyncDocument) => syncDocument.name != model.me.userId);
                 this.toggleDeleteView(false);
                 this.vm.selectedDocuments = [];
                 safeApply(this.scope);
