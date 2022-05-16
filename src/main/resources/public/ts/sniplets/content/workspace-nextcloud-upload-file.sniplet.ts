@@ -1,5 +1,4 @@
-import {Behaviours, model} from "entcore";
-import {NEXTCLOUD_APP} from "../../nextcloud.behaviours";
+import {model} from "entcore";
 import {safeApply} from "../../utils/safe-apply.utils";
 import {AxiosError} from "axios";
 import {SyncDocument} from "../../models";
@@ -58,7 +57,16 @@ export class UploadFileSnipletViewModel implements IViewModel {
     onValidImportFiles(): void {
         let selectedFolderFromNextcloudTree: SyncDocument = this.vm.getNextcloudTreeController()['selectedFolder'];
         this.vm.nextcloudService.uploadDocuments(model.me.userId, this.uploadedDocuments, selectedFolderFromNextcloudTree.path)
-            .then(() => Behaviours.applicationsBehaviours[NEXTCLOUD_APP].nextcloudService.sendOpenFolderDocument(this.vm.parentDocument))
+            .then(() => {
+                return this.vm.nextcloudService.listDocument(model.me.userId, this.vm.parentDocument.path ?
+                    this.vm.parentDocument.path : null);
+            })
+            .then((syncDocuments: Array<SyncDocument>) => {
+                this.vm.documents = syncDocuments
+                    .filter((syncDocument: SyncDocument) => syncDocument.path != this.vm.parentDocument.path)
+                    .filter((syncDocument: SyncDocument) => syncDocument.name != model.me.userId);
+                safeApply(this.scope);
+            })
             .catch((err: AxiosError) => {
                 const message: string = "Error while uploading files to nextcloud";
                 console.error(`${message}${err.message}: ${this.vm.getErrorMessage(err)}`);
