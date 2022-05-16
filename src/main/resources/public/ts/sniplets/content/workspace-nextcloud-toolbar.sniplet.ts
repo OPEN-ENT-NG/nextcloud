@@ -74,8 +74,7 @@ export class ToolbarSnipletViewModel implements IViewModel {
     renameDocument(): void {
         const oldDocumentToRename: SyncDocument = this.vm.selectedDocuments[0];
         if (oldDocumentToRename) {
-            // we take old document path and we replace the matched file name by the new one
-            const targetDocument: string = decodeURI(this.currentDocument.path).replace(oldDocumentToRename.name, this.currentDocument.name);
+            const targetDocument: string = (this.vm.parentDocument.path == null ? "" : this.vm.parentDocument.path) + "/" + encodeURIComponent(this.currentDocument.name);
             this.vm.nextcloudService.moveDocument(model.me.userId, oldDocumentToRename.path, targetDocument)
                 .then(() => {
                     return this.vm.nextcloudService.listDocument(model.me.userId, this.vm.parentDocument.path ?

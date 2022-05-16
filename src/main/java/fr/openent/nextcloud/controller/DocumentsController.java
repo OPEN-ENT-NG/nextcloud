@@ -2,6 +2,7 @@ package fr.openent.nextcloud.controller;
 
 import fr.openent.nextcloud.core.constants.Field;
 import fr.openent.nextcloud.helper.FileHelper;
+import fr.openent.nextcloud.helper.StringHelper;
 import fr.openent.nextcloud.security.OwnerFilter;
 import fr.openent.nextcloud.service.DocumentsService;
 import fr.openent.nextcloud.service.ServiceFactory;
@@ -100,10 +101,11 @@ public class DocumentsController extends ControllerHelper {
             UserUtils.getUserInfos(eb, request, user ->
                     userService.getUserSession(user.getUserId())
                             .compose(userSession -> {
-                                String formattedPath = path.replace(" ", "%20");
-                                String formattedDestPath = destPath.replace(" ", "%20");
-                                return documentsService.moveDocument(userSession, formattedPath, formattedDestPath);
-                            })
+                                        String finalPath = StringHelper.encodeUrlForNc(path);
+                                        String finalDestPath = StringHelper.encodeUrlForNc(destPath);
+                                        return documentsService.moveDocument(userSession, finalPath, finalDestPath);
+                                    }
+                            )
                             .onSuccess(res -> renderJson(request, res))
                             .onFailure(err -> renderError(request, new JsonObject().put(Field.MESSAGE, err.getMessage()))));
         } else {
