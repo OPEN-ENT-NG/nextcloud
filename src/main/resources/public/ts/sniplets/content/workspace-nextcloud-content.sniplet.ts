@@ -53,6 +53,7 @@ class ViewModel implements IViewModel {
         this.scope = scope;
         this.nextcloudService = nextcloudService;
         this.documents = [new SyncDocument()];
+        this.parentDocument = null;
 
         // on init we first sync its main folder content
         this.initDocumentsContent(nextcloudService, scope);
@@ -74,6 +75,7 @@ class ViewModel implements IViewModel {
         this.initDraggable();
 
         scope.$parent.$on("$destroy", () => {
+            this.parentDocument = null;
             this.subscriptions.unsubscribe();
         });
     }
@@ -133,16 +135,22 @@ class ViewModel implements IViewModel {
     }
 
     async moveDocument(element: any, document: SyncDocument): Promise<void> {
+        let selectedFolderFromNextcloudTree: SyncDocument = this.getNextcloudTreeController()['selectedFolder'];
+        if (!selectedFolderFromNextcloudTree) {
+            selectedFolderFromNextcloudTree = this.parentDocument;
+        }
         let folderContent: any = angular.element(element).scope();
         if (folderContent && folderContent.folder) {
             if (folderContent.folder instanceof models.Element) {
                 this.moveDocumentToWorkspace(folderContent.folder, document)
                     .then(async (_: AxiosResponse) => {
-                        return nextcloudService.listDocument(model.me.userId, this.parentDocument.path ?
-                           this.parentDocument.path : null);
+                        return nextcloudService.listDocument(model.me.userId, selectedFolderFromNextcloudTree.path ?
+                            selectedFolderFromNextcloudTree.path : null);
                     })
                     .then((syncedDocument: Array<SyncDocument>) => {
-                        this.documents = syncedDocument.filter((syncDocument: SyncDocument) => syncDocument.name != model.me.userId);
+                        this.documents = syncedDocument
+                            .filter((syncDocument: SyncDocument) => syncDocument.path != selectedFolderFromNextcloudTree.path)
+                            .filter((syncDocument: SyncDocument) => syncDocument.name != model.me.userId);
                         this.safeApply();
                     })
                     .catch((err: AxiosError) => {
