@@ -161,7 +161,7 @@ public class DocumentsController extends ControllerHelper {
             UserUtils.getUserInfos(eb, request, user ->
                 userService.getUserSession(user.getUserId())
                         .compose(userSession -> documentsService.moveDocumentToWorkspace(userSession, user, listFiles, parentId))
-                        .onSuccess(res -> renderJson(request, res))
+                        .onSuccess(res -> renderJson(request, new JsonObject().put(Field.DATA, res)))
                         .onFailure(err -> renderError(request, new JsonObject().put(Field.ERROR, err.getMessage()))));
         else
             badRequest(request);
@@ -178,7 +178,7 @@ public class DocumentsController extends ControllerHelper {
             UserUtils.getUserInfos(eb, request, user ->
                 userService.getUserSession(user.getUserId())
                         .compose(userSession -> documentsService.copyDocumentToWorkspace(userSession, user, listFiles, parentId))
-                        .onSuccess(res -> renderJson(request, res))
+                        .onSuccess(res -> renderJson(request, new JsonObject().put(Field.DATA, res)))
                         .onFailure(err -> renderError(request, new JsonObject().put(Field.ERROR, err.getMessage()))));
         else
             badRequest(request);

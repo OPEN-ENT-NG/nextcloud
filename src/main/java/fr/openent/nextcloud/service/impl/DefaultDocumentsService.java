@@ -27,9 +27,11 @@ import org.entcore.common.storage.Storage;
 import org.entcore.common.user.UserInfos;
 
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class DefaultDocumentsService implements DocumentsService {
     private final Logger log = LoggerFactory.getLogger(DefaultDocumentsService.class);
@@ -311,20 +313,27 @@ public class DefaultDocumentsService implements DocumentsService {
      * @param user              User infos
      * @param filesPath         Path of all the files to move
      * @param parentId          Identifier of the previous folder if moving in a folder
-     * @return                  Future Json with the infos about every copy
+     * @return                  Future list of JsonObject with infos about every file copied
      */
-    public Future<JsonObject> copyDocumentToWorkspace(UserNextcloud.TokenProvider userSession,
+    public Future<List<JsonObject>> copyDocumentToWorkspace(UserNextcloud.TokenProvider userSession,
                                                       UserInfos user,
                                                       List<String> filesPath,
                                                       String parentId) {
-        Promise<JsonObject> promise = Promise.promise();
+        Promise<List<JsonObject>> promise = Promise.promise();
         Future<JsonObject> current = Future.succeededFuture();
-
-        JsonObject result = new JsonObject();
+        List<Future<JsonObject>> listResult = new ArrayList<>();
         for (String file : filesPath) {
-            current = current.compose(v -> copyToWorkspace(userSession, user, file.startsWith("/") ? file.substring(1) : file, result, parentId));
+            current = current.compose(v -> {
+                Future<JsonObject> future = copyToWorkspace(userSession, user, file.startsWith("/") ? file.substring(1) : file, parentId);
+                Promise<JsonObject> succeedPromise = Promise.promise();
+                future
+                        .onSuccess( r -> listResult.add(future))
+                        .onFailure( r -> listResult.add(Future.succeededFuture(new JsonObject().put(file, future.cause().getMessage()))))
+                        .onComplete(r -> succeedPromise.complete());
+                return succeedPromise.future();
+            });
         }
-        current.onSuccess(res -> promise.complete(result))
+        current.onSuccess(res -> promise.complete(listResult.stream().map(Future::result).collect(Collectors.toList())))
                 .onFailure(err -> {
                     String messageToFormat = "[Nextcloud@%s::copyDocumentToWorkspace] An error has occurred during copy : %s";
                     PromiseHelper.reject(log, messageToFormat, this.getClass().getSimpleName(), err, promise);
@@ -339,20 +348,29 @@ public class DefaultDocumentsService implements DocumentsService {
      * @param user              User infos
      * @param filesPath         Path of all the files to move
      * @param parentId          Identifier of the previous folder if moving in a folder
-     * @return                  Future Json with infos about every move
+     * @return                  Future list of JsonObject with infos about every file moved
      */
     @Override
-    public Future<JsonObject> moveDocumentToWorkspace(UserNextcloud.TokenProvider userSession,
-                                                      UserInfos user,
-                                                      List<String> filesPath,
-                                                      String parentId) {
-        Promise<JsonObject> promise = Promise.promise();
+    public Future<List<JsonObject>> moveDocumentToWorkspace(UserNextcloud.TokenProvider userSession,
+                                                            UserInfos user,
+                                                            List<String> filesPath,
+                                                            String parentId) {
+        Promise<List<JsonObject>> promise = Promise.promise();
         Future<JsonObject> current = Future.succeededFuture();
-        JsonObject result = new JsonObject();
+        List<Future<JsonObject>> result = new ArrayList<>();
         for (String file : filesPath) {
-            current = current.compose(v -> moveToWorkspace(userSession, user, file.startsWith("/") ? file.substring(1) : file, result, parentId));
+            current = current.compose(v -> {
+                Future<JsonObject> future = moveToWorkspace(userSession, user, file.startsWith("/") ? file.substring(1) : file, parentId);
+                Promise<JsonObject> succeedPromise = Promise.promise();
+                future
+                        .onSuccess( r -> result.add(future))
+                        .onFailure( r -> result.add(Future.succeededFuture(new JsonObject().put(file, future.cause().getMessage()))))
+                        .onComplete(r -> succeedPromise.complete());
+                return succeedPromise.future();
+            });
+
         }
-        current.onSuccess(res -> promise.complete(result))
+        current.onSuccess(v -> promise.complete(result.stream().map(Future::result).collect(Collectors.toList())))
                 .onFailure(err -> {
                     String messageToFormat = "[Nextcloud@%s::moveDocumentToWorkspace] An error has occurred while moving documents : %s";
                     PromiseHelper.reject(log, messageToFormat, this.getClass().getSimpleName(), err, promise);
@@ -364,14 +382,12 @@ public class DefaultDocumentsService implements DocumentsService {
      * @param userSession       User session
      * @param user              User infos
      * @param file              Path of the file you want to move
-     * @param result            Json where status of move is stored
      * @param parentId          Identifier of the previous folder if moving in a folder
      * @return                  Future Json with the infos about the copy
      */
     private Future<JsonObject> copyToWorkspace(UserNextcloud.TokenProvider userSession,
                                                UserInfos user,
                                                String file,
-                                               JsonObject result,
                                                String parentId) {
         Promise<JsonObject> promiseResult = Promise.promise();
         //The listFiles function here is called to gather data on one specific file.
@@ -386,24 +402,21 @@ public class DefaultDocumentsService implements DocumentsService {
                             return;
                         }
                         if (Boolean.FALSE.equals(fileInfo.getJsonObject(0).getBoolean(Field.ISFOLDER))) {
-                            storeFileWorkspace(userSession, user, file, parentId).onComplete(status -> {
-                                if (status.succeeded()) {
-                                    result.put(file, status.result());
+                            storeFileWorkspace(userSession, user, file, parentId).onComplete(fileInfos -> {
+                                if (fileInfos.succeeded()) {
+                                    promiseResult.complete(fileInfos.result());
                                 }
                                 else {
-                                    result.put(file, status.cause().getMessage());
+                                    promiseResult.fail(fileInfos.cause().getMessage());
                                 }
-                                promiseResult.complete();
                             });
                         } else {
                             //TODO Gérer le cas d'import d'un dossier
                             log.error("[Nextcloud@%s::copyToWorkspace] import.directory.not.handled");
-                            result.put(file, "import.directory.not.handled");
-                            promiseResult.complete();
+                            promiseResult.fail("import.directory.not.handled");
                         }
                     } else {
-                        result.put(file, "nextcloud.server.file.no.exist");
-                        promiseResult.complete();
+                        promiseResult.fail("nextcloud.server.file.no.exist");
                     }
 
                 })
@@ -419,14 +432,12 @@ public class DefaultDocumentsService implements DocumentsService {
      * @param userSession       User session
      * @param user              User infos
      * @param file              Path of the file you want to move
-     * @param result            Json where status of move is stored
      * @param parentId          Identifier of the previous folder if moving in a folder
      * @return                  Future Json with the infos about the move
      */
     private Future<JsonObject> moveToWorkspace(UserNextcloud.TokenProvider userSession,
                                                UserInfos user,
                                                String file,
-                                               JsonObject result,
                                                String parentId) {
         Promise<JsonObject> promiseResult = Promise.promise();
         //The listFiles function here is called to gather data on one specific file.
@@ -434,7 +445,6 @@ public class DefaultDocumentsService implements DocumentsService {
                 .onSuccess(fileInfo -> {
                     if (!fileInfo.isEmpty()) {
                         JsonObject resJson = fileInfo.getJsonObject(0);
-
                         if (!resJson.containsKey(Field.DISPLAYNAME) || resJson.getString(Field.DISPLAYNAME).equals("")
                                 || !resJson.containsKey(Field.ISFOLDER)) {
                             String messageToFormat = "[Nextcloud@%s::moveToWorkspace] An error has occurred while retrieving data from file : %s";
@@ -443,24 +453,20 @@ public class DefaultDocumentsService implements DocumentsService {
                         }
                         if (Boolean.FALSE.equals(fileInfo.getJsonObject(0).getBoolean(Field.ISFOLDER))) {
                             retrieveAndDeleteFile(userSession, user, file, parentId)
-                                    .onComplete(status -> {
-                                if (status.succeeded()) {
-                                    //
-                                    result.put(file, status.result());
+                                    .onComplete(fileInfos -> {
+                                if (fileInfos.succeeded()) {
+                                    promiseResult.complete(fileInfos.result());
                                 } else {
-                                    result.put(file, status.cause().getMessage());
+                                    promiseResult.fail(fileInfos.cause().getMessage());
                                 }
-                                promiseResult.complete();
                             });
                         } else {
                             //TODO Gérer le cas d'import d'un dossier
                             log.error("[Nextcloud@%s::moveToWorkspace] import.directory.not.handled");
-                            result.put(file, "import.directory.not.handled");
-                            promiseResult.complete();
+                            promiseResult.fail("import.directory.not.handled");
                         }
                     } else {
-                        result.put(file, "nextcloud.server.file.no.exist");
-                        promiseResult.complete();
+                        promiseResult.fail("nextcloud.server.file.no.exist");
                     }
                 })
                 .onFailure(err -> {
@@ -510,6 +516,7 @@ public class DefaultDocumentsService implements DocumentsService {
         Promise<JsonObject> promise = Promise.promise();
         String[] splitPath = filePath.split("/");
         String fileName = splitPath[splitPath.length - 1];
+        JsonObject[] fileInfos = new JsonObject[1];
         getFile(userSession, filePath)
                 .compose(buffer ->
                         FileHelper.writeBuffer(storage, buffer.bodyAsBuffer(), buffer.headers().get(Field.CONTENT_TYPE_HEADER), fileName)
@@ -518,8 +525,11 @@ public class DefaultDocumentsService implements DocumentsService {
                     writeInfo.put(Field.PARENTID, parentId);
                     return FileHelper.addFileReference(writeInfo, user, fileName.replace("%20", " "), workspaceHelper);
                 })
-                .compose(resDoc -> moveUnderParent(workspaceHelper, user, parentId, resDoc))
-                .onSuccess(promise::complete)
+                .compose(resDoc -> {
+                    fileInfos[0] = resDoc;
+                    return moveUnderParent(workspaceHelper, user, parentId, resDoc);
+                })
+                .onSuccess(res -> promise.complete(fileInfos[0]))
                 .onFailure(err -> {
                     String messageToFormat = "[Nextcloud@%s::storeFileWorkspace] Error while storing file : %s";
                     PromiseHelper.reject(log, messageToFormat, this.getClass().getSimpleName(), err, promise);
