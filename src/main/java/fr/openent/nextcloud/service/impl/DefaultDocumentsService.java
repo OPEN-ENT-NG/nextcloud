@@ -308,6 +308,18 @@ public class DefaultDocumentsService implements DocumentsService {
     }
 
     /**
+     * Return JsonObject with error code, status and name of the file.
+     * @param futureRes Future with the result of the operation
+     * @return JsonObject with error code, status and name of the file
+     */
+    private JsonObject answerJsonError(Map.Entry<String, Future<JsonObject>> futureRes) {
+        return new JsonObject()
+                .put(Field.NAME, futureRes.getKey())
+                .put(Field.ERROR, futureRes.getValue().cause().getMessage())
+                .put(Field.STATUS, Field.KO_LOWER);
+    }
+
+    /**
      * Copy all the files listed in the filesPath from nextcloud to workspace.
      * @param userSession       User session
      * @param user              User infos
@@ -321,26 +333,30 @@ public class DefaultDocumentsService implements DocumentsService {
                                                       String parentId) {
         Promise<List<JsonObject>> promise = Promise.promise();
         Future<JsonObject> current = Future.succeededFuture();
-        List<Future<JsonObject>> listResult = new ArrayList<>();
+        Map<String, Future<JsonObject>> result = new HashMap<>();
         for (String file : filesPath) {
             current = current.compose(v -> {
                 Future<JsonObject> future = copyToWorkspace(userSession, user, file.startsWith("/") ? file.substring(1) : file, parentId);
                 Promise<JsonObject> succeedPromise = Promise.promise();
-                future
-                        .onSuccess( r -> listResult.add(future))
-                        .onFailure( r -> listResult.add(Future.succeededFuture(new JsonObject().put(file, future.cause().getMessage()))))
-                        .onComplete(r -> succeedPromise.complete());
+                future.onComplete(r -> {
+                    result.put(file, future);
+                    succeedPromise.complete();
+                });
                 return succeedPromise.future();
             });
         }
-        current.onSuccess(res -> promise.complete(listResult.stream().map(Future::result).collect(Collectors.toList())))
-                .onFailure(err -> {
-                    String messageToFormat = "[Nextcloud@%s::copyDocumentToWorkspace] An error has occurred during copy : %s";
-                    PromiseHelper.reject(log, messageToFormat, this.getClass().getSimpleName(), err, promise);
-                });
+        current.onSuccess(v -> promise.complete(result.entrySet().stream().map(futureRes -> {
+            if (futureRes.getValue().succeeded())
+                return futureRes.getValue().result();
+            else {
+                return answerJsonError(futureRes);
+            }
 
+        }).collect(Collectors.toList())));
         return promise.future();
     }
+
+
 
     /**
      * Move all the files listed in the filesPath from nextcloud to workspace.
@@ -357,24 +373,27 @@ public class DefaultDocumentsService implements DocumentsService {
                                                             String parentId) {
         Promise<List<JsonObject>> promise = Promise.promise();
         Future<JsonObject> current = Future.succeededFuture();
-        List<Future<JsonObject>> result = new ArrayList<>();
+        Map<String, Future<JsonObject>> result = new HashMap<>();
         for (String file : filesPath) {
             current = current.compose(v -> {
                 Future<JsonObject> future = moveToWorkspace(userSession, user, file.startsWith("/") ? file.substring(1) : file, parentId);
                 Promise<JsonObject> succeedPromise = Promise.promise();
-                future
-                        .onSuccess( r -> result.add(future))
-                        .onFailure( r -> result.add(Future.succeededFuture(new JsonObject().put(file, future.cause().getMessage()))))
-                        .onComplete(r -> succeedPromise.complete());
+                future.onComplete(r -> {
+                            result.put(file, future);
+                            succeedPromise.complete();
+                        });
                 return succeedPromise.future();
             });
 
         }
-        current.onSuccess(v -> promise.complete(result.stream().map(Future::result).collect(Collectors.toList())))
-                .onFailure(err -> {
-                    String messageToFormat = "[Nextcloud@%s::moveDocumentToWorkspace] An error has occurred while moving documents : %s";
-                    PromiseHelper.reject(log, messageToFormat, this.getClass().getSimpleName(), err, promise);
-                });
+        current.onSuccess(v -> promise.complete(result.entrySet().stream().map(futureRes -> {
+                    if (futureRes.getValue().succeeded())
+                        return futureRes.getValue().result();
+                    else {
+                        return answerJsonError(futureRes);
+                    }
+
+                }).collect(Collectors.toList())));
         return promise.future();
     }
 

@@ -75,6 +75,7 @@ public class Field {
     public static final String OK = "OK";
     public static final String OK_LOWER = "ok";
     public static final String KO = "KO";
+    public static final String KO_LOWER = "ko";
 
 
     public static final String ISFOLDER = "isFolder";
