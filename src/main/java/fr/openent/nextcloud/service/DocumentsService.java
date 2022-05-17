@@ -83,9 +83,9 @@ public interface DocumentsService {
      * @param user              User infos
      * @param filesPath         Path of all the files to move
      * @param parentId          Identifier of the previous folder if moving in a folder
-     * @return                  Future Json with the infos about every move
+     * @return                  Future list of JsonObject with infos about every file copied
      */
-    Future<JsonObject> copyDocumentToWorkspace(UserNextcloud.TokenProvider userSession, UserInfos user, List<String> filesPath, String parentId);
+    Future<List<JsonObject>> copyDocumentToWorkspace(UserNextcloud.TokenProvider userSession, UserInfos user, List<String> filesPath, String parentId);
 
     /**
      * Move all the files listed in the filesPath from nextcloud to local.
@@ -93,9 +93,9 @@ public interface DocumentsService {
      * @param user              User infos
      * @param filesPath         Path of all the files to move
      * @param parentId          Identifier of the previous folder if moving in a folder
-     * @return                  Future Json with the infos about every move
+     * @return                  Future list of JsonObject with infos about every file moved
      */
-    Future<JsonObject> moveDocumentToWorkspace(UserNextcloud.TokenProvider userSession, UserInfos user, List<String> filesPath, String parentId);
+    Future<List<JsonObject>> moveDocumentToWorkspace(UserNextcloud.TokenProvider userSession, UserInfos user, List<String> filesPath, String parentId);
 
     /**
      * Move all the files listed in id idList from workspace to Nextcloud
