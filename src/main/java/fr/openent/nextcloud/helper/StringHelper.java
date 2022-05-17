@@ -1,11 +1,14 @@
 package fr.openent.nextcloud.helper;
 
+import io.vertx.core.logging.Logger;
+import io.vertx.core.logging.LoggerFactory;
+
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.text.Normalizer;
 
 public class StringHelper {
-
+    private static final Logger log = LoggerFactory.getLogger(StringHelper.class);
     private StringHelper() {
         throw new IllegalStateException("Utility StringHelper class");
     }
@@ -32,14 +35,16 @@ public class StringHelper {
      * @return      Modified URL
      */
     public static String encodeUrlForNc(String url) {
-        url = removeFirstChar("/", url);
+        String subUrl = removeFirstChar("/", url);
         try {
-            url = URLEncoder.encode(url, "UTF-8");
+            subUrl = URLEncoder.encode(subUrl, "UTF-8");
         } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
+            String messageToFormat = "[Nextcloud@%s::encodeUrlForNc] Error while encoding URL : %s";
+            log.error(String.format(messageToFormat, e.getMessage()));
+            return subUrl;
         }
-        url = url.replace("%2F", "/")
+        subUrl = subUrl.replace("%2F", "/")
                 .replace("+", "%20");
-        return url;
+        return subUrl;
     }
 }
