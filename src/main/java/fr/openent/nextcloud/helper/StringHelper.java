@@ -39,7 +39,7 @@ public class StringHelper {
         try {
             subUrl = URLEncoder.encode(subUrl, "UTF-8");
         } catch (UnsupportedEncodingException e) {
-            String messageToFormat = "[Nextcloud@%s::encodeUrlForNc] Error while encoding URL : %s";
+            String messageToFormat = "[Nextcloud@::encodeUrlForNc] Error while encoding URL : %s";
             log.error(String.format(messageToFormat, e.getMessage()));
             return subUrl;
         }
