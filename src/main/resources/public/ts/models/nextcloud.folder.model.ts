@@ -31,7 +31,7 @@ export class SyncDocument {
     isNextcloudParent?: boolean;
 
     build(data: IDocumentResponse): SyncDocument {
-        this.name = decodeURI(data.displayname);
+        this.name = decodeURIComponent(data.displayname);
         this.ownerDisplayName = data.ownerDisplayName;
         this.path = data.path.split(model.me.userId).pop();
         this.contentType = data.contentType;
