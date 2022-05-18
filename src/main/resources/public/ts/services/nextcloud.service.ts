@@ -1,6 +1,7 @@
-import {ng} from 'entcore'
+import {ng, workspace} from 'entcore'
 import http, {AxiosResponse} from 'axios';
 import {IDocumentResponse, SyncDocument} from "../models";
+import models = workspace.v2.models;
 
 export interface INextcloudService {
     listDocument(userid: string, path?: string): Promise<Array<SyncDocument>>;
@@ -8,6 +9,7 @@ export interface INextcloudService {
     moveDocument(userid: string, path: string, destPath: string): Promise<AxiosResponse>;
     moveDocumentNextcloudToWorkspace(userid: string, paths: Array<string>, parentId?: string): Promise<AxiosResponse>;
     moveDocumentWorkspaceToCloud(userid: string, ids: Array<string>, cloudDocumentName?: string): Promise<AxiosResponse>;
+    copyDocumentToWorkspace(userid: string, paths: Array<string>, parentId?: string): Promise<Array<Element>>;
     deleteDocuments(userid: string, path: Array<string>): Promise<AxiosResponse>;
     getFile(userid: string, fileName: string, path: string, contentType: string): string;
     getFiles(userid: string, path: string, files: Array<string>): string;
@@ -40,7 +42,10 @@ export const nextcloudService: INextcloudService = {
         let urlParams: URLSearchParams = new URLSearchParams();
         paths.forEach((path: string) => urlParams.append('path', path));
         const parentIdParam: string = parentId ? `&parentId=${parentId}` : '';
-        return http.put(`/nextcloud/files/user/${userid}/move/workspace?${urlParams}${parentIdParam}`);
+        return http.put(`/nextcloud/files/user/${userid}/move/workspace?${urlParams}${parentIdParam}`)
+            .then((res: AxiosResponse) => res.data.data
+                .filter(document => document._id)
+                .map((document) => new models.Element(document)));
     },
 
     moveDocumentWorkspaceToCloud: (userid: string, ids: Array<string>, cloudDocumentName?: string): Promise<AxiosResponse> => {
@@ -48,6 +53,16 @@ export const nextcloudService: INextcloudService = {
         ids.forEach((path: string) => urlParams.append('id', path));
         const parentDocumentNameParam: string = cloudDocumentName ? `&parentName=${cloudDocumentName}` : '';
         return http.put(`/nextcloud/files/user/${userid}/workspace/move/cloud?${urlParams}${parentDocumentNameParam}`);
+    },
+
+    copyDocumentToWorkspace(userid: string, paths: Array<string>, parentId?: string): Promise<Array<Element>> {
+        let urlParams: URLSearchParams = new URLSearchParams();
+        paths.forEach((path: string) => urlParams.append('path', path));
+        const parentIdParam: string = parentId ? `&parentId=${parentId}` : '';
+        return http.put(`/nextcloud/files/user/${userid}/copy/workspace?${urlParams}${parentIdParam}`)
+            .then((res: AxiosResponse) => res.data.data
+                .filter(document => document._id)
+                .map((document) => new models.Element(document)));
     },
 
     deleteDocuments(userid: string, paths: Array<string>): Promise<AxiosResponse> {
