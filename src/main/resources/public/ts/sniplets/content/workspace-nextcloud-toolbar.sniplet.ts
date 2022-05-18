@@ -2,12 +2,14 @@ import {SyncDocument} from "../../models";
 import {model} from "entcore";
 import {AxiosError} from "axios";
 import {safeApply} from "../../utils/safe-apply.utils";
+import {ToolbarShareSnipletViewModel} from "./workspace-nextcloud-toolbar-share.sniplet";
 
 declare let window: any;
 
 interface ILightboxViewModel {
     properties: boolean;
     delete: boolean;
+    share: boolean;
 }
 
 interface IViewModel {
@@ -26,6 +28,9 @@ interface IViewModel {
     // delete documents action
     toggleDeleteView(state: boolean): void;
     deleteDocuments();
+
+    // share documents action (using class sniplet)
+    share: any;
 }
 
 export class ToolbarSnipletViewModel implements IViewModel {
@@ -35,14 +40,19 @@ export class ToolbarSnipletViewModel implements IViewModel {
     lightbox: ILightboxViewModel;
     currentDocument: SyncDocument;
 
+    // share documents action
+    share: any;
+
     constructor(scope) {
         this.scope = scope;
         this.vm = scope.vm;
         this.lightbox = {
             properties: false,
-            delete: false
+            delete: false,
+            share: false
         };
         this.currentDocument = null;
+        this.share = new ToolbarShareSnipletViewModel(this);
     }
 
     hasOneDocumentSelected(selectedDocuments: Array<SyncDocument>): boolean {
@@ -133,6 +143,4 @@ export class ToolbarSnipletViewModel implements IViewModel {
                 safeApply(this.scope);
             });
     }
-
-
 }

@@ -25,6 +25,17 @@
                 <!-- popup -->
                 <div ng-include="'/nextcloud/public/template/behaviours/sniplet-nextcloud-content/toolbar/workspace-nextcloud-toolbar-delete.html'"></div>
             </div>
+
+
+            <!-- share document(s) -->
+            <div id="nextcloud-toolbar-share">
+                <button ng-click="vm.toolbar.share.toggleShareView(true, vm.selectedDocuments)">
+                    <i18n>workspace.share</i18n>
+                </button>
+
+                <!-- popup -->
+                <div ng-include="'/nextcloud/public/template/behaviours/sniplet-nextcloud-content/toolbar/share/workspace-nextcloud-toolbar-share.html'"></div>
+            </div>
         </div>
     </div>
 </section>
