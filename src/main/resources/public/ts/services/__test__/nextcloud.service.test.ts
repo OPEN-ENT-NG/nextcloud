@@ -117,7 +117,7 @@ describe('NextcloudService', () => {
 
     it('Test Put moving document to nextcloud to workspace should have paths appeared in URL request', done => {
         const mock = new MockAdapter(axios);
-        const data = {response: true};
+        const data = {data: []};
 
         const userId = "userId";
         const paths = ["path", "path1", "path2"];
@@ -135,7 +135,7 @@ describe('NextcloudService', () => {
 
     it('Test Put moving document to nextcloud to workspace should have paths appeared in URL request without parentId', done => {
         const mock = new MockAdapter(axios);
-        const data = {response: true};
+        const data = {data: []};
 
         const userId = "userId";
         const paths = ["path", "path1", "path2"];

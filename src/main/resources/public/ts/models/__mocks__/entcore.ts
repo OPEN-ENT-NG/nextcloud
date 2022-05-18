@@ -18,11 +18,13 @@ interface IService {
 const controllers: Array<IController> = []
 const directives: Array<IDirective> = []
 const services: Array<IService> = [];
-const workspace = {
+export const workspace = {
     v2: {
         models: {}
     }
 };
+
+
 export const ng = {
     service: jest.fn((name:string, contents: any) => {
         this.ng.services.push({name, contents})
