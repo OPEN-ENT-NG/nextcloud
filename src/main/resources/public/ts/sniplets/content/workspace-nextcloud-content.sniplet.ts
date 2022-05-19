@@ -171,7 +171,7 @@ class ViewModel implements IViewModel {
         if (fileToMove.indexOf(document) == -1) {
             fileToMove.push(document);
         }
-        return nextcloudService.moveDocumentNextcloudToWorkspace(model.me.userId, fileToMove.map(file => file.path), folder._id);
+        return nextcloudService.moveDocumentNextcloudToWorkspace(model.me.userId, fileToMove.filter(file => !file.isFolder).map(file => file.path), folder._id);
     }
 
     onSelectContent(content: SyncDocument): void {
