@@ -8,6 +8,7 @@ import {ToolbarSnipletViewModel} from "./workspace-nextcloud-toolbar.sniplet";
 import {AxiosError, AxiosResponse} from "axios";
 import {UploadFileSnipletViewModel} from "./workspace-nextcloud-upload-file.sniplet";
 import models = workspace.v2.models;
+import {Object} from "core-js";
 
 declare let window: any;
 
@@ -166,7 +167,11 @@ class ViewModel implements IViewModel {
     }
 
     async moveDocumentToWorkspace(folder: models.Element, document: SyncDocument): Promise<AxiosResponse> {
-        return nextcloudService.moveDocumentNextcloudToWorkspace(model.me.userId, [document.path], folder._id);
+        let fileToMove: Array<SyncDocument> = Object.assign([], this.selectedDocuments);
+        if (fileToMove.indexOf(document) == -1) {
+            fileToMove.push(document);
+        }
+        return nextcloudService.moveDocumentNextcloudToWorkspace(model.me.userId, fileToMove.map(file => file.path), folder._id);
     }
 
     onSelectContent(content: SyncDocument): void {
