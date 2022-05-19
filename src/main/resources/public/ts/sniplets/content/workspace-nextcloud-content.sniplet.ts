@@ -143,10 +143,12 @@ class ViewModel implements IViewModel {
         let folderContent: any = angular.element(element).scope();
         if (folderContent && folderContent.folder) {
             if (folderContent.folder instanceof models.Element) {
-                let fileToMove : Set<SyncDocument> = new Set(this.selectedDocuments).add(document);
-                let finalUpload : Array<String> = Array.from(fileToMove).filter(file => !file.isFolder).map(file => file.path);
-                if (finalUpload.length > 0) {
-                    nextcloudService.moveDocumentNextcloudToWorkspace(model.me.userId, finalUpload, folderContent.folder.id)
+                let fileToMove: Set<SyncDocument> = new Set(this.selectedDocuments).add(document);
+                let finalUpload: Array<string> = Array.from(fileToMove)
+                    .filter((file: SyncDocument) => !file.isFolder)
+                    .map((file: SyncDocument) => file.path);
+                if (finalUpload.length) {
+                    this.nextcloudService.moveDocumentNextcloudToWorkspace(model.me.userId, finalUpload, folderContent.folder.id)
                         .then(async (_: AxiosResponse) => {
                             return nextcloudService.listDocument(model.me.userId, selectedFolderFromNextcloudTree.path ?
                                 selectedFolderFromNextcloudTree.path : null);
