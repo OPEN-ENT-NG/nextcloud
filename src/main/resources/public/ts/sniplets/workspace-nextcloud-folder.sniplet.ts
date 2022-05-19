@@ -1,4 +1,4 @@
-import {FolderTreeProps, angular, template, Behaviours, workspace, model, idiom as lang} from "entcore";
+import {FolderTreeProps, angular, template, Behaviours, workspace, model, idiom as lang, Document} from "entcore";
 import {Tree} from "entcore/types/src/ts/workspace/model";
 import {safeApply} from "../utils/safe-apply.utils";
 import {RootsConst} from "../core/constants/roots.const";
@@ -146,7 +146,10 @@ class ViewModel implements IViewModel {
             if (document && (document._id && document.eType === "file")) {
                 if (angular.element(event.target).scope().folder instanceof SyncDocument) {
                     const syncedDocument: SyncDocument = angular.element(event.target).scope().folder;
-                    nextcloudService.moveDocumentWorkspaceToCloud(model.me.userId, [document._id], syncedDocument.path)
+                    let selectedDocuments: Array<Document> = WorkspaceEntcoreUtils.workspaceScope()['documentList']['_documents'];
+                    let documentToUpdate: Set<string> = new Set(selectedDocuments.filter((file: Document) => file.selected).map((file: Document) => file._id));
+                    documentToUpdate.add(document._id);
+                    nextcloudService.moveDocumentWorkspaceToCloud(model.me.userId, Array.from(documentToUpdate), syncedDocument.path)
                         .then((_: AxiosResponse) => WorkspaceEntcoreUtils.updateWorkspaceDocuments(
                             WorkspaceEntcoreUtils.workspaceScope()['openedFolder']['folder'])
                         )
