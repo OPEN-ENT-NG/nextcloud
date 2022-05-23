@@ -148,7 +148,7 @@ class ViewModel implements IViewModel {
                     .filter((file: SyncDocument) => !file.isFolder)
                     .map((file: SyncDocument) => file.path);
                 if (finalUpload.length) {
-                    this.nextcloudService.moveDocumentNextcloudToWorkspace(model.me.userId, finalUpload, folderContent.folder.id)
+                    this.nextcloudService.moveDocumentNextcloudToWorkspace(model.me.userId, finalUpload, folderContent.folder._id)
                         .then(async (_: AxiosResponse) => {
                             return nextcloudService.listDocument(model.me.userId, selectedFolderFromNextcloudTree.path ?
                                 selectedFolderFromNextcloudTree.path : null);
