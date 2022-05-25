@@ -11,7 +11,6 @@ import fr.openent.nextcloud.model.XmlnsOptions;
 import fr.openent.nextcloud.service.DocumentsService;
 import fr.openent.nextcloud.service.ServiceFactory;
 
-import fr.openent.nextcloud.service.UserService;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
@@ -29,7 +28,6 @@ import org.entcore.common.storage.Storage;
 import org.entcore.common.user.UserInfos;
 
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -333,6 +331,11 @@ public class DefaultDocumentsService implements DocumentsService {
     Future<JsonObject> folderCopy(JsonArray fileInfo, String file, String parentId, UserInfos user, UserNextcloud.TokenProvider userSession) {
         Promise<JsonObject> promise = Promise.promise();
         NextcloudFolder ncFolder = new NextcloudFolder(fileInfo);
+        if (!ncFolder.isSet()) {
+            String messageToFormat = "[Nextcloud@%s::folderCopy] Error while retrieve folder data : %s";
+            PromiseHelper.reject(log, messageToFormat, this.getClass().getSimpleName(), new Exception("folder.info.retrieve.failed"), promise);
+            return promise.future();
+        }
         ncFolder.setPath(file);
         EventBusHelper.createFolder(eventBus, ncFolder.getName(), parentId, user.getUserId(), user.getUsername())
                 .compose(folderInfos -> {
@@ -545,7 +548,7 @@ public class DefaultDocumentsService implements DocumentsService {
                             folderMove(fileInfo, file, parentId, user, userSession)
                                     .onSuccess(promiseResult::complete)
                                     .onFailure(err -> {
-                                        String messageToFormat = "[Nextcloud@%s::moveToWorkspace] Error while handling folder copy : %s";
+                                        String messageToFormat = "[Nextcloud@%s::moveToWorkspace] Error while handling folder move : %s";
                                         PromiseHelper.reject(log, messageToFormat, this.getClass().getSimpleName(), err, promiseResult);
                                     });
                         }

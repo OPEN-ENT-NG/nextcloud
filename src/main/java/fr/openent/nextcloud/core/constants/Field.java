@@ -2,7 +2,6 @@ package fr.openent.nextcloud.core.constants;
 
 public class Field {
 
-    public static final String ADDFOLDER = "addFolder";
     public static final String DATA = "data";
     public static final String ID = "id";
     public static final String USERID = "userid";
@@ -16,7 +15,6 @@ public class Field {
     public static final String DISPLAYNAMECAMEL = "displayName";
     public static final String EMAIL = "email";
     public static final String PHONE = "phone";
-    public static final String DELETE = "delete";
     public static final String PARENTNAME = "parentName";
     public static final String ACTION = "action";
     public static final String OWNER = "owner";

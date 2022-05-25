@@ -27,7 +27,7 @@ public class EventBusHelper {
      */
     public static Future<JsonObject> createFolder(EventBus eb, String folderName, String folderParentId, String userId, String userName) {
         JsonObject action = new JsonObject()
-                .put(Field.ACTION, EventBusActions.ADDFOLDER)
+                .put(Field.ACTION, EventBusActions.ADDFOLDER.action())
                 .put(Field.NAME, folderName)
                 .put(Field.OWNER, userId)
                 .put(Field.OWNERNAME, userName)
@@ -37,7 +37,7 @@ public class EventBusHelper {
 
     public static Future<JsonArray> deleteDocument(EventBus eb, String id, String userId) {
         JsonObject action =  new JsonObject()
-                .put(Field.ACTION, EventBusActions.DELETE)
+                .put(Field.ACTION, EventBusActions.DELETE.action())
                 .put(Field.ID, id)
                 .put(Field.USERID_CAPS, userId);
         return requestJsonArray(eb, action);

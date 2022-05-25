@@ -19,14 +19,16 @@ public class NextcloudFolder {
     private List<JsonObject> folderItemsInfos = new ArrayList<>();
     private String workspaceId;
     private String path;
+    private Boolean isSet = true;
     public NextcloudFolder(JsonArray folderInfos) {
         try {
             this.folderItemsInfos = folderInfos.stream().map(fileInfo -> new JsonObject(
                     fileInfo.toString())).collect(Collectors.toList());
-            this.name = this.folderItemsInfos.get(0).getString(Field.DISPLAYNAME);
+            this.name = this.folderItemsInfos.get(0).getString(Field.DISPLAYNAME).replace("%20", " ");
             //removing first one because it is the folder itself.
             this.folderItemsInfos.remove(0);
         } catch (Exception e) {
+            this.isSet = false;
             log.error("[Nextcloud@::NextcloudFolder] Error while instantiating NextcloudFolder class");
         }
     }
@@ -62,5 +64,9 @@ public class NextcloudFolder {
 
     public void setPath(String path) {
         this.path = path;
+    }
+
+    public Boolean isSet() {
+        return isSet;
     }
 }
