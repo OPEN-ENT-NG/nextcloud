@@ -5,11 +5,13 @@ import fr.openent.nextcloud.core.enums.NextcloudHttpMethod;
 import fr.openent.nextcloud.core.enums.XmlnsAttr;
 import fr.openent.nextcloud.helper.*;
 import fr.openent.nextcloud.model.Document;
+import fr.openent.nextcloud.model.NextcloudFolder;
 import fr.openent.nextcloud.model.UserNextcloud;
 import fr.openent.nextcloud.model.XmlnsOptions;
 import fr.openent.nextcloud.service.DocumentsService;
 import fr.openent.nextcloud.service.ServiceFactory;
 
+import fr.openent.nextcloud.service.UserService;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
@@ -320,6 +322,63 @@ public class DefaultDocumentsService implements DocumentsService {
     }
 
     /**
+     * Create folder into workspace and copy every file from NC folder to new workspace folder.
+     * @param fileInfo      Information about the file
+     * @param file          Path to the file on nc server
+     * @param parentId      Identifier of the parent in the workspace (if you want to create the new folder under specific one)
+     * @param user          User infos
+     * @param userSession   Session infos
+     * @return              Infos about the copy
+     */
+    Future<JsonObject> folderCopy(JsonArray fileInfo, String file, String parentId, UserInfos user, UserNextcloud.TokenProvider userSession) {
+        Promise<JsonObject> promise = Promise.promise();
+        NextcloudFolder ncFolder = new NextcloudFolder(fileInfo);
+        ncFolder.setPath(file);
+        EventBusHelper.createFolder(eventBus, ncFolder.getName(), parentId, user.getUserId(), user.getUsername())
+                .compose(folderInfos -> {
+                    ncFolder.setWorkspaceId(folderInfos.getString(Field.UNDERSCORE_ID));
+                    return copyDocumentToWorkspace(userSession, user, ncFolder.getFolderItemPath(), ncFolder.getWorkspaceId());
+                })
+                .onSuccess(resultFolderMove -> promise.complete(new JsonObject()
+                        .put(Field.NAME, ncFolder.getName())
+                        .put(Field.ISFOLDER, Field.YES)
+                        .put(Field.STATUS, Field.OK_LOWER)
+                        .put(Field.DATA, resultFolderMove)))
+                .onFailure(err -> {
+                    String messageToFormat = "[Nextcloud@%s::folderCopy] Error while handling folder copy : %s";
+                    PromiseHelper.reject(log, messageToFormat, this.getClass().getSimpleName(), err, promise);
+                });
+        return promise.future();
+    }
+
+    /**
+     * Create folder into workspace and move every file from NC folder to new workspace folder.
+     * @param fileInfo      Information about the file
+     * @param file          Path to the file on nc server
+     * @param parentId      Identifier of the parent in the workspace (if you want to create the new folder under specific one)
+     * @param user          User infos
+     * @param userSession   Session infos
+     * @return              Infos about the move
+     */
+    Future<JsonObject> folderMove(JsonArray fileInfo, String file, String parentId, UserInfos user, UserNextcloud.TokenProvider userSession) {
+        Promise<JsonObject> promise = Promise.promise();
+        Map<String, JsonObject> result = new HashMap<>();
+
+
+        folderCopy(fileInfo, file, parentId, user, userSession)
+                .compose(folderCopyInfos -> {
+                    result.put(Field.RESULT, folderCopyInfos);
+                    return deleteDocument(userSession, file);
+                })
+                .onSuccess(deleteStatus -> promise.complete(result.get(Field.RESULT)))
+                .onFailure(err -> {
+                    String messageToFormat = "[Nextcloud@%s::folderMove] Error while handling folder move : %s";
+                    PromiseHelper.reject(log, messageToFormat, this.getClass().getSimpleName(), err, promise);
+                });
+        return promise.future();
+    }
+
+    /**
      * Copy all the files listed in the filesPath from nextcloud to workspace.
      * @param userSession       User session
      * @param user              User infos
@@ -430,9 +489,12 @@ public class DefaultDocumentsService implements DocumentsService {
                                 }
                             });
                         } else {
-                            //TODO Gérer le cas d'import d'un dossier
-                            log.error("[Nextcloud@%s::copyToWorkspace] import.directory.not.handled");
-                            promiseResult.fail("import.directory.not.handled");
+                            folderCopy(fileInfo, file, parentId, user, userSession)
+                                    .onSuccess(promiseResult::complete)
+                                    .onFailure(err -> {
+                                        String messageToFormat = "[Nextcloud@%s::copyToWorkspace] Error while handling folder copy : %s";
+                                        PromiseHelper.reject(log, messageToFormat, this.getClass().getSimpleName(), err, promiseResult);
+                                    });
                         }
                     } else {
                         promiseResult.fail("nextcloud.server.file.no.exist");
@@ -480,9 +542,12 @@ public class DefaultDocumentsService implements DocumentsService {
                                 }
                             });
                         } else {
-                            //TODO Gérer le cas d'import d'un dossier
-                            log.error("[Nextcloud@%s::moveToWorkspace] import.directory.not.handled");
-                            promiseResult.fail("import.directory.not.handled");
+                            folderMove(fileInfo, file, parentId, user, userSession)
+                                    .onSuccess(promiseResult::complete)
+                                    .onFailure(err -> {
+                                        String messageToFormat = "[Nextcloud@%s::moveToWorkspace] Error while handling folder copy : %s";
+                                        PromiseHelper.reject(log, messageToFormat, this.getClass().getSimpleName(), err, promiseResult);
+                                    });
                         }
                     } else {
                         promiseResult.fail("nextcloud.server.file.no.exist");

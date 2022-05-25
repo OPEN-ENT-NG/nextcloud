@@ -1,6 +1,7 @@
 package fr.openent.nextcloud.helper;
 
 import fr.openent.nextcloud.core.constants.Field;
+import fr.openent.nextcloud.core.enums.EventBusActions;
 import fr.openent.nextcloud.service.impl.DefaultDocumentsService;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
@@ -17,24 +18,26 @@ public class EventBusHelper {
 
     /**
      * Create a folder ine the workspace
-     * @param folder    JsonObject with folder's infos
-     * @param userId    User's identifier
-     * @param userName  User's username
-     * @return          Future with the status of the folder creation
+     * @param eb                The current eventBus
+     * @param folderName        Name of the new folder
+     * @param folderParentId    Identifier of parent folder in the workspace
+     * @param userId            User's identifier
+     * @param userName          User's username
+     * @return                  Future with the status of the folder creation
      */
-    public static Future<JsonObject> createFolder(EventBus eb, JsonObject folder, String userId, String userName) {
+    public static Future<JsonObject> createFolder(EventBus eb, String folderName, String folderParentId, String userId, String userName) {
         JsonObject action = new JsonObject()
-                .put(Field.ACTION, Field.ADDFOLDER)
-                .put(Field.NAME, folder.getString(Field.NAME))
+                .put(Field.ACTION, EventBusActions.ADDFOLDER)
+                .put(Field.NAME, folderName)
                 .put(Field.OWNER, userId)
                 .put(Field.OWNERNAME, userName)
-                .put(Field.PARENTFOLDERID, folder.getString(Field.PARENT_ID));
+                .put(Field.PARENTFOLDERID, folderParentId);
         return requestJsonObject(eb, action);
     }
 
     public static Future<JsonArray> deleteDocument(EventBus eb, String id, String userId) {
         JsonObject action =  new JsonObject()
-                .put(Field.ACTION, Field.DELETE)
+                .put(Field.ACTION, EventBusActions.DELETE)
                 .put(Field.ID, id)
                 .put(Field.USERID_CAPS, userId);
         return requestJsonArray(eb, action);
