@@ -1,12 +1,12 @@
 package fr.openent.nextcloud.core.enums;
 
-public enum EventBusActions {
+public enum WorkspaceEventBusActions {
     ADDFOLDER("addFolder"),
     DELETE("delete");
 
     private final String action;
 
-    EventBusActions(String action) {
+    WorkspaceEventBusActions(String action) {
         this.action = action;
     }
 

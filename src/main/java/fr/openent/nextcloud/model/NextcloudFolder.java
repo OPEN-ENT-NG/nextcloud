@@ -20,6 +20,8 @@ public class NextcloudFolder {
     private String workspaceId;
     private String path;
     private Boolean isSet = true;
+    private final Logger log = LoggerFactory.getLogger(DefaultDocumentsService.class);
+
     public NextcloudFolder(JsonArray folderInfos) {
         try {
             this.folderItemsInfos = folderInfos.stream().map(fileInfo -> new JsonObject(
@@ -29,10 +31,9 @@ public class NextcloudFolder {
             this.folderItemsInfos.remove(0);
         } catch (Exception e) {
             this.isSet = false;
-            log.error("[Nextcloud@::NextcloudFolder] Error while instantiating NextcloudFolder class");
+            log.error(String.format("[Nextcloud@::NextcloudFolder] Error while instantiating NextcloudFolder class : %s", e.getMessage()));
         }
     }
-    private final Logger log = LoggerFactory.getLogger(DefaultDocumentsService.class);
 
     public List<JsonObject> getFolderItemsInfos() {
         return folderItemsInfos;

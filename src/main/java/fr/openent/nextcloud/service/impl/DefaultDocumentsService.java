@@ -1,6 +1,7 @@
 package fr.openent.nextcloud.service.impl;
 import fr.openent.nextcloud.config.NextcloudConfig;
 import fr.openent.nextcloud.core.constants.Field;
+import fr.openent.nextcloud.core.enums.WorkspaceEventBusActions;
 import fr.openent.nextcloud.core.enums.NextcloudHttpMethod;
 import fr.openent.nextcloud.core.enums.XmlnsAttr;
 import fr.openent.nextcloud.helper.*;
@@ -337,7 +338,13 @@ public class DefaultDocumentsService implements DocumentsService {
             return promise.future();
         }
         ncFolder.setPath(file);
-        EventBusHelper.createFolder(eventBus, ncFolder.getName(), parentId, user.getUserId(), user.getUsername())
+        JsonObject action = new JsonObject()
+                .put(Field.ACTION, WorkspaceEventBusActions.ADDFOLDER.action())
+                .put(Field.NAME, ncFolder.getName())
+                .put(Field.OWNER, user.getUserId())
+                .put(Field.OWNERNAME, user.getUsername())
+                .put(Field.PARENTFOLDERID, parentId);
+        EventBusHelper.createFolder(eventBus, action)
                 .compose(folderInfos -> {
                     ncFolder.setWorkspaceId(folderInfos.getString(Field.UNDERSCORE_ID));
                     return copyDocumentToWorkspace(userSession, user, ncFolder.getFolderItemPath(), ncFolder.getWorkspaceId());
