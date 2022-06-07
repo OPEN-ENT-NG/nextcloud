@@ -374,14 +374,14 @@ public class DefaultDocumentsService implements DocumentsService {
      */
     Future<JsonObject> folderMove(JsonArray fileInfo, String file, String parentId, UserInfos user, UserNextcloud.TokenProvider userSession) {
         Promise<JsonObject> promise = Promise.promise();
-        Map<String, JsonObject> result = new HashMap<>();
+        JsonObject result = new JsonObject();
 
         folderCopy(fileInfo, file, parentId, user, userSession)
                 .compose(folderCopyInfos -> {
                     result.put(Field.RESULT, folderCopyInfos);
                     return deleteDocument(userSession, file);
                 })
-                .onSuccess(deleteStatus -> promise.complete(result.get(Field.RESULT)))
+                .onSuccess(deleteStatus -> promise.complete(result.getJsonObject(Field.RESULT)))
                 .onFailure(err -> {
                     String messageToFormat = "[Nextcloud@%s::folderMove] Error while handling folder move : %s";
                     PromiseHelper.reject(log, messageToFormat, this.getClass().getSimpleName(), err, promise);
