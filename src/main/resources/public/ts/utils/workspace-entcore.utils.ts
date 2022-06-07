@@ -52,7 +52,10 @@ export class WorkspaceEntcoreUtils {
      */
     static updateWorkspaceDocuments(folder: any | models.Element): void {
         if (folder && folder instanceof models.Element) {
-            //The root folder does not contain the eType attribute, so we add it to make the refresh happen on this folder too.
+            //The root folder is treated differently because it contains all the tree of files and folders, and we can't apply
+            // the same treatment as if it was a classic folder.
+            //As it is not a folder, it does not contain the eType attribute, so we have to simulate it by adding the eType attribute,
+            // and make the refresh happen on this root folder.
             if ("tree" in folder) {
                 folder.eType = 'folder';
             }

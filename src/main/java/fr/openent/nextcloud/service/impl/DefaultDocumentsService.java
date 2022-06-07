@@ -775,6 +775,14 @@ public class DefaultDocumentsService implements DocumentsService {
         return promise.future();
     }
 
+    /**
+     * Recursively call nextcloud API to know if a file with the same name exists on nextcloud server, if the answer is yes,
+     * call again this method with a number of copy after the initial name (e.g. name (1).txt).
+     * @param userSession       Session of the user.
+     * @param path              The path of the file.
+     * @param duplicateNumber   Number of previous call to this function.
+     * @return                  A file name which is not already used on the nextcloud.
+     */
     private Future<String> getUniqueFileName(UserNextcloud.TokenProvider userSession, String path, int duplicateNumber) {
         Promise<String> promise = Promise.promise();
         String extension = "";
