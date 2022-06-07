@@ -1,6 +1,6 @@
 import {angular, Folder, workspace} from "entcore";
 import models = workspace.v2.models;
-
+import WorkspaceEvent = workspace.v2.WorkspaceEvent;
 export class WorkspaceEntcoreUtils {
 
     static $ENTCORE_WORKSPACE: string = `div[data-ng-include="'folder-content'"]`;
@@ -53,14 +53,13 @@ export class WorkspaceEntcoreUtils {
     static updateWorkspaceDocuments(folder: any | models.Element): void {
         if (folder && folder instanceof models.Element) {
             if ("tree" in folder) {
-                WorkspaceEntcoreUtils.workspaceScope()['onTreeInit'](() =>
-                    WorkspaceEntcoreUtils.workspaceScope()['setCurrentTree'](folder['tree']['filter'])
-                )
-            } else if (folder._id && folder.eType === "folder") {
-                WorkspaceEntcoreUtils.workspaceScope()['onTreeInit'](() =>
-                    WorkspaceEntcoreUtils.workspaceScope()['openFolderById'](folder._id)
-                )
+                folder.eType = 'folder';
             }
+            const event : WorkspaceEvent = {
+                action: "tree-change",
+                elements: [folder]
+            }
+            workspace.v2.service.onChange.next(event);
         }
     }
 }
