@@ -1,6 +1,7 @@
 package fr.openent.nextcloud.helper;
 
 import fr.openent.nextcloud.core.constants.Field;
+import fr.openent.nextcloud.core.enums.WorkspaceEventBusActions;
 import fr.openent.nextcloud.service.impl.DefaultDocumentsService;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
@@ -17,24 +18,17 @@ public class EventBusHelper {
 
     /**
      * Create a folder ine the workspace
-     * @param folder    JsonObject with folder's infos
-     * @param userId    User's identifier
-     * @param userName  User's username
-     * @return          Future with the status of the folder creation
+     * @param eb                The current eventBus
+     * @param action            The action parameters to send to the event bus
+     * @return                  Future with the status of the folder creation
      */
-    public static Future<JsonObject> createFolder(EventBus eb, JsonObject folder, String userId, String userName) {
-        JsonObject action = new JsonObject()
-                .put(Field.ACTION, Field.ADDFOLDER)
-                .put(Field.NAME, folder.getString(Field.NAME))
-                .put(Field.OWNER, userId)
-                .put(Field.OWNERNAME, userName)
-                .put(Field.PARENTFOLDERID, folder.getString(Field.PARENT_ID));
+    public static Future<JsonObject> createFolder(EventBus eb, JsonObject action) {
         return requestJsonObject(eb, action);
     }
 
     public static Future<JsonArray> deleteDocument(EventBus eb, String id, String userId) {
         JsonObject action =  new JsonObject()
-                .put(Field.ACTION, Field.DELETE)
+                .put(Field.ACTION, WorkspaceEventBusActions.DELETE.action())
                 .put(Field.ID, id)
                 .put(Field.USERID_CAPS, userId);
         return requestJsonArray(eb, action);

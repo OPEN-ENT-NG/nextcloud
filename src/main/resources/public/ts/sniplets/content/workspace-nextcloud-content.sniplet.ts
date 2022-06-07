@@ -145,7 +145,6 @@ class ViewModel implements IViewModel {
             if (folderContent.folder instanceof models.Element) {
                 let fileToMove: Set<SyncDocument> = new Set(this.selectedDocuments).add(document);
                 let finalUpload: Array<string> = Array.from(fileToMove)
-                    .filter((file: SyncDocument) => !file.isFolder)
                     .map((file: SyncDocument) => file.path);
                 if (finalUpload.length) {
                     this.nextcloudService.moveDocumentNextcloudToWorkspace(model.me.userId, finalUpload, folderContent.folder._id)
