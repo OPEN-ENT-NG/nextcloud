@@ -1,5 +1,8 @@
-import {angular, Folder, workspace} from "entcore";
+import {angular, Document, Folder, model, workspace} from "entcore";
 import models = workspace.v2.models;
+import {SyncDocument} from "../models";
+import {NextcloudDocumentsUtils} from "./nextcloud-documents.utils";
+
 import WorkspaceEvent = workspace.v2.WorkspaceEvent;
 export class WorkspaceEntcoreUtils {
 
@@ -65,5 +68,29 @@ export class WorkspaceEntcoreUtils {
             }
             workspace.v2.service.onChange.next(event);
         }
+    }
+
+    static toDocuments(syncDocuments: Array<SyncDocument>): Array<Document> {
+        let formattedDocuments: Array<Document> = [];
+        syncDocuments.forEach((syncDoc: SyncDocument) => {
+            let elementObj: any = {
+                name: syncDoc.name,
+                comments: '',
+                metadata: {
+                    'content-type': syncDoc.contentType,
+                    role: syncDoc.role,
+                    extension: NextcloudDocumentsUtils.getExtension(syncDoc.name),
+                    filename: syncDoc.name,
+                    size: syncDoc.size
+                },
+                owner: model.me.userId,
+                ownerName: syncDoc.ownerDisplayName,
+                path: syncDoc.path
+            };
+            let newElement: Document = new Document(elementObj);
+            newElement.application = "nextcloud";
+            formattedDocuments.push(newElement);
+        });
+        return formattedDocuments;
     }
 }
