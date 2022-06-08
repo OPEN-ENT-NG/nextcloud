@@ -9,7 +9,7 @@ export interface INextcloudService {
     moveDocument(userid: string, path: string, destPath: string): Promise<AxiosResponse>;
     moveDocumentNextcloudToWorkspace(userid: string, paths: Array<string>, parentId?: string): Promise<AxiosResponse>;
     moveDocumentWorkspaceToCloud(userid: string, ids: Array<string>, cloudDocumentName?: string): Promise<AxiosResponse>;
-    copyDocumentToWorkspace(userid: string, paths: Array<string>, parentId?: string): Promise<Array<Element>>;
+    copyDocumentToWorkspace(userid: string, paths: Array<string>, parentId?: string): Promise<Array<models.Element>>;
     deleteDocuments(userid: string, path: Array<string>): Promise<AxiosResponse>;
     getFile(userid: string, fileName: string, path: string, contentType: string): string;
     getFiles(userid: string, path: string, files: Array<string>): string;
@@ -55,7 +55,7 @@ export const nextcloudService: INextcloudService = {
         return http.put(`/nextcloud/files/user/${userid}/workspace/move/cloud?${urlParams}${parentDocumentNameParam}`);
     },
 
-    copyDocumentToWorkspace(userid: string, paths: Array<string>, parentId?: string): Promise<Array<Element>> {
+    copyDocumentToWorkspace(userid: string, paths: Array<string>, parentId?: string): Promise<Array<models.Element>> {
         let urlParams: URLSearchParams = new URLSearchParams();
         paths.forEach((path: string) => urlParams.append('path', path));
         const parentIdParam: string = parentId ? `&parentId=${parentId}` : '';

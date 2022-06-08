@@ -1,5 +1,6 @@
 {
   "nextcloud.title": "Nextcloud",
+  "nextcloud.virtual.media.title": "Nextcloud",
   "nextcloud.documents": "Documents synchronisés",
   "create.nextcloud.documents": "Créer un dossier synchronisé",
   "nextcloud.quota": "Espace utilisé synchronisé",

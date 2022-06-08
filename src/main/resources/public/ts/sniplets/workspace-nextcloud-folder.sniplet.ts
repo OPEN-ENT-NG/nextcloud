@@ -12,6 +12,7 @@ import {INextcloudUserService, nextcloudUserService} from "../services";
 import {UserNextcloud} from "../models/nextcloud-user.model";
 import {Subscription} from "rxjs";
 import rights from "../rights";
+import {NextcloudDocumentsUtils} from "../utils/nextcloud-documents.utils";
 
 declare let window: any;
 
@@ -178,23 +179,14 @@ class ViewModel implements IViewModel {
                 return [];
         });
         // first filter applies only when we happen to fetch its own folder and the second applies on document only
-        document.children = syncDocuments.filter(this.filterRemoveOwnDocument(document)).filter(this.filterDocumentOnly());
+        document.children = syncDocuments.filter(NextcloudDocumentsUtils.filterRemoveOwnDocument(document)).filter(NextcloudDocumentsUtils.filterDocumentOnly());
         safeApply(this.scope);
 
         Behaviours.applicationsBehaviours[NEXTCLOUD_APP].nextcloudService
             .sendDocuments({
                 parentDocument: document.path ? document : new SyncDocument().initParent(),
-                documents: syncDocuments.filter(this.filterRemoveOwnDocument(document))
+                documents: syncDocuments.filter(NextcloudDocumentsUtils.filterRemoveOwnDocument(document))
             });
-    }
-
-    /* Filter mode */
-    private filterDocumentOnly() {
-        return (syncDocument: SyncDocument) => syncDocument.isFolder && syncDocument.name != model.me.userId;
-    }
-
-    private filterRemoveOwnDocument(document: SyncDocument) {
-        return (syncDocument: SyncDocument) => syncDocument.path !== document.path;
     }
 
     setSwitchDisplayHandler(): void {
