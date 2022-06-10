@@ -29,3 +29,5 @@ module-starting-pack/src/main/resources/public/font
 /src/main/resources/public/template/entcore/
 /src/main/resources/public/js/
 /src/main/resources/view/
+/npm-debug.log
+/package-lock.json
