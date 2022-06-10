@@ -7,11 +7,11 @@ gradle:
   - ~/.gradle:/home/gradle/.gradle
 
 node:
-  image: opendigitaleducation/node
+  image: opendigitaleducation/node:10-alpine
   working_dir: /home/node/app
   volumes:
   - ./:/home/node/app
   - ~/.npm:/.npm
-  - ~/.npmrc:/home/node/.npmrc
+  - ~/.npmrc:/.npmrc
   - ~/.bowerrc:/home/node/.bowerrc
   - ~/.gitconfig:/home/node/.gitconfig
