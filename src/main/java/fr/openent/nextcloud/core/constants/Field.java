@@ -46,6 +46,7 @@ public class Field {
     public static final String DIR = "dir";
     public static final String DESTINATION = "destination";
     public static final String ERROR = "error";
+    public static final String URL = "url";
 
 
     public static final String STATUS = "status";

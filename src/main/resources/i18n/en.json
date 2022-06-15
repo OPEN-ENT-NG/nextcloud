@@ -4,5 +4,6 @@
   "nextcloud.documents": "Synchronized documents",
   "create.nextcloud.documents": "Create a synchronized folder",
   "nextcloud.quota": "Synchronized used space",
-  "nextcloud.file.already.exist": "Impossible to rename the file with this name: already exists"
+  "nextcloud.file.already.exist": "Impossible to rename the file with this name: already exists",
+  "nextcloud.url.connect": "To connect from your phone or computer"
 }

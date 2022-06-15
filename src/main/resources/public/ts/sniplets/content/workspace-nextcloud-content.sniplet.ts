@@ -23,6 +23,8 @@ interface IViewModel {
     onOpenContent(document: SyncDocument): void;
     getFile(document: SyncDocument): string;
 
+    nextcloudUrl: string;
+
     draggable: Draggable;
     lockDropzone: boolean;
     parentDocument: SyncDocument;
@@ -43,6 +45,9 @@ class ViewModel implements IViewModel {
     private nextcloudService: INextcloudService;
 
     subscriptions: Subscription = new Subscription();
+
+    nextcloudUrl: string;
+
     draggable: Draggable;
     lockDropzone: boolean;
 
@@ -55,9 +60,17 @@ class ViewModel implements IViewModel {
         this.nextcloudService = nextcloudService;
         this.documents = [new SyncDocument()];
         this.parentDocument = null;
+        this.nextcloudUrl = null;
 
         // on init we first sync its main folder content
-        this.initDocumentsContent(nextcloudService, scope);
+        Promise.all<void, string>([this.initDocumentsContent(nextcloudService, scope), nextcloudService.getNextcloudUrl()])
+            .then(([_, url]) => {
+                this.nextcloudUrl = url;
+            })
+            .catch((err: AxiosError) => {
+                const message: string = "Error while attempting to init or fetch nextcloud url: ";
+                console.error(message + err.message);
+            });
 
         // on receive documents from folder-tree sniplet
         this.subscriptions.add(Behaviours.applicationsBehaviours[NEXTCLOUD_APP].nextcloudService
@@ -77,11 +90,12 @@ class ViewModel implements IViewModel {
 
         scope.$parent.$on("$destroy", () => {
             this.parentDocument = null;
+            this.nextcloudUrl = null;
             this.subscriptions.unsubscribe();
         });
     }
 
-    private initDocumentsContent(nextcloudService: INextcloudService, scope) {
+    private async initDocumentsContent(nextcloudService: INextcloudService, scope): Promise<void> {
         let selectedFolderFromNextcloudTree: SyncDocument = this.getNextcloudTreeController()['selectedFolder'];
         nextcloudService.listDocument(model.me.userId, selectedFolderFromNextcloudTree.path)
             .then((documents: Array<SyncDocument>) => {
