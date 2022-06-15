@@ -170,6 +170,8 @@ class ViewModel implements IViewModel {
                             this.documents = syncedDocument
                                 .filter((syncDocument: SyncDocument) => syncDocument.path != selectedFolderFromNextcloudTree.path)
                                 .filter((syncDocument: SyncDocument) => syncDocument.name != model.me.userId);
+                            Behaviours.applicationsBehaviours[NEXTCLOUD_APP].nextcloudService.setContentContext(null);
+                            Behaviours.applicationsBehaviours[NEXTCLOUD_APP].nextcloudService.sendOpenFolderDocument(selectedFolderFromNextcloudTree);
                             this.safeApply();
                         })
                         .catch((err: AxiosError) => {

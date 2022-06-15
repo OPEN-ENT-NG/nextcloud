@@ -1,4 +1,4 @@
-import {FolderTreeProps, angular, template, Behaviours, workspace, model, idiom as lang, Document} from "entcore";
+import {FolderTreeProps, angular, template, Behaviours, workspace, model, idiom as lang, Document, init} from "entcore";
 import {Tree} from "entcore/types/src/ts/workspace/model";
 import {safeApply} from "../utils/safe-apply.utils";
 import {RootsConst} from "../core/constants/roots.const";
@@ -86,6 +86,8 @@ class ViewModel implements IViewModel {
 
     }
 
+
+
     initTree(folder: Array<SyncDocument>): void {
         // use this const to make it accessible to its folderTree inner context
         const viewModel: IViewModel = this;
@@ -105,11 +107,11 @@ class ViewModel implements IViewModel {
             },
             async openFolder(folder: models.Element): Promise<void> {
                 viewModel.setSwitchDisplayHandler();
-
                 // create handler in case icon are only clicked
-                viewModel.watchFolderState();
                 viewModel.selectedFolder = folder;
+                viewModel.watchFolderState();
                 if (!viewModel.openedFolder.some((openFolder: models.Element) => openFolder === folder)) {
+                    viewModel.openedFolder = viewModel.openedFolder.filter((e: models.Element) => (<any> e).path != (<any> folder).path);
                     viewModel.openedFolder.push(folder);
                 }
                 // synchronize documents and send content to its other sniplet content
@@ -181,7 +183,6 @@ class ViewModel implements IViewModel {
         // first filter applies only when we happen to fetch its own folder and the second applies on document only
         document.children = syncDocuments.filter(NextcloudDocumentsUtils.filterRemoveOwnDocument(document)).filter(NextcloudDocumentsUtils.filterDocumentOnly());
         safeApply(this.scope);
-
         Behaviours.applicationsBehaviours[NEXTCLOUD_APP].nextcloudService
             .sendDocuments({
                 parentDocument: document.path ? document : new SyncDocument().initParent(),
@@ -214,7 +215,6 @@ class ViewModel implements IViewModel {
             if (!viewModel.selectedFolder) {
                 viewModel.folderTree.openFolder(viewModel.documents[0]);
             }
-
             const $workspaceFolderTree: JQuery = $(WorkspaceEntcoreUtils.$ENTCORE_WORKSPACE + ' li > a');
 
             // using nextcloud content display
@@ -240,12 +240,11 @@ class ViewModel implements IViewModel {
             // go back to workspace content display
             // clear nextCloudTree interaction
             viewModel.selectedFolder = null;
-
-            arguments[0].currentTarget.classList.add('selected');
-
+            arguments[0].target.classList.add('selected');
             // update workspace folder content
             WorkspaceEntcoreUtils.updateWorkspaceDocuments(angular.element(arguments[0].target).scope().folder);
-
+            //set the right openedFolder
+            WorkspaceEntcoreUtils.workspaceScope()['openedFolder']['folder'] = angular.element(arguments[0].target).scope().folder;
             // display workspace buttons interactions
             WorkspaceEntcoreUtils.toggleProgressBarDisplay(true);
             // display workspace buttons interactions
