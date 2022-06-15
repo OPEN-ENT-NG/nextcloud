@@ -70,3 +70,89 @@ You also need to add ***"enable-nextcloud": true*** in ent-core.json, under work
 # Documentation API
 * [OCS](https://docs.nextcloud.com/server/latest/developer_manual/client_apis/OCS/ocs-api-overview.html)
 * [Webdav](https://docs.nextcloud.com/server/latest/developer_manual/client_apis/WebDAV/basic.html#)
+
+# SSO
+
+### Installation
+
+* Must use `SSO & SAML Authentication` plugin on Nextcloud [Guidelines](https://apps.nextcloud.com/apps/user_saml)
+* Must inject trigger SQL (see SQL script part) in order to propagate user saml within oc_user 
+
+## SQL trigger injection
+
+The reason we have to use trigger injection is because nextcloud has 2 distinct table : "oc_users" and "oc_user_saml_users"
+
+* "oc_users" occurs when you generate a user from nextcloud
+* "oc_user_saml_users" occurs when you generate a user with nextcloud's SSO
+
+If you log into the application via SSO FIRSTLY, you will generate a user in user_saml.
+Problem is, ENT through nextcloud can only read "oc_users" within webdav protocol
+To resolve this issues, we have to "duplicate" the user data oc_users and user_saml
+
+**You need to use "_nextcloud_" in order to access and interact tables in database**
+
+### postgresql
+```sql
+# propagate user (duplicate user saml into oc_user)
+
+CREATE OR REPLACE FUNCTION propagate_user() RETURNS TRIGGER AS
+$BODY$
+BEGIN
+    INSERT into oc_users(uid, displayname, uid_lower)
+    VALUES (NEW.uid, NEW.displayname, NEW.uid);
+    RETURN NEW;
+END
+$BODY$
+    LANGUAGE plpgsql;
+
+CREATE TRIGGER propagate_user
+    AFTER INSERT
+    ON oc_user_saml_users
+    FOR EACH ROW
+EXECUTE PROCEDURE propagate_user();
+
+
+# delete propagate user (if user saml deleted, then the duplicated user "oc_users" shall be deleted too)
+
+CREATE OR REPLACE FUNCTION delete_propagate_user() RETURNS TRIGGER AS
+$BODY$
+BEGIN
+    DELETE FROM oc_users WHERE uid = OLD.uid;
+    RETURN OLD;
+END
+$BODY$
+    LANGUAGE plpgsql;
+
+CREATE TRIGGER propagate_user
+    AFTER DELETE
+    ON oc_user_saml_users
+    FOR EACH ROW
+EXECUTE PROCEDURE delete_propagate_user();
+
+```
+
+Check its creation (trigger and function)
+```postgresql
+# trigger
+SELECT * FROM information_schema.triggers WHERE trigger_name = 'propagate_user'; 
+
+# function
+SELECT routine_name FROM information_schema.routines WHERE routine_type = 'FUNCTION' AND routine_name = 'propagate_user';
+
+# also workss for delete_propagate_user trigger/function
+```
+
+Drop its triggers/functions
+```postgresql
+# trigger
+DROP TRIGGER propagate_user ON oc_user_saml_users;
+
+# function
+DROP function propagate_user(); # must delete trigger first since it depends on it
+
+# also works for delete_propagate_user trigger/function
+```
+
+You can check the document for accessing your database :
+* [Database configuration](https://docs.nextcloud.com/server/latest/admin_manual/configuration_database/linux_database_configuration.html)
+
