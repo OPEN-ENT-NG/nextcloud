@@ -111,7 +111,7 @@ class ViewModel implements IViewModel {
                 viewModel.selectedFolder = folder;
                 viewModel.watchFolderState();
                 if (!viewModel.openedFolder.some((openFolder: models.Element) => openFolder === folder)) {
-                    viewModel.openedFolder = viewModel.openedFolder.filter(e => (<any> e).path != (<any> folder).path);
+                    viewModel.openedFolder = viewModel.openedFolder.filter((e: models.Element) => (<any> e).path != (<any> folder).path);
                     viewModel.openedFolder.push(folder);
                 }
                 // synchronize documents and send content to its other sniplet content
