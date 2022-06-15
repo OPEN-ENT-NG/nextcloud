@@ -1,10 +1,25 @@
-import axios, {AxiosResponse} from 'axios';
+import axios from 'axios';
 import MockAdapter from 'axios-mock-adapter';
 import {nextcloudService} from '../nextcloud.service';
 import {IDocumentResponse} from "../../models";
-import http from "axios";
 
 describe('NextcloudService', () => {
+
+    it('test fetching nextcloud config url via axios', done => {
+        const mock = new MockAdapter(axios);
+        let spy = jest.spyOn(axios, "get");
+
+        const data = {url: "your_url"};
+
+        mock.onGet(`/nextcloud/config/url`).reply(200, data);
+
+        nextcloudService.getNextcloudUrl().then((e) => {
+            expect(spy).toHaveBeenCalledWith(`/nextcloud/config/url`);
+            expect(data.url).toEqual(e);
+            done();
+        });
+    });
+
     it('Test listDocument method', done => {
         const mock = new MockAdapter(axios);
         const iDocumentResponse1: IDocumentResponse = {
