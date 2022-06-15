@@ -30,8 +30,8 @@ interface IViewModel {
 
     userInfo: UserNextcloud;
     folderTree: FolderTreeProps;
-    selectedFolder:any | models.Element;
-    openedFolder: Array<any | models.Element>;
+    selectedFolder: models.Element;
+    openedFolder: Array<models.Element>;
 
     // drag & drop actions
     initDraggable(): void;
@@ -47,7 +47,7 @@ class ViewModel implements IViewModel {
     userInfo: UserNextcloud;
     folderTree: FolderTreeProps;
     selectedFolder: models.Element;
-    openedFolder: Array<any |models.Element> = [];
+    openedFolder: Array<models.Element> = [];
     droppable: Draggable;
     documents: Array<SyncDocument>;
 
@@ -83,7 +83,6 @@ class ViewModel implements IViewModel {
             .subscribe((document: SyncDocument) => {
                 this.folderTree.openFolder(document)
                     .then(() => {
-                        this.folderTree.setSelectedFolder(document);
                         safeApply(scope);
                     });
 
@@ -111,16 +110,13 @@ class ViewModel implements IViewModel {
             isSelectedFolder(folder: models.Element): boolean {
                 return viewModel.selectedFolder === folder;
             },
-            setSelectedFolder(folder : models.Element): void {
-                viewModel.selectedFolder = folder;
-            },
-            async openFolder(folder: any | models.Element): Promise<void> {
+            async openFolder(folder: models.Element): Promise<void> {
                 viewModel.setSwitchDisplayHandler();
                 // create handler in case icon are only clicked
                 viewModel.selectedFolder = folder;
                 viewModel.watchFolderState();
                 if (!viewModel.openedFolder.some((openFolder: models.Element) => openFolder === folder)) {
-                    viewModel.openedFolder = viewModel.openedFolder.filter(e => e.path != folder.path);
+                    viewModel.openedFolder = viewModel.openedFolder.filter(e => (<any> e).path != (<any> folder).path);
                     viewModel.openedFolder.push(folder);
                 }
                 // synchronize documents and send content to its other sniplet content
@@ -249,7 +245,6 @@ class ViewModel implements IViewModel {
             // go back to workspace content display
             // clear nextCloudTree interaction
             viewModel.selectedFolder = null;
-            // console.log(arguments[0].currentTarget);
             arguments[0].target.classList.add('selected');
             // update workspace folder content
             WorkspaceEntcoreUtils.updateWorkspaceDocuments(angular.element(arguments[0].target).scope().folder);
