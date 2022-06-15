@@ -81,12 +81,7 @@ class ViewModel implements IViewModel {
         this.subscriptions.add(Behaviours.applicationsBehaviours[NEXTCLOUD_APP].nextcloudService
             .getOpenedFolderDocument()
             .subscribe((document: SyncDocument) => {
-                this.folderTree.openFolder(document)
-                    .then(() => {
-                        safeApply(scope);
-                    });
-
-
+                this.folderTree.openFolder(document);
             }));
 
     }
