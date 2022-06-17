@@ -26,6 +26,14 @@ public class EventBusHelper {
         return requestJsonObject(eb, action);
     }
 
+    public static Future<JsonObject> getDocument(EventBus eb, JsonObject action) {
+        return requestJsonObject(eb, action);
+    }
+
+    public static Future<JsonArray> listDocuments(EventBus eb, JsonObject action) {
+        return requestJsonArray(eb, action);
+    }
+
     public static Future<JsonArray> deleteDocument(EventBus eb, String id, String userId) {
         JsonObject action =  new JsonObject()
                 .put(Field.ACTION, WorkspaceEventBusActions.DELETE.action())

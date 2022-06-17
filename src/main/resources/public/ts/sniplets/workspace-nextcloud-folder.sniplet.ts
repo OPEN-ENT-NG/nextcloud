@@ -146,7 +146,7 @@ class ViewModel implements IViewModel {
             // case drop concerns workspace but we need extra check
             const document: any = JSON.parse(event.dataTransfer.getData("application/json"));
             // check if it s a workspace document with its identifier and format file to proceed move to nextcloud
-            if (document && (document._id && document.eType === "file")) {
+            if (document && (document._id && document.eType === "file" || document.eType === "folder")) {
                 if (angular.element(event.target).scope().folder instanceof SyncDocument) {
                     const syncedDocument: SyncDocument = angular.element(event.target).scope().folder;
                     let selectedDocuments: Array<Document> = WorkspaceEntcoreUtils.workspaceScope()['documentList']['_documents'];
