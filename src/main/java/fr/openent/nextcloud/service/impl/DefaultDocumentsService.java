@@ -28,6 +28,7 @@ import org.entcore.common.bus.WorkspaceHelper;
 import org.entcore.common.storage.Storage;
 import org.entcore.common.user.UserInfos;
 
+import javax.swing.*;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
@@ -112,12 +113,26 @@ public class DefaultDocumentsService implements DocumentsService {
         }
     }
 
+    /**
+     * Create a nextcloud folder
+     * @param userSession   The user session
+     * @param path          The path on the new folder on the nextcloud server
+     * @return              Promise with status of the creation
+     */
     private Future<JsonObject> createFolder(UserNextcloud.TokenProvider userSession, String path) {
         Promise<JsonObject> promise = Promise.promise();
-        this.client.rawAbs("MKCOL",nextcloudConfig.host() + nextcloudConfig.webdavEndpoint() + "/" +
+        this.client.rawAbs(NextcloudHttpMethod.MKCOL.method(), nextcloudConfig.host() + nextcloudConfig.webdavEndpoint() + "/" +
                         userSession.userId() + (path != null ? "/" + path : "" ))
                 .basicAuthentication(userSession.userId(), userSession.token())
-                .send(responseAsync -> promise.complete(new JsonObject().put(Field.STATUS, responseAsync.result().statusCode())));
+                .send(responseAsync -> {
+                    if (responseAsync.result().statusCode() != 201) {
+                        String messageToFormat = "[Nextcloud@%s::createFolder] Response status is not a HTTP 201 : %s : %s";
+                        HttpResponseHelper.reject(log, messageToFormat, this.getClass().getSimpleName(), responseAsync.result(), promise);
+                    } else {
+                        promise.complete(new JsonObject().put(Field.STATUS, Field.OK));
+                    }
+
+                });
         return promise.future();
     }
 
@@ -743,76 +758,74 @@ public class DefaultDocumentsService implements DocumentsService {
     public Future<JsonObject> moveFilesFromWorkspaceToNC(UserNextcloud.TokenProvider userSession, UserInfos user, List<String> idList, String parentName) {
         Promise<JsonObject> promise = Promise.promise();
 
-
-        getUniqueFileName(userSession, parentName, 0)
-                .onSuccess(path -> {
-                    Future<JsonObject> current = Future.succeededFuture();
-                    JsonObject result = new JsonObject();
-
+        Future<JsonObject> current = Future.succeededFuture();
+        JsonObject result = new JsonObject();
                     for (String id : idList) {
-                        //handling folders
                         current = current
-                                .compose(v -> {
-                                            log.error(path);
-                                            return handleDocumentMove(eventBus, userSession, id, path);
-                                        }
-                                )
-                                .compose(documentData -> {
-                                    if (documentData.getBoolean(Field.ISFOLDER)) {
-                                        return moveFilesFromWorkspaceToNC(userSession,
-                                                user,
-                                                documentData.getJsonArray(Field.LIST).stream().map(listItem -> ((JsonObject) listItem).getString(Field.UNDERSCORE_ID)).collect(Collectors.toList()),
-                                                documentData.getString(Field.NAME));
-                                    } else {
-                                        return moveFromWorkspaceToNC(userSession, id, parentName, result);
-                                    }
-                                });
+                                .compose(v -> handleDocumentMove(userSession, user, id, parentName));
                     }
                     current.onSuccess(res -> promise.complete(result))
                             .onFailure(err -> {
                                 String messageToFormat = "[Nextcloud@%s::moveFilesFromWorkspaceToNC] An error has occurred while moving documents : %s";
                                 PromiseHelper.reject(log, messageToFormat, this.getClass().getSimpleName(), err, promise);
                             });
-                });
-
 
         return promise.future();
     }
 
-    private Future<JsonObject> handleDocumentType(EventBus eventBus, UserNextcloud.TokenProvider userSession, JsonObject document, String parentPath) {
+    private Future<JsonObject> handleFolderMove(UserNextcloud.TokenProvider userSession, UserInfos user, JsonObject document, String parentPath) {
         Promise<JsonObject> promise = Promise.promise();
-        if (document.getString("eType").equals("folder")) {
-            JsonObject list = new JsonObject()
-                    .put(Field.ACTION, Field.LIST)
-                    .put(Field.USERID_CAPS, userSession.userId())
-                    .put(Field.PARENTID, document.getString("_id"));
-            getUniqueFileName(userSession, (parentPath != null ? parentPath + "/" : "" ) + document.getString("name"), 0)
-                            .compose(path -> {
-                                    log.error(path);
-                                    return createFolder(userSession, path);
-                            })
-                            .compose(status -> EventBusHelper.listDocuments(eventBus, list))
-                                .onSuccess(res -> {
-                                    promise.complete(new JsonObject()
-                                            .put(Field.ISFOLDER, true)
-                                            .put(Field.LIST, res)
-                                            .put(Field.NAME, document.getString("name")));
-                                });
-        } else {
-            promise.complete(new JsonObject().put(Field.ISFOLDER, false));
-        }
+        JsonObject folderData = new JsonObject();
+        JsonObject list = new JsonObject()
+                .put(Field.ACTION, Field.LIST)
+                .put(Field.USERID_CAPS, userSession.userId())
+                .put(Field.PARENTID, document.getString(Field.UNDERSCORE_ID));
+        getUniqueFileName(userSession, (parentPath != null ? parentPath + "/" : "" ) + document.getString(Field.NAME), 0)
+                .compose(path -> {
+                    folderData.put(Field.PATH, path);
+                    return createFolder(userSession, StringHelper.encodeUrlForNc(path.replace("%20", " ")));
+                })
+                .compose(status -> EventBusHelper.listDocuments(eventBus, list))
+                .compose(res ->
+                    moveFilesFromWorkspaceToNC(userSession, user, res.stream().map(listItem -> ((JsonObject) listItem).getString(Field.UNDERSCORE_ID)).collect(Collectors.toList()), parentPath))
+//                    promise.complete(folderData
+//                            .put(Field.STATUS, Field.OK)
+//                            .put(Field.ISFOLDER, true)
+//                            .put(Field.LIST, res)
+//                            .put(Field.NAME, document.getString(Field.NAME)));)
+                .onSuccess(promise::complete)
+                .onFailure(err -> {
+                    String messageToFormat = "[Nextcloud@%s::handleFolderMove] Error while handling folder creation : %s";
+                    PromiseHelper.reject(log, messageToFormat, FileHelper.class.getName(), err, promise);
+                });
         return promise.future();
     }
 
-    private Future<JsonObject> handleDocumentMove(EventBus eventBus, UserNextcloud.TokenProvider userSession, String id, String parentName) {
+    private Future<JsonObject> handleDocumentMove(UserNextcloud.TokenProvider userSession, UserInfos user, String id, String parentName) {
         Promise<JsonObject> promise = Promise.promise();
         JsonObject action = new JsonObject()
                 .put(Field.ACTION, "getDocument")
-                .put(Field.ID,id);
-
+                .put(Field.ID, id);
         EventBusHelper.getDocument(eventBus, action)
-                .compose(document -> handleDocumentType(eventBus, userSession, document, parentName))
-                .onSuccess(promise::complete);
+                .compose(document -> {
+                    //handling folder case
+                    if (document.containsKey(Field.ETYPE) && document.getString(Field.ETYPE).equals(Field.FOLDER)) {
+                        return handleFolderMove(userSession, user, document, parentName);
+                    } else {
+                        return moveFromWorkspaceToNC(userSession, id, parentName);
+//                        Promise<JsonObject> fileData = Promise.promise();
+//                        fileData.complete(new JsonObject()
+//                                .put(Field.STATUS, Field.OK)
+//                                .put(Field.NAME, document.getString(Field.NAME))
+//                                .put(Field.ISFOLDER, false));
+//                        return fileData.future();
+                    }
+                })
+                .onSuccess(promise::complete)
+                .onFailure(err -> {
+                    String messageToFormat = "[Nextcloud@%s::handleDocumentMove] Error while moving document : %s";
+                    PromiseHelper.reject(log, messageToFormat, FileHelper.class.getName(), err, promise);
+                });
         return promise.future();
     }
 
@@ -821,10 +834,9 @@ public class DefaultDocumentsService implements DocumentsService {
      * @param userSession   User session
      * @param id            Identifier of the file
      * @param parentName    Name of the parent folder in Nextcloud
-     * @param result        JsonObject containing all the status about the move
      * @return              Future Json with status of the move.
      */
-    private Future<JsonObject> moveFromWorkspaceToNC(UserNextcloud.TokenProvider userSession, String id, String parentName, JsonObject result) {
+    private Future<JsonObject> moveFromWorkspaceToNC(UserNextcloud.TokenProvider userSession, String id, String parentName) {
         Promise<JsonObject> promise = Promise.promise();
 
         sendWorkspaceFileToNC(userSession, id, parentName)
