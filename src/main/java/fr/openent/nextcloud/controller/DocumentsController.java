@@ -194,7 +194,24 @@ public class DocumentsController extends ControllerHelper {
         if (!listFiles.isEmpty())
             UserUtils.getUserInfos(eb, request, user ->
                     userService.getUserSession(user.getUserId())
-                            .compose(userSession -> documentsService.moveFilesFromWorkspaceToNC(userSession, user, listFiles, parentId))
+                            .compose(userSession -> documentsService.moveDocumentsFromWorkspaceToNC(userSession, user, listFiles, parentId))
+                            .onSuccess(res -> renderJson(request, res))
+                            .onFailure(err -> renderError(request, new JsonObject().put(Field.ERROR, err.getMessage()))));
+        else
+            badRequest(request);
+    }
+
+    @Put("/files/user/:userid/workspace/copy/cloud")
+    @ApiDoc("Copy a file from ENT workspace to cloud")
+    @SecuredAction(value = "", type = ActionType.RESOURCE)
+    @ResourceFilter(OwnerFilter.class)
+    public void copyToCloud(HttpServerRequest request) {
+        List<String> listFiles = request.params().getAll(Field.ID);
+        String parentId = request.params().get(Field.PARENTNAME);
+        if (!listFiles.isEmpty())
+            UserUtils.getUserInfos(eb, request, user ->
+                    userService.getUserSession(user.getUserId())
+                            .compose(userSession -> documentsService.copyDocumentsFromWorkspaceToNC(userSession, user, listFiles, parentId))
                             .onSuccess(res -> renderJson(request, res))
                             .onFailure(err -> renderError(request, new JsonObject().put(Field.ERROR, err.getMessage()))));
         else

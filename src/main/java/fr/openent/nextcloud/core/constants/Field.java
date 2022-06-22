@@ -32,14 +32,12 @@ public class Field {
     public static final String QUOTA = "quota";
     public static final String FREE = "free";
     public static final String APP = "nextcloud";
-    public static final String LIST = "list";
     public static final String RELATIVE = "relative";
     public static final String TOTAL = "total";
     public static final String GROUPID = "groupId";
     public static final String KEY = "key";
     public static final String FILECOUNT = "File-Count";
     public static final String VALUE = "value";
-    public static final String LISTFILES = "List-Files";
     public static final String APPPASSWORD = "apppassword";
     public static final String FILENAME = "fileName";
     public static final String FILENAMELOWER = "filename";
