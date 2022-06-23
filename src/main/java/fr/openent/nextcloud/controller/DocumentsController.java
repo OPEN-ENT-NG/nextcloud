@@ -97,6 +97,7 @@ public class DocumentsController extends ControllerHelper {
     public void moveDocuments(HttpServerRequest request) {
         String path = request.getParam(Field.PATH);
         String destPath = request.getParam(Field.DESTPATH);
+        String moveAction = request.getParam(Field.MOVEACTION);
         if ((path != null && !path.isEmpty()) && (destPath != null && !destPath.isEmpty())) {
             UserUtils.getUserInfos(eb, request, user ->
                     userService.getUserSession(user.getUserId())

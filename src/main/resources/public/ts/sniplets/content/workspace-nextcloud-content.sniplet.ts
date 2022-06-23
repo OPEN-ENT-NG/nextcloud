@@ -1,4 +1,4 @@
-import {Behaviours, model, idiom as lang, angular, Document, workspace} from "entcore";
+import {angular, Behaviours, idiom as lang, model, workspace} from "entcore";
 import {NEXTCLOUD_APP} from "../../nextcloud.behaviours";
 import {Subscription} from "rxjs";
 import {Draggable, SyncDocument} from "../../models";
@@ -8,7 +8,6 @@ import {ToolbarSnipletViewModel} from "./workspace-nextcloud-toolbar.sniplet";
 import {AxiosError, AxiosResponse} from "axios";
 import {UploadFileSnipletViewModel} from "./workspace-nextcloud-upload-file.sniplet";
 import models = workspace.v2.models;
-import {Object} from "core-js";
 
 declare let window: any;
 
@@ -61,6 +60,7 @@ class ViewModel implements IViewModel {
         this.documents = [new SyncDocument()];
         this.parentDocument = null;
         this.nextcloudUrl = null;
+        this.selectedDocuments = new Array<SyncDocument>();
 
         // on init we first sync its main folder content
         Promise.all<void, string>([this.initDocumentsContent(nextcloudService, scope), nextcloudService.getNextcloudUrl()])
@@ -155,37 +155,78 @@ class ViewModel implements IViewModel {
             selectedFolderFromNextcloudTree = this.parentDocument;
         }
         let folderContent: any = angular.element(element).scope();
+        // if interacted into workspace
         if (folderContent && folderContent.folder) {
-            if (folderContent.folder instanceof models.Element) {
-                let fileToMove: Set<SyncDocument> = new Set(this.selectedDocuments).add(document);
-                let finalUpload: Array<string> = Array.from(fileToMove)
-                    .map((file: SyncDocument) => file.path);
-                if (finalUpload.length) {
-                    this.nextcloudService.moveDocumentNextcloudToWorkspace(model.me.userId, finalUpload, folderContent.folder._id)
-                        .then(async (_: AxiosResponse) => {
-                            return nextcloudService.listDocument(model.me.userId, selectedFolderFromNextcloudTree.path ?
-                                selectedFolderFromNextcloudTree.path : null);
-                        })
-                        .then((syncedDocument: Array<SyncDocument>) => {
-                            this.documents = syncedDocument
-                                .filter((syncDocument: SyncDocument) => syncDocument.path != selectedFolderFromNextcloudTree.path)
-                                .filter((syncDocument: SyncDocument) => syncDocument.name != model.me.userId);
-                            Behaviours.applicationsBehaviours[NEXTCLOUD_APP].nextcloudService.setContentContext(null);
-                            Behaviours.applicationsBehaviours[NEXTCLOUD_APP].nextcloudService.sendOpenFolderDocument(selectedFolderFromNextcloudTree);
-                            this.safeApply();
-                        })
-                        .catch((err: AxiosError) => {
-                            const message: string = "Error while attempting to move nextcloud document to workspace " +
-                                "or update nextcloud list";
-                            console.error(message + err.message);
-                        });
-                }
-            }
-            if (folderContent.folder instanceof SyncDocument) {
-                // if interacted into nextcloud
+            this.processMoveToWorkspace(folderContent, document, selectedFolderFromNextcloudTree);
+        }
+        // if interacted into nextcloud (folderContent as being te targeted path to move in)
+        if (folderContent.content instanceof SyncDocument && folderContent.content.isFolder) {
+            // if interacted into nextcloud
+            this.processMoveToNextcloud(document, folderContent.content, selectedFolderFromNextcloudTree);
+        }
+    }
+
+    private processMoveToWorkspace(folderContent: any, document: SyncDocument, selectedFolderFromNextcloudTree: SyncDocument): void {
+        if (folderContent.folder instanceof models.Element) {
+            let fileToMove: Set<SyncDocument> = new Set(this.selectedDocuments).add(document);
+            let finalUpload: Array<string> = Array.from(fileToMove)
+                .map((file: SyncDocument) => file.path);
+            if (finalUpload.length) {
+                this.nextcloudService.moveDocumentNextcloudToWorkspace(model.me.userId, finalUpload, folderContent.folder._id)
+                    .then(async (_: AxiosResponse) => {
+                        return nextcloudService.listDocument(model.me.userId, selectedFolderFromNextcloudTree.path ?
+                            selectedFolderFromNextcloudTree.path : null);
+                    })
+                    .then((syncedDocument: Array<SyncDocument>) => {
+                        this.documents = syncedDocument
+                            .filter((syncDocument: SyncDocument) => syncDocument.path != selectedFolderFromNextcloudTree.path)
+                            .filter((syncDocument: SyncDocument) => syncDocument.name != model.me.userId);
+                        this.updateFolderDocument(selectedFolderFromNextcloudTree);
+                        this.safeApply();
+                    })
+                    .catch((err: AxiosError) => {
+                        const message: string = "Error while attempting to move nextcloud document to workspace " +
+                            "or update nextcloud list";
+                        console.error(message + err.message);
+                    });
             }
         }
     }
+
+    private async moveAllDocuments(document: SyncDocument, target: SyncDocument): Promise<AxiosResponse[]> {
+        let promises: Array<Promise<AxiosResponse>> = [];
+        this.selectedDocuments.push(document);
+        let selectedSet: Set<SyncDocument> = new Set(this.selectedDocuments.filter((doc: SyncDocument) => !doc.isFolder));
+        selectedSet.forEach((doc: SyncDocument) => {
+            promises.push(this.nextcloudService.moveDocument(model.me.userId, doc.path, target.path + doc.name));
+        });
+        return await Promise.all(promises);
+    }
+
+    private processMoveToNextcloud(document: SyncDocument, target: SyncDocument, selectedFolderFromNextcloudTree: SyncDocument): void {
+            this.moveAllDocuments(document, target)
+            .then(async (_: AxiosResponse[]) => {
+                return nextcloudService.listDocument(model.me.userId, selectedFolderFromNextcloudTree.path ?
+                    selectedFolderFromNextcloudTree.path : null);
+            })
+            .then((syncedDocument: Array<SyncDocument>) => {
+                this.documents = syncedDocument
+                    .filter((syncDocument: SyncDocument) => syncDocument.path != selectedFolderFromNextcloudTree.path)
+                    .filter((syncDocument: SyncDocument) => syncDocument.name != model.me.userId);
+                this.updateFolderDocument(selectedFolderFromNextcloudTree);
+                this.safeApply();
+            })
+            .catch((err: AxiosError) => {
+                const message: string = "Error while attempting to move nextcloud document to workspace " +
+                    "or update nextcloud list";
+                console.error(message + err.message);
+            });
+    }
+
+    private updateFolderDocument = (selectedFolderFromNextcloudTree: SyncDocument): void => {
+        Behaviours.applicationsBehaviours[NEXTCLOUD_APP].nextcloudService.setContentContext(null);
+        Behaviours.applicationsBehaviours[NEXTCLOUD_APP].nextcloudService.sendOpenFolderDocument(selectedFolderFromNextcloudTree);
+    };
 
     onSelectContent(content: SyncDocument): void {
         this.selectedDocuments = this.documents.filter((document: SyncDocument) => document.selected);
