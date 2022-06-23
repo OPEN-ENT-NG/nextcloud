@@ -18,6 +18,7 @@ public class Field {
     public static final String EMAIL = "email";
     public static final String PHONE = "phone";
     public static final String PARENTNAME = "parentName";
+    public static final String ASCIISPACE = "%20";
     public static final String ACTION = "action";
     public static final String OWNER = "owner";
     public static final String OWNERNAME = "ownerName";

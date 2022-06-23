@@ -759,15 +759,7 @@ public class DefaultDocumentsService implements DocumentsService {
         JsonArray results = new JsonArray();
         Future<JsonObject> current = Future.succeededFuture();
         for (String id : idList) {
-            current = current.compose(v -> {
-                Future<JsonObject> future = handleDocumentCopy(userSession, user, id, parentName);
-                Promise<JsonObject> promiseSucceed = Promise.promise();
-                future.onComplete(moveStatus -> {
-                    results.add(moveStatus.result());
-                    promiseSucceed.complete();
-                });
-                return promiseSucceed.future();
-            });
+            current = current.compose(v -> completeResult(processDocumentCopy(userSession, user, id, parentName) ,id, results));
         }
         current.onSuccess(res -> {
                     promise.complete(new JsonObject().put(Field.DATA, results));
@@ -781,6 +773,30 @@ public class DefaultDocumentsService implements DocumentsService {
     }
 
     /**
+     * Complete result array with each status and data about document move / copy.
+     * @param future    Future with the result of the specific move / copy
+     * @param id        Identifier of the document.
+     * @param results   Array with the result of all move / copy.
+     * @return          Future JsonObject of the move / copy.
+     */
+    public Future<JsonObject> completeResult(Future<JsonObject> future, String id, JsonArray results) {
+        Promise<JsonObject> promiseSucceed = Promise.promise();
+        future
+                .onSuccess(moveStatus -> {
+                    results.add(moveStatus);
+                    promiseSucceed.complete();
+                })
+                .onFailure(err -> {
+                    results.add(new JsonObject()
+                            .put(Field.ID, id)
+                            .put(Field.STATUS, Field.KO_LOWER)
+                            .put(Field.ERROR, err.getMessage()));
+                })
+                .onComplete(v -> promiseSucceed.complete());
+        return promiseSucceed.future();
+    }
+
+    /**
      * Move all the documents listed in id idList from workspace to Nextcloud
      * @param userSession   User session
      * @param user          User infos
@@ -791,27 +807,18 @@ public class DefaultDocumentsService implements DocumentsService {
     @Override
     public Future<JsonObject> moveDocumentsFromWorkspaceToNC(UserNextcloud.TokenProvider userSession, UserInfos user, List<String> idList, String parentName) {
         Promise<JsonObject> promise = Promise.promise();
-        JsonObject results = new JsonObject();
+        JsonArray results = new JsonArray();
         Future<JsonObject> current = Future.succeededFuture();
                     for (String id : idList) {
-                        current = current.compose(v -> {
-                            Future<JsonObject> future = handleDocumentMove(userSession, user, id, parentName);
-                            Promise<JsonObject> promiseSucceed = Promise.promise();
-                            future.onComplete(moveStatus -> {
-                                results.put(id, moveStatus.result());
-                                promiseSucceed.complete();
-                            });
-                            return promiseSucceed.future();
-                        });
+                        current = current.compose(v -> completeResult(processDocumentMove(userSession, user, id, parentName) ,id, results));
                     }
                     current.onSuccess(res -> {
-                                promise.complete(results);
+                                promise.complete(new JsonObject().put(Field.DATA, results));
                             })
                             .onFailure(err -> {
                                 String messageToFormat = "[Nextcloud@%s::moveDocumentsFromWorkspaceToNC] An error has occurred while moving documents : %s";
                                 PromiseHelper.reject(log, messageToFormat, this.getClass().getSimpleName(), err, promise);
                             });
-
         return promise.future();
     }
 
@@ -823,7 +830,7 @@ public class DefaultDocumentsService implements DocumentsService {
      * @param parentPath    The parent path in the nextcloud server
      * @return              Future with details about the copy
      */
-    private Future<JsonObject> handleDocumentCopy(UserNextcloud.TokenProvider userSession, UserInfos user, String id, String parentPath) {
+    private Future<JsonObject> processDocumentCopy(UserNextcloud.TokenProvider userSession, UserInfos user, String id, String parentPath) {
         Promise<JsonObject> promise = Promise.promise();
         JsonObject action = new JsonObject()
                 .put(Field.ACTION, WorkspaceEventBusActions.GETDOCUMENT.action())
@@ -831,7 +838,7 @@ public class DefaultDocumentsService implements DocumentsService {
         EventBusHelper.requestJsonObject(eventBus, action)
                 .compose(document -> {
                     if (document.containsKey(Field.ETYPE) && document.getString(Field.ETYPE).equals(Field.FOLDER)) {
-                        return handleFolderCopy(userSession, user, document, parentPath);
+                        return processFolderCopy(userSession, user, document, parentPath);
                     } else {
                         return sendWorkspaceFileToNC(userSession, id, parentPath);
                     }
@@ -852,9 +859,9 @@ public class DefaultDocumentsService implements DocumentsService {
      * @param parentPath    The parent path in the nextcloud server
      * @return              Future with details about the move
      */
-    private Future<JsonObject> handleDocumentMove(UserNextcloud.TokenProvider userSession, UserInfos user, String id, String parentPath) {
+    private Future<JsonObject> processDocumentMove(UserNextcloud.TokenProvider userSession, UserInfos user, String id, String parentPath) {
         Promise<JsonObject> promise = Promise.promise();
-        handleDocumentCopy(userSession, user, id, parentPath)
+        processDocumentCopy(userSession, user, id, parentPath)
                 .onSuccess(res -> {
                     JsonObject delete =  new JsonObject()
                             .put(Field.ACTION, WorkspaceEventBusActions.DELETE.action())
@@ -879,19 +886,19 @@ public class DefaultDocumentsService implements DocumentsService {
      * @param parentPath  The parent path in the nextcloud server.
      * @return Future with the details of the copy
      */
-    private Future<JsonObject> handleFolderCopy(UserNextcloud.TokenProvider userSession, UserInfos user, JsonObject document, String parentPath) {
+    private Future<JsonObject> processFolderCopy(UserNextcloud.TokenProvider userSession, UserInfos user, JsonObject document, String parentPath) {
         Promise<JsonObject> promise = Promise.promise();
         JsonObject folderData = new JsonObject();
-        JsonObject list = new JsonObject()
+        JsonObject action = new JsonObject()
                 .put(Field.ACTION, WorkspaceEventBusActions.LIST.action())
                 .put(Field.USERID_CAPS, userSession.userId())
                 .put(Field.PARENTID, document.getString(Field.UNDERSCORE_ID));
         getUniqueFileName(userSession, (parentPath != null ? parentPath + "/" : "") + document.getString(Field.NAME), 0)
                 .compose(path -> {
                     folderData.put(Field.PATH, path);
-                    return createFolder(userSession, StringHelper.encodeUrlForNc(path.replace("%20", " ")));
+                    return createFolder(userSession, StringHelper.encodeUrlForNc(path.replace(Field.ASCIISPACE, " ")));
                 })
-                .compose(status -> EventBusHelper.requestJsonArray(eventBus, list))
+                .compose(status -> EventBusHelper.requestJsonArray(eventBus, action))
                 .compose(res ->
                         copyDocumentsFromWorkspaceToNC(userSession,
                                 user,
