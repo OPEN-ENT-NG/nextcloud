@@ -1,6 +1,7 @@
 package fr.openent.nextcloud.model;
 
 import fr.openent.nextcloud.core.constants.Field;
+import fr.openent.nextcloud.helper.StringHelper;
 import fr.openent.nextcloud.service.impl.DefaultDocumentsService;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -26,7 +27,7 @@ public class NextcloudFolder {
         try {
             this.folderItemsInfos = folderInfos.stream().map(fileInfo -> new JsonObject(
                     fileInfo.toString())).collect(Collectors.toList());
-            this.name = this.folderItemsInfos.get(0).getString(Field.DISPLAYNAME).replace("%20", " ");
+            this.name = StringHelper.decodeUrlForNc(this.folderItemsInfos.get(0).getString(Field.DISPLAYNAME));
             //removing first one because it is the folder itself.
             this.folderItemsInfos.remove(0);
         } catch (Exception e) {
