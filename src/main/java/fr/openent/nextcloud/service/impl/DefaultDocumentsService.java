@@ -782,10 +782,7 @@ public class DefaultDocumentsService implements DocumentsService {
     public Future<JsonObject> completeResult(Future<JsonObject> future, String id, JsonArray results) {
         Promise<JsonObject> promiseSucceed = Promise.promise();
         future
-                .onSuccess(moveStatus -> {
-                    results.add(moveStatus);
-                    promiseSucceed.complete();
-                })
+                .onSuccess(results::add)
                 .onFailure(err -> {
                     results.add(new JsonObject()
                             .put(Field.ID, id)
