@@ -12,10 +12,13 @@ public class Field {
     public static final String NAME = "name";
     public static final String DISPLAYNAME = "displayname";
     public static final String YES = "yes";
+    public static final String ETYPE = "eType";
+    public static final String FOLDER = "folder";
     public static final String DISPLAYNAMECAMEL = "displayName";
     public static final String EMAIL = "email";
     public static final String PHONE = "phone";
     public static final String PARENTNAME = "parentName";
+    public static final String ASCIISPACE = "%20";
     public static final String ACTION = "action";
     public static final String OWNER = "owner";
     public static final String OWNERNAME = "ownerName";
@@ -36,7 +39,6 @@ public class Field {
     public static final String KEY = "key";
     public static final String FILECOUNT = "File-Count";
     public static final String VALUE = "value";
-    public static final String LISTFILES = "List-Files";
     public static final String APPPASSWORD = "apppassword";
     public static final String FILENAME = "fileName";
     public static final String FILENAMELOWER = "filename";

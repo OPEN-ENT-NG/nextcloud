@@ -2,6 +2,7 @@ package fr.openent.nextcloud.core.enums;
 
 public enum NextcloudHttpMethod {
     PROPFIND("PROPFIND"),
+    MKCOL("MKCOL"),
     MOVE("MOVE");
 
 

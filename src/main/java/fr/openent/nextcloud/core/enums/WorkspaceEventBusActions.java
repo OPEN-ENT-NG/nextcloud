@@ -2,7 +2,9 @@ package fr.openent.nextcloud.core.enums;
 
 public enum WorkspaceEventBusActions {
     ADDFOLDER("addFolder"),
-    DELETE("delete");
+    DELETE("delete"),
+    GETDOCUMENT("getDocument"),
+    LIST("list");
 
     private final String action;
 
