@@ -49,7 +49,6 @@ public class Field {
     public static final String DESTINATION = "destination";
     public static final String ERROR = "error";
     public static final String URL = "url";
-    public static final String MOVEACTION = "moveAction";
 
 
 

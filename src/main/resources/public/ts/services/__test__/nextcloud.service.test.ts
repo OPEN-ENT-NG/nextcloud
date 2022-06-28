@@ -206,7 +206,7 @@ describe('NextcloudService', () => {
     it('Test move document should require action param such as RENAME document/folder', done => {
         const mock = new MockAdapter(axios);
         const userId = "userId";
-        const expectedEndpoint: string = `/nextcloud/files/user/userId/move?path=path1&destPath=path2&moveAction=RENAME`;
+        const expectedEndpoint: string = `/nextcloud/files/user/userId/move?path=path1&destPath=path2`;
 
         let spy = jest.spyOn(axios, "put");
         mock.onPut(expectedEndpoint).reply(200);
@@ -220,7 +220,7 @@ describe('NextcloudService', () => {
     it('Test move document should require action param such as MOVE document/folder', done => {
         const mock = new MockAdapter(axios);
         const userId = "userId";
-        const expectedEndpoint: string = `/nextcloud/files/user/userId/move?path=path1&destPath=path2&moveAction=MOVE`;
+        const expectedEndpoint: string = `/nextcloud/files/user/userId/move?path=path1&destPath=path2`;
 
         let spy = jest.spyOn(axios, "put");
         mock.onPut(expectedEndpoint).reply(200);
