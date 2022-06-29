@@ -194,9 +194,9 @@ class ViewModel implements IViewModel {
     }
 
     private async moveAllDocuments(document: SyncDocument, target: SyncDocument): Promise<AxiosResponse[]> {
-        let promises: Array<Promise<AxiosResponse>> = [];
+        const promises: Array<Promise<AxiosResponse>> = [];
         this.selectedDocuments.push(document);
-        let selectedSet: Set<SyncDocument> = new Set(this.selectedDocuments.filter((doc: SyncDocument) => !doc.isFolder));
+        const selectedSet: Set<SyncDocument> = new Set(this.selectedDocuments.filter((doc: SyncDocument) => !doc.isFolder));
         selectedSet.forEach((doc: SyncDocument) => {
             promises.push(this.nextcloudService.moveDocument(model.me.userId, doc.path, target.path + doc.name));
         });
