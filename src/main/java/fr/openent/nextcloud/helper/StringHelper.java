@@ -64,8 +64,6 @@ public class StringHelper {
             log.error(String.format(messageToFormat, e.getMessage()));
             return subUrl;
         }
-        subUrl = subUrl.replace(Field.ASCII_SLASH, Field.URL_DELIMITER)
-                .replace(Field.PLUS_SIGN, Field.ASCIISPACE);
         return subUrl;
     }
 }
