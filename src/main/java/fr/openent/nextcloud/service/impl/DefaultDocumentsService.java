@@ -1,6 +1,7 @@
 package fr.openent.nextcloud.service.impl;
 import fr.openent.nextcloud.config.NextcloudConfig;
 import fr.openent.nextcloud.core.constants.Field;
+
 import fr.openent.nextcloud.core.enums.WorkspaceEventBusActions;
 import fr.openent.nextcloud.core.enums.NextcloudHttpMethod;
 import fr.openent.nextcloud.core.enums.XmlnsAttr;
@@ -208,22 +209,15 @@ public class DefaultDocumentsService implements DocumentsService {
     @Override
     public Future<JsonObject> moveDocument(UserNextcloud.TokenProvider userSession, String path, String destPath) {
         Promise<JsonObject> promise = Promise.promise();
+
         String endpoint = nextcloudConfig.host() + nextcloudConfig.webdavEndpoint() + "/" + userSession.userId();
-        this.listFiles(userSession, destPath)
-                .onSuccess(files -> {
-                    if (files.isEmpty()) {
-                        this.client.rawAbs(NextcloudHttpMethod.MOVE.method(), endpoint + "/" + path)
-                                .basicAuthentication(userSession.userId(), userSession.token())
-                                .putHeader(Field.DESTINATION, endpoint + "/" + destPath)
-                                .send(responseAsync -> this.onMoveDocumentHandler(responseAsync, promise));
-                    } else {
-                        promise.fail("nextcloud.file.already.exist");
-                    }
-                })
-                .onFailure(promise::fail);
+        this.client.rawAbs(NextcloudHttpMethod.MOVE.method(), endpoint + "/" + path)
+                .basicAuthentication(userSession.userId(), userSession.token())
+                .putHeader(Field.DESTINATION, endpoint + "/" + destPath)
+                .send(responseAsync -> this.onMoveDocumentHandler(responseAsync, promise));
+
         return promise.future();
     }
-
 
     /**
      * Proceed async event after HTTP MOVE documents API endpoint has been sent

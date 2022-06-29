@@ -39,7 +39,7 @@ export const nextcloudService: INextcloudService = {
     },
 
     moveDocument: (userid: string, path: string, destPath: string): Promise<AxiosResponse> => {
-        const urlParam: string = `?path=${path}&destPath=${destPath}`
+        const urlParam: string = `?path=${path}&destPath=${destPath}`;
         return http.put(`/nextcloud/files/user/${userid}/move${urlParam}`);
     },
 
