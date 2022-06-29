@@ -169,8 +169,7 @@ class ViewModel implements IViewModel {
     private processMoveToWorkspace(folderContent: any, document: SyncDocument, selectedFolderFromNextcloudTree: SyncDocument): void {
         if (folderContent.folder instanceof models.Element) {
             const filesToMove: Set<SyncDocument> = new Set(this.selectedDocuments).add(document);
-            const filesPath: Array<string> = Array.from(filesToMove)
-                .map((file: SyncDocument) => file.path);
+            const filesPath: Array<string> = Array.from(filesToMove).map((file: SyncDocument) => file.path);
             if (filesPath.length) {
                 this.nextcloudService.moveDocumentNextcloudToWorkspace(model.me.userId, filesPath, folderContent.folder._id)
                     .then(() => {
@@ -200,7 +199,7 @@ class ViewModel implements IViewModel {
         selectedSet.forEach((doc: SyncDocument) => {
             promises.push(this.nextcloudService.moveDocument(model.me.userId, doc.path, target.path + doc.name));
         });
-        return await Promise.all(promises);
+        return await Promise.all<AxiosResponse>(promises);
     }
 
     private processMoveToNextcloud(document: SyncDocument, target: SyncDocument, selectedFolderFromNextcloudTree: SyncDocument): void {
