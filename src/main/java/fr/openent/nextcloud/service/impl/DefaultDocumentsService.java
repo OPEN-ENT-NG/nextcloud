@@ -634,7 +634,7 @@ public class DefaultDocumentsService implements DocumentsService {
                 )
                 .compose(writeInfo -> {
                     writeInfo.put(Field.PARENTID, parentId);
-                    return FileHelper.addFileReference(writeInfo, user, fileName.replace("%20", " "), workspaceHelper);
+                    return FileHelper.addFileReference(writeInfo, user, StringHelper.decodeUrlForNc(fileName), workspaceHelper);
                 })
                 .compose(resDoc -> {
                     fileInfos[0] = resDoc;

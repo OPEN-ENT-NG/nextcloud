@@ -19,6 +19,10 @@ public class Field {
     public static final String PHONE = "phone";
     public static final String PARENTNAME = "parentName";
     public static final String ASCIISPACE = "%20";
+    public static final String PLUS_SIGN = "+";
+    public static final String URL_DELIMITER = "/";
+    public static final String ASCII_SLASH = "%2F";
+    public static final String UTF8 = "UTF-8";
     public static final String ACTION = "action";
     public static final String OWNER = "owner";
     public static final String OWNERNAME = "ownerName";

@@ -1,9 +1,11 @@
 package fr.openent.nextcloud.helper;
 
+import fr.openent.nextcloud.core.constants.Field;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 
 import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.text.Normalizer;
 
@@ -35,16 +37,33 @@ public class StringHelper {
      * @return      Modified URL
      */
     public static String encodeUrlForNc(String url) {
-        String subUrl = removeFirstChar("/", url);
+        String subUrl = removeFirstChar(Field.URL_DELIMITER, url);
         try {
-            subUrl = URLEncoder.encode(subUrl, "UTF-8");
+            subUrl = URLEncoder.encode(subUrl, Field.UTF8);
         } catch (UnsupportedEncodingException e) {
             String messageToFormat = "[Nextcloud@::encodeUrlForNc] Error while encoding URL : %s";
             log.error(String.format(messageToFormat, e.getMessage()));
             return subUrl;
         }
-        subUrl = subUrl.replace("%2F", "/")
-                .replace("+", "%20");
+        subUrl = subUrl.replace(Field.ASCII_SLASH, Field.URL_DELIMITER)
+                .replace(Field.PLUS_SIGN, Field.ASCIISPACE);
+        return subUrl;
+    }
+
+    /**
+     * Decode URL for Nextcloud server
+     * @param url   Default URL
+     * @return      Modified URL
+     */
+    public static String decodeUrlForNc(String url) {
+        String subUrl = removeFirstChar(Field.URL_DELIMITER, url);
+        try {
+            subUrl = URLDecoder.decode(subUrl, Field.UTF8);
+        } catch (UnsupportedEncodingException e) {
+            String messageToFormat = "[Nextcloud@::decodeUrlForNc] Error while decoding URL : %s";
+            log.error(String.format(messageToFormat, e.getMessage()));
+            return subUrl;
+        }
         return subUrl;
     }
 }
