@@ -160,7 +160,7 @@ class ViewModel implements IViewModel {
             this.processMoveToWorkspace(folderContent, document, selectedFolderFromNextcloudTree);
         }
         // if interacted into nextcloud (folderContent as being te targeted path to move in)
-        if (folderContent.content instanceof SyncDocument && folderContent.content.isFolder) {
+        if (folderContent && folderContent.content instanceof SyncDocument && folderContent.content.isFolder) {
             // if interacted into nextcloud
             this.processMoveToNextcloud(document, folderContent.content, selectedFolderFromNextcloudTree);
         }
@@ -168,12 +168,12 @@ class ViewModel implements IViewModel {
 
     private processMoveToWorkspace(folderContent: any, document: SyncDocument, selectedFolderFromNextcloudTree: SyncDocument): void {
         if (folderContent.folder instanceof models.Element) {
-            let fileToMove: Set<SyncDocument> = new Set(this.selectedDocuments).add(document);
-            let finalUpload: Array<string> = Array.from(fileToMove)
+            const filesToMove: Set<SyncDocument> = new Set(this.selectedDocuments).add(document);
+            const filesPath: Array<string> = Array.from(filesToMove)
                 .map((file: SyncDocument) => file.path);
-            if (finalUpload.length) {
-                this.nextcloudService.moveDocumentNextcloudToWorkspace(model.me.userId, finalUpload, folderContent.folder._id)
-                    .then(async (_: AxiosResponse) => {
+            if (filesPath.length) {
+                this.nextcloudService.moveDocumentNextcloudToWorkspace(model.me.userId, filesPath, folderContent.folder._id)
+                    .then(() => {
                         return nextcloudService.listDocument(model.me.userId, selectedFolderFromNextcloudTree.path ?
                             selectedFolderFromNextcloudTree.path : null);
                     })
@@ -205,7 +205,8 @@ class ViewModel implements IViewModel {
 
     private processMoveToNextcloud(document: SyncDocument, target: SyncDocument, selectedFolderFromNextcloudTree: SyncDocument): void {
             this.moveAllDocuments(document, target)
-            .then(async (_: AxiosResponse[]) => {
+            .then(() => {
+                this.selectedDocuments = [];
                 return nextcloudService.listDocument(model.me.userId, selectedFolderFromNextcloudTree.path ?
                     selectedFolderFromNextcloudTree.path : null);
             })
