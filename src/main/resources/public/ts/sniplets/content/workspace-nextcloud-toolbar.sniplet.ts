@@ -95,6 +95,7 @@ export class ToolbarSnipletViewModel implements IViewModel {
                         .filter((syncDocument: SyncDocument) => syncDocument.path != this.vm.parentDocument.path)
                         .filter((syncDocument: SyncDocument) => syncDocument.name != model.me.userId);
                     this.toggleRenameView(false);
+                    this.vm.updateTree();
                     this.vm.selectedDocuments = [];
                     safeApply(this.scope);
                 })
@@ -133,6 +134,7 @@ export class ToolbarSnipletViewModel implements IViewModel {
                     .filter((syncDocument: SyncDocument) => syncDocument.name != model.me.userId);
                 this.toggleDeleteView(false);
                 this.vm.selectedDocuments = [];
+                this.vm.updateTree();
                 safeApply(this.scope);
             })
             .catch((err: AxiosError) => {
