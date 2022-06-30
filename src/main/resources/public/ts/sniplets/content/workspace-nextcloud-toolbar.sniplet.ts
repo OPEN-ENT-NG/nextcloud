@@ -95,6 +95,7 @@ export class ToolbarSnipletViewModel implements IViewModel {
                         .filter((syncDocument: SyncDocument) => syncDocument.path != this.vm.parentDocument.path)
                         .filter((syncDocument: SyncDocument) => syncDocument.name != model.me.userId);
                     this.toggleRenameView(false);
+                    this.vm.updateTree();
                     this.vm.selectedDocuments = [];
                     safeApply(this.scope);
                 })
@@ -121,7 +122,6 @@ export class ToolbarSnipletViewModel implements IViewModel {
     }
 
     deleteDocuments(): void {
-        const selectedFolderFromNextcloudTree: SyncDocument = this.vm.getNextcloudTreeController()['selectedFolder'];
         const paths: Array<string> = this.vm.selectedDocuments.map((selectedDocument: SyncDocument) => selectedDocument.path);
         this.vm.nextcloudService.deleteDocuments(model.me.userId, paths)
             .then(() => {
@@ -134,7 +134,7 @@ export class ToolbarSnipletViewModel implements IViewModel {
                     .filter((syncDocument: SyncDocument) => syncDocument.name != model.me.userId);
                 this.toggleDeleteView(false);
                 this.vm.selectedDocuments = [];
-                this.vm.updateFolderDocument(selectedFolderFromNextcloudTree);
+                this.vm.updateTree();
                 safeApply(this.scope);
             })
             .catch((err: AxiosError) => {

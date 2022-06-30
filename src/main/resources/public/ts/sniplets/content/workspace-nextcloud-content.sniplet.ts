@@ -120,6 +120,12 @@ class ViewModel implements IViewModel {
         safeApply(this.scope);
     }
 
+    updateTree(): void {
+        const selectedFolderFromNextcloudTree: SyncDocument = this.getNextcloudTreeController()['selectedFolder'];
+        this.updateFolderDocument(selectedFolderFromNextcloudTree);
+        this.safeApply();
+    }
+
     initDraggable(): void {
         // use this const to make it accessible to its folderTree inner context
         const viewModel: IViewModel = this;
