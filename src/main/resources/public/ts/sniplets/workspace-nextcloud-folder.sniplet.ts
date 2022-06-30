@@ -241,7 +241,7 @@ class ViewModel implements IViewModel {
             // go back to workspace content display
             // clear nextCloudTree interaction
             viewModel.selectedFolder = null;
-            arguments[0].target.classList.add('selected');
+            arguments[0].currentTarget.classList.add('selected');
             // update workspace folder content
             WorkspaceEntcoreUtils.updateWorkspaceDocuments(angular.element(arguments[0].target).scope().folder);
             //set the right openedFolder
