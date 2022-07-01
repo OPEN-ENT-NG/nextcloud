@@ -212,13 +212,10 @@ class ViewModel implements IViewModel {
         return await Promise.all<AxiosResponse>(promises);
     }
 
-    private processMoveToNextcloud(document: SyncDocument, target: SyncDocument, selectedFolderFromNextcloudTree: SyncDocument): void {
-            this.moveAllDocuments(document, target)
-            .then(() => {
-                this.selectedDocuments = [];
-                return nextcloudService.listDocument(model.me.userId, selectedFolderFromNextcloudTree.path ?
-                    selectedFolderFromNextcloudTree.path : null);
-            })
+    private updateDocList(selectedFolderFromNextcloudTree: SyncDocument): void {
+        this.selectedDocuments = [];
+        nextcloudService.listDocument(model.me.userId, selectedFolderFromNextcloudTree.path ?
+            selectedFolderFromNextcloudTree.path : null)
             .then((syncedDocument: Array<SyncDocument>) => {
                 this.documents = syncedDocument
                     .filter((syncDocument: SyncDocument) => syncDocument.path != selectedFolderFromNextcloudTree.path)
@@ -227,10 +224,20 @@ class ViewModel implements IViewModel {
                 this.safeApply();
             })
             .catch((err: AxiosError) => {
+                const message: string = "Error while updating documents list";
+                console.error(message + err.message);
+            })
+    }
+
+    private processMoveToNextcloud(document: SyncDocument, target: SyncDocument, selectedFolderFromNextcloudTree: SyncDocument): void {
+            this.moveAllDocuments(document, target)
+            .then(() => this.updateDocList(selectedFolderFromNextcloudTree))
+            .catch((err: AxiosError) => {
+                this.updateDocList(selectedFolderFromNextcloudTree);
                 const message: string = "Error while attempting to move nextcloud document to workspace " +
                     "or update nextcloud list";
                 console.error(message + err.message);
-            });
+            })
     }
 
     private updateFolderDocument = (selectedFolderFromNextcloudTree: SyncDocument): void => {
