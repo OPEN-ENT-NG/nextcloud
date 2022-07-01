@@ -152,6 +152,7 @@ class ViewModel implements IViewModel {
                 if (angular.element(event.target).scope().folder instanceof SyncDocument) {
                     const syncedDocument: SyncDocument = angular.element(event.target).scope().folder;
                     let selectedDocuments: Array<Document> = WorkspaceEntcoreUtils.workspaceScope()['documentList']['_documents'];
+                    selectedDocuments = selectedDocuments.concat(WorkspaceEntcoreUtils.workspaceScope()['currentTree']['children']);
                     let documentToUpdate: Set<string> = new Set(selectedDocuments.filter((file: Document) => file.selected).map((file: Document) => file._id));
                     documentToUpdate.add(document._id);
                     nextcloudService.moveDocumentWorkspaceToCloud(model.me.userId, Array.from(documentToUpdate), syncedDocument.path)
