@@ -210,11 +210,20 @@ public class DefaultDocumentsService implements DocumentsService {
     public Future<JsonObject> moveDocument(UserNextcloud.TokenProvider userSession, String path, String destPath) {
         Promise<JsonObject> promise = Promise.promise();
 
-        String endpoint = nextcloudConfig.host() + nextcloudConfig.webdavEndpoint() + "/" + userSession.userId();
-        this.client.rawAbs(NextcloudHttpMethod.MOVE.method(), endpoint + "/" + path)
-                .basicAuthentication(userSession.userId(), userSession.token())
-                .putHeader(Field.DESTINATION, endpoint + "/" + destPath)
-                .send(responseAsync -> this.onMoveDocumentHandler(responseAsync, promise));
+        listFiles(userSession, destPath)
+                .onSuccess(fileInfo -> {
+                            if (fileInfo.isEmpty()) {
+                                String endpoint = nextcloudConfig.host() + nextcloudConfig.webdavEndpoint() + "/" + userSession.userId();
+                                this.client.rawAbs(NextcloudHttpMethod.MOVE.method(), endpoint + "/" + path)
+                                        .basicAuthentication(userSession.userId(), userSession.token())
+                                        .putHeader(Field.DESTINATION, endpoint + "/" + destPath)
+                                        .send(responseAsync -> this.onMoveDocumentHandler(responseAsync, promise));
+
+                            } else {
+                                promise.fail("nextcloud.file.already.exist");
+                            }
+                        })
+                .onFailure(promise::fail);
 
         return promise.future();
     }
