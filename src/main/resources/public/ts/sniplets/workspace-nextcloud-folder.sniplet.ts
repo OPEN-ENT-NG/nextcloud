@@ -82,7 +82,8 @@ class ViewModel implements IViewModel {
         this.subscriptions.add(Behaviours.applicationsBehaviours[NEXTCLOUD_APP].nextcloudService
             .getOpenedFolderDocument()
             .subscribe((document: SyncDocument) => {
-                this.folderTree.openFolder(document);
+                let getFolderContext: SyncDocument = this.folderTree.trees.find(f => f.fileId === document.fileId);
+                this.folderTree.openFolder(getFolderContext ? getFolderContext : document);
             }));
 
     }

@@ -99,10 +99,14 @@ class ViewModel implements IViewModel {
         let selectedFolderFromNextcloudTree: SyncDocument = this.getNextcloudTreeController()['selectedFolder'];
         nextcloudService.listDocument(model.me.userId, selectedFolderFromNextcloudTree.path)
             .then((documents: Array<SyncDocument>) => {
-                this.documents = documents
-                    .filter((syncDocument: SyncDocument) => syncDocument.path != selectedFolderFromNextcloudTree.path)
-                    .filter((syncDocument: SyncDocument) => syncDocument.name != model.me.userId);
-                this.parentDocument = new SyncDocument().initParent();
+                // will be called first time while constructor initializing
+                // since it will syncing at the same time observable will receive its events, we check its length at the end
+                if (!this.documents.length) {
+                    this.documents = documents
+                        .filter((syncDocument: SyncDocument) => syncDocument.path != selectedFolderFromNextcloudTree.path)
+                        .filter((syncDocument: SyncDocument) => syncDocument.name != model.me.userId);
+                    this.parentDocument = new SyncDocument().initParent();
+                }
                 safeApply(scope);
             })
             .catch((err: AxiosError) => {
@@ -241,6 +245,8 @@ class ViewModel implements IViewModel {
     onOpenContent(document: SyncDocument): void {
         if (document.isFolder) {
             Behaviours.applicationsBehaviours[NEXTCLOUD_APP].nextcloudService.sendOpenFolderDocument(document);
+            // reset all selected documents switch we switch folder
+            this.selectedDocuments = [];
         } else {
             window.open(this.getFile(document));
         }
