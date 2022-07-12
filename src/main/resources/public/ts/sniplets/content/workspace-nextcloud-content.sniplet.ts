@@ -165,9 +165,9 @@ class ViewModel implements IViewModel {
             selectedFolderFromNextcloudTree = this.parentDocument;
         }
         let folderContent: any = angular.element(element).scope();
-        // if interacted into workspace
+        // if interacted into trees(workspace or nextcloud)
         if (folderContent && folderContent.folder) {
-            this.processMoveToWorkspace(folderContent, document, selectedFolderFromNextcloudTree);
+            this.processMoveTree(folderContent, document, selectedFolderFromNextcloudTree);
         }
         // if interacted into nextcloud (folderContent as being te targeted path to move in)
         if (folderContent && folderContent.content instanceof SyncDocument && folderContent.content.isFolder) {
@@ -176,7 +176,7 @@ class ViewModel implements IViewModel {
         }
     }
 
-    private processMoveToWorkspace(folderContent: any, document: SyncDocument, selectedFolderFromNextcloudTree: SyncDocument): void {
+    private processMoveTree(folderContent: any, document: SyncDocument, selectedFolderFromNextcloudTree: SyncDocument): void {
         if (folderContent.folder instanceof models.Element) {
             const filesToMove: Set<SyncDocument> = new Set(this.selectedDocuments).add(document);
             const filesPath: Array<string> = Array.from(filesToMove).map((file: SyncDocument) => file.path);
@@ -199,6 +199,8 @@ class ViewModel implements IViewModel {
                         console.error(message + err.message);
                     });
             }
+        } else {
+            this.processMoveToNextcloud(document, folderContent.folder, selectedFolderFromNextcloudTree);
         }
     }
 
@@ -207,7 +209,7 @@ class ViewModel implements IViewModel {
         this.selectedDocuments.push(document);
         const selectedSet: Set<SyncDocument> = new Set(this.selectedDocuments.filter((doc: SyncDocument) => !doc.isFolder));
         selectedSet.forEach((doc: SyncDocument) => {
-            promises.push(this.nextcloudService.moveDocument(model.me.userId, doc.path, target.path + doc.name));
+            promises.push(this.nextcloudService.moveDocument(model.me.userId, doc.path, (target.path != null ? target.path : "") + doc.name));
         });
         return await Promise.all<AxiosResponse>(promises);
     }
