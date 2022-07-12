@@ -156,8 +156,13 @@ class ViewModel implements IViewModel {
                     let documentToUpdate: Set<string> = new Set(selectedDocuments.filter((file: Document) => file.selected).map((file: Document) => file._id));
                     documentToUpdate.add(document._id);
                     nextcloudService.moveDocumentWorkspaceToCloud(model.me.userId, Array.from(documentToUpdate), syncedDocument.path)
-                        .then((_: AxiosResponse) => WorkspaceEntcoreUtils.updateWorkspaceDocuments(
-                            WorkspaceEntcoreUtils.workspaceScope()['openedFolder']['folder'])
+                        .then((_: AxiosResponse) => {
+                            WorkspaceEntcoreUtils.updateWorkspaceDocuments(
+                                    WorkspaceEntcoreUtils.workspaceScope()['openedFolder']['folder']);
+                            Behaviours.applicationsBehaviours[NEXTCLOUD_APP].nextcloudService.sendOpenFolderDocument(angular.element(event.target).scope().folder);
+                            this.selectedFolder = null;
+                            angular.element(event.target).scope().folder.classList.remove("selected");
+                            }
                         )
                         .catch((err: AxiosError) => {
                             const message: string = "Error while attempting to fetch documents children ";
