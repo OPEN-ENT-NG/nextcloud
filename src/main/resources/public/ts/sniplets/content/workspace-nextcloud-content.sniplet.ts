@@ -209,7 +209,7 @@ class ViewModel implements IViewModel {
         this.selectedDocuments.push(document);
         const selectedSet: Set<SyncDocument> = new Set(this.selectedDocuments.filter((doc: SyncDocument) => !doc.isFolder));
         selectedSet.forEach((doc: SyncDocument) => {
-            promises.push(this.nextcloudService.moveDocument(model.me.userId, doc.path, target.path + doc.name));
+            promises.push(this.nextcloudService.moveDocument(model.me.userId, doc.path, target.path != null ? target.path : "" + doc.name));
         });
         return await Promise.all<AxiosResponse>(promises);
     }
