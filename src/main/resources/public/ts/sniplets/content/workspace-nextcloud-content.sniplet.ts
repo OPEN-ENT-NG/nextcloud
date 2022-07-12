@@ -165,7 +165,7 @@ class ViewModel implements IViewModel {
             selectedFolderFromNextcloudTree = this.parentDocument;
         }
         let folderContent: any = angular.element(element).scope();
-        // if interacted into trees (workspace or nextcloud)
+        // if interacted into trees(workspace or nextcloud)
         if (folderContent && folderContent.folder) {
             this.processMoveTree(folderContent, document, selectedFolderFromNextcloudTree);
         }
