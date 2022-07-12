@@ -13,7 +13,7 @@
     </dropzone-overlay>
 
     <!-- list of documents -->
-    <article class="icons-view no-overflow no-margin-bottom ng-scope height-minus300" ng-show="vm.documents.length > 0">
+    <article class="icons-view no-overflow no-margin-bottom ng-scope height-minus300" ng-if="vm.isLoaded" ng-show="vm.documents.length > 0">
         <explorer class="radius explorer-hover"
                   ng-repeat="content in vm.documents"
                   ng-model="content.selected"
@@ -49,7 +49,7 @@
     </article>
 
     <!-- empty state -->
-    <div class="emptyscreen" ng-if="vm.documents.length === 0">
+    <div class="emptyscreen" ng-if="vm.isLoaded" ng-show="!vm.documents.length">
         <h2 class="emptyscreen-header">
             <i18n>empty.workspace.subfolder.title</i18n>
         </h2>

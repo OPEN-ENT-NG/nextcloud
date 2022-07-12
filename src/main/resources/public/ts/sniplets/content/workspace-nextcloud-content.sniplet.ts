@@ -53,11 +53,13 @@ class ViewModel implements IViewModel {
     parentDocument: SyncDocument;
     documents: Array<SyncDocument>;
     selectedDocuments: Array<SyncDocument>;
+    isLoaded: boolean;
 
     constructor(scope, nextcloudService: INextcloudService) {
+        this.isLoaded = false;
         this.scope = scope;
         this.nextcloudService = nextcloudService;
-        this.documents = [new SyncDocument()];
+        this.documents = [];
         this.parentDocument = null;
         this.nextcloudUrl = null;
         this.selectedDocuments = new Array<SyncDocument>();
@@ -66,10 +68,14 @@ class ViewModel implements IViewModel {
         Promise.all<void, string>([this.initDocumentsContent(nextcloudService, scope), nextcloudService.getNextcloudUrl()])
             .then(([_, url]) => {
                 this.nextcloudUrl = url;
+                this.isLoaded = true;
+                safeApply(scope);
             })
             .catch((err: AxiosError) => {
                 const message: string = "Error while attempting to init or fetch nextcloud url: ";
                 console.error(message + err.message);
+                this.isLoaded = true;
+                safeApply(scope);
             });
 
         // on receive documents from folder-tree sniplet
@@ -83,6 +89,7 @@ class ViewModel implements IViewModel {
                     this.parentDocument = res.parentDocument;
                     this.documents = [];
                 }
+                this.isLoaded = true;
                 safeApply(scope);
             }));
 
@@ -97,7 +104,7 @@ class ViewModel implements IViewModel {
 
     private async initDocumentsContent(nextcloudService: INextcloudService, scope): Promise<void> {
         let selectedFolderFromNextcloudTree: SyncDocument = this.getNextcloudTreeController()['selectedFolder'];
-        nextcloudService.listDocument(model.me.userId, selectedFolderFromNextcloudTree.path)
+        await nextcloudService.listDocument(model.me.userId, selectedFolderFromNextcloudTree.path)
             .then((documents: Array<SyncDocument>) => {
                 // will be called first time while constructor initializing
                 // since it will syncing at the same time observable will receive its events, we check its length at the end
