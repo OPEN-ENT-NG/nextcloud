@@ -116,4 +116,14 @@ public interface DocumentsService {
      * @return              Future Json with all the status infos about the copy.
      */
     Future<JsonObject> copyDocumentsFromWorkspaceToNC(UserNextcloud.TokenProvider userSession, UserInfos user, List<String> idList, String parentName);
+
+    /**
+     * Create a new folder in the Nextcloud space
+     * @param userSession   User session
+     * @param user          User infos
+     * @param path          Path of the new folder in Nextcloud
+     * @return              Future JsonObject with the status of the creation
+     */
+    Future<JsonObject> createFolderNextcloud(UserNextcloud.TokenProvider userSession, UserInfos user, String path);
+
 }

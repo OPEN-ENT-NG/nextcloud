@@ -218,4 +218,20 @@ public class DocumentsController extends ControllerHelper {
             badRequest(request);
     }
 
+    @Put("/files/user/:userid/create/folder")
+    @ApiDoc("Copy a file from ENT workspace to cloud")
+    @SecuredAction(value = "", type = ActionType.RESOURCE)
+    @ResourceFilter(OwnerFilter.class)
+    public void createNewFolder(HttpServerRequest request) {
+        String path = request.params().get(Field.PATH);
+        if (!path.isEmpty())
+            UserUtils.getUserInfos(eb, request, user ->
+                    userService.getUserSession(user.getUserId())
+                            .compose(userSession -> documentsService.createFolderNextcloud(userSession, user, path))
+                            .onSuccess(res -> renderJson(request, res))
+                            .onFailure(err -> renderError(request, new JsonObject().put(Field.ERROR, err.getMessage()))));
+        else
+            badRequest(request);
+    }
+
 }

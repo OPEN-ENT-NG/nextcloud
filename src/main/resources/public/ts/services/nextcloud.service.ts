@@ -14,12 +14,19 @@ export interface INextcloudService {
     deleteDocuments(userid: string, path: Array<string>): Promise<AxiosResponse>;
     getFile(userid: string, fileName: string, path: string, contentType: string): string;
     getFiles(userid: string, path: string, files: Array<string>): string;
+    createFolder(userid: string, folderPath: String): Promise<AxiosResponse>;
 }
 
 export const nextcloudService: INextcloudService = {
 
     getNextcloudUrl: async (): Promise<string> => {
         return http.get(`/nextcloud/config/url`).then((res: AxiosResponse) => res.data.url);
+    },
+
+    createFolder: async(userid: string, folderPath: String): Promise<AxiosResponse> => {
+        console.log(folderPath);
+        const urlParam: string = folderPath ? `?path=${folderPath}` : '';
+        return http.put(`/nextcloud/files/user/${userid}/create/folder${urlParam}`);
     },
 
     listDocument: async (userid: string, path?: string): Promise<Array<SyncDocument>> => {

@@ -12,7 +12,16 @@
 <!--            <i18n>create.nextcloud.documents</i18n>-->
 <!--        </a>-->
 
-        <!-- progress bar -->
+        <!-- create folder -->
+        <div id="nextcloud-folder-create">
+            <a class="classic-link centered-bloc-text vertical-spacing-twice-1d ng-scope" ng-click="vm.folderCreation.toggleCreateFolder(true)">
+                <i18n>folder.new</i18n>
+            </a>
+
+            <!-- popup -->
+            <div ng-include="'/nextcloud/public/template/behaviours/create-folder/simpe.html'"></div>
+        </div>
+
         <div class="row">
             <h2>
                 <i18n>nextcloud.quota</i18n>
