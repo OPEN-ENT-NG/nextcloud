@@ -22,10 +22,6 @@ declare let window: any;
 const $folderTreeArrows: string = '#nextcloud-folder-tree i';
 const $nextcloudFolder: string = '#nextcloud-folder-tree';
 
-interface ILightboxViewModel {
-    folder: boolean;
-}
-
 interface IViewModel {
     documents: Array<SyncDocument>;
     initTree(folder: Array<SyncDocument>): void;
@@ -45,7 +41,6 @@ interface IViewModel {
 }
 
 class ViewModel implements IViewModel {
-    lightbox: ILightboxViewModel;
     private nextcloudService: INextcloudService;
     private nextcloudUserService: INextcloudUserService;
     private scope: any;
@@ -68,9 +63,6 @@ class ViewModel implements IViewModel {
         this.folderTree = {};
         this.selectedFolder = null;
         this.openedFolder = [];
-        this.lightbox = {
-            folder: false
-        };
 
         // resolve user nextcloud && init tree
         this.nextcloudUserService.getUserInfo(model.me.userId)

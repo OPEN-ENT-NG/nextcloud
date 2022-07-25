@@ -27,8 +27,6 @@ export class FolderCreationModel implements IViewModel {
     lightbox: ILightboxViewModel;
     currentDocument: SyncDocument;
 
-    // share documents action
-    share: any;
 
     constructor(scope) {
         this.scope = scope;
@@ -51,7 +49,4 @@ export class FolderCreationModel implements IViewModel {
         Behaviours.applicationsBehaviours[NEXTCLOUD_APP].nextcloudService.sendOpenFolderDocument(this.vm.selectedFolder);
         safeApply(this.scope);
     }
-
-
-
 }
