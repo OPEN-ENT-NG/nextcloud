@@ -219,7 +219,7 @@ public class DocumentsController extends ControllerHelper {
     }
 
     @Post("/files/user/:userid/create/folder")
-    @ApiDoc("Copy a file from ENT workspace to cloud")
+    @ApiDoc("Create a folder in Nextcloud")
     @SecuredAction(value = "", type = ActionType.RESOURCE)
     @ResourceFilter(OwnerFilter.class)
     public void createNewFolder(HttpServerRequest request) {
