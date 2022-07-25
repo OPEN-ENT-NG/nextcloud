@@ -16,7 +16,7 @@ interface IViewModel {
     lightbox: ILightboxViewModel;
     currentDocument: SyncDocument;
     toggleCreateFolder(state: boolean): void;
-    createFolder(name: String);
+    createFolder(folderCreate: models.Element);
 
 }
 
@@ -43,15 +43,12 @@ export class FolderCreationModel implements IViewModel {
         this.lightbox.folder = state;
     }
 
-    createFolder(name: String) {
-        const currentFolder: SyncDocument = angular.element(document.getElementById('nextcloud-folder-tree'));
+    createFolder(folderCreate: models.Element) {
         const folder: SyncDocument = this.vm.selectedFolder;
-        this.vm.nextcloudService.createFolder(model.me.userId, (folder.path != null ? folder.path + "/" : "") + name);
+        this.vm.nextcloudService.createFolder(model.me.userId, (folder.path != null ? folder.path + "/" : "") + folderCreate.name);
+        folderCreate.name = "";
         this.toggleCreateFolder(false);
-        console.log(this.scope);
-        console.log(this.vm.selectedFolder.name);
-        console.log(folder);
-        // Behaviours.applicationsBehaviours[NEXTCLOUD_APP].nextcloudService.sendOpenFolderDocument(this.scope.parent.name);
+        Behaviours.applicationsBehaviours[NEXTCLOUD_APP].nextcloudService.sendOpenFolderDocument(this.vm.selectedFolder);
         safeApply(this.scope);
     }
 

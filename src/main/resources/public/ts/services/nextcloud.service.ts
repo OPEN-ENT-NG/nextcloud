@@ -24,9 +24,8 @@ export const nextcloudService: INextcloudService = {
     },
 
     createFolder: async(userid: string, folderPath: String): Promise<AxiosResponse> => {
-        console.log(folderPath);
         const urlParam: string = folderPath ? `?path=${folderPath}` : '';
-        return http.put(`/nextcloud/files/user/${userid}/create/folder${urlParam}`);
+        return http.post(`/nextcloud/files/user/${userid}/create/folder${urlParam}`);
     },
 
     listDocument: async (userid: string, path?: string): Promise<Array<SyncDocument>> => {

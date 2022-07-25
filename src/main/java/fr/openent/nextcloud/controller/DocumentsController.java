@@ -218,7 +218,7 @@ public class DocumentsController extends ControllerHelper {
             badRequest(request);
     }
 
-    @Put("/files/user/:userid/create/folder")
+    @Post("/files/user/:userid/create/folder")
     @ApiDoc("Copy a file from ENT workspace to cloud")
     @SecuredAction(value = "", type = ActionType.RESOURCE)
     @ResourceFilter(OwnerFilter.class)
