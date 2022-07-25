@@ -13,7 +13,6 @@ interface IViewModel {
     currentDocument: SyncDocument;
     toggleCreateFolder(state: boolean): void;
     createFolder(folderCreate: models.Element);
-
 }
 
 export class FolderCreationModel implements IViewModel {
@@ -22,7 +21,6 @@ export class FolderCreationModel implements IViewModel {
 
     lightbox: ILightboxViewModel;
     currentDocument: SyncDocument;
-
 
     constructor(scope) {
         this.scope = scope;
