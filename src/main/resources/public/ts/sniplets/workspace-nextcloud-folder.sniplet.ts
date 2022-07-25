@@ -14,6 +14,7 @@ import {Subscription} from "rxjs";
 import rights from "../rights";
 import {NextcloudDocumentsUtils} from "../utils/nextcloud-documents.utils";
 import {DocumentsType} from "../core/enums/documents-type";
+import {FolderCreationModel} from "./folder/nextcloud-folder.sniplet";
 
 declare let window: any;
 
@@ -23,7 +24,6 @@ const $nextcloudFolder: string = '#nextcloud-folder-tree';
 
 interface IViewModel {
     documents: Array<SyncDocument>;
-
     initTree(folder: Array<SyncDocument>): void;
     watchFolderState(): void;
     openDocument(folder: any): void;
@@ -230,7 +230,6 @@ class ViewModel implements IViewModel {
 
             // clear all potential "selected" class workspace folder tree
             $workspaceFolderTree.each((index: number, element: Element): void => element.classList.remove("selected"));
-
             // hide workspace progress bar
             WorkspaceEntcoreUtils.toggleProgressBarDisplay(false);
             // hide workspace buttons interactions
@@ -290,6 +289,7 @@ export const workspaceNextcloudFolder = {
                 lang.addBundle('/nextcloud/i18n', async () => {
                     await nextcloudUserService.resolveUser(model.me.userId);
                     this.vm = new ViewModel(this, nextcloudService, nextcloudUserService);
+                    this.vm.folderCreation = new FolderCreationModel(this);
                 });
             }
         }

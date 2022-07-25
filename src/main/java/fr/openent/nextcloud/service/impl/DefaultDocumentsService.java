@@ -999,7 +999,15 @@ public class DefaultDocumentsService implements DocumentsService {
         return promise.future();
     }
 
-
+    /**
+     * Create a new folder in the Nextcloud space
+     * @param userSession   User session
+     * @param path          Path of the new folder in Nextcloud
+     * @return              Future JsonObject with the status of the creation
+     */
+    public Future<JsonObject> createFolderNextcloud(UserNextcloud.TokenProvider userSession, String path) {
+        return createFolder(userSession, StringHelper.encodeUrlForNc(path.replace(Field.ASCIISPACE, " ")));
+    }
 
 
 }
