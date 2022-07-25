@@ -1,12 +1,8 @@
 import {SyncDocument} from "../../models";
-import {angular, Behaviours, model, workspace} from "entcore";
-import {AxiosError} from "axios";
+import {Behaviours, model, workspace} from "entcore";
 import {safeApply} from "../../utils/safe-apply.utils";
-import {ToolbarShareSnipletViewModel} from "../content/workspace-nextcloud-toolbar-share.sniplet";
 import {NEXTCLOUD_APP} from "../../nextcloud.behaviours";
 import models = workspace.v2.models;
-
-declare let window: any;
 
 interface ILightboxViewModel {
     folder: boolean;

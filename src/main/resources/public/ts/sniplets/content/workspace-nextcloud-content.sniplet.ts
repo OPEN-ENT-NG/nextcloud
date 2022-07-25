@@ -8,7 +8,6 @@ import {ToolbarSnipletViewModel} from "./workspace-nextcloud-toolbar.sniplet";
 import {AxiosError, AxiosResponse} from "axios";
 import {UploadFileSnipletViewModel} from "./workspace-nextcloud-upload-file.sniplet";
 import models = workspace.v2.models;
-import {FolderCreationModel} from "../folder/nextcloud-folder.sniplet";
 
 declare let window: any;
 
@@ -295,7 +294,6 @@ export const workspaceNextcloudContent = {
     controller: {
         init: async function (): Promise<void> {
             lang.addBundle('/nextcloud/i18n', () => {
-                console.log("vm pob");
                 this.vm = new ViewModel(this, nextcloudService);
                 this.vm.toolbar = new ToolbarSnipletViewModel(this);
                 this.vm.upload = new UploadFileSnipletViewModel(this);
