@@ -20,6 +20,34 @@ describe('NextcloudService', () => {
         });
     });
 
+    it('test creating folder function with empty name', done => {
+        const mock = new MockAdapter(axios);
+        let spy = jest.spyOn(axios, "post");
+
+        const userId1 = "userId1";
+
+        mock.onPost(`/nextcloud/files/user/userId1/create/folder`).reply(200);
+
+        nextcloudService.createFolder(userId1, "").then((e) => {
+            expect(spy).toHaveBeenCalledWith(`/nextcloud/files/user/userId1/create/folder`);
+            done();
+        });
+    });
+
+    it('test creating folder function', done => {
+        const mock = new MockAdapter(axios);
+        let spy = jest.spyOn(axios, "post");
+
+        const userId1 = "userId1";
+        const test = "test";
+        mock.onPost(`/nextcloud/files/user/userId1/create/folder?path=test`).reply(200);
+
+        nextcloudService.createFolder(userId1, "test").then((e) => {
+            expect(spy).toHaveBeenCalledWith(`/nextcloud/files/user/userId1/create/folder?path=test`);
+            done();
+        });
+    });
+
     it('Test listDocument method', done => {
         const mock = new MockAdapter(axios);
         const iDocumentResponse1: IDocumentResponse = {

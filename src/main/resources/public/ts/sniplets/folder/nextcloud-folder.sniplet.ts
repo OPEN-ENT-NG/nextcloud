@@ -3,6 +3,7 @@ import {Behaviours, model, workspace} from "entcore";
 import {safeApply} from "../../utils/safe-apply.utils";
 import {NEXTCLOUD_APP} from "../../nextcloud.behaviours";
 import models = workspace.v2.models;
+import {AxiosError} from "axios";
 
 interface ILightboxViewModel {
     folder: boolean;
@@ -37,10 +38,16 @@ export class FolderCreationModel implements IViewModel {
 
     createFolder(folderCreate: models.Element) {
         const folder: SyncDocument = this.vm.selectedFolder;
-        this.vm.nextcloudService.createFolder(model.me.userId, (folder.path != null ? folder.path + "/" : "") + folderCreate.name);
-        folderCreate.name = "";
-        this.toggleCreateFolder(false);
-        Behaviours.applicationsBehaviours[NEXTCLOUD_APP].nextcloudService.sendOpenFolderDocument(this.vm.selectedFolder);
-        safeApply(this.scope);
+        this.vm.nextcloudService.createFolder(model.me.userId, (folder.path != null ? folder.path + "/" : "") + folderCreate.name)
+            .then(res => {
+                folderCreate.name = "";
+                this.toggleCreateFolder(false);
+                Behaviours.applicationsBehaviours[NEXTCLOUD_APP].nextcloudService.sendOpenFolderDocument(this.vm.selectedFolder);
+                safeApply(this.scope);
+            })
+            .catch((err: AxiosError) => {
+                const message: string = "Error while attempting folder creation.";
+                console.error(message + err.message);
+            });
     }
 }

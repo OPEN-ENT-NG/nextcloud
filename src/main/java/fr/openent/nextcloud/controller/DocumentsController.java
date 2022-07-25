@@ -227,7 +227,7 @@ public class DocumentsController extends ControllerHelper {
         if (!path.isEmpty())
             UserUtils.getUserInfos(eb, request, user ->
                     userService.getUserSession(user.getUserId())
-                            .compose(userSession -> documentsService.createFolderNextcloud(userSession, user, path))
+                            .compose(userSession -> documentsService.createFolderNextcloud(userSession, path))
                             .onSuccess(res -> renderJson(request, res))
                             .onFailure(err -> renderError(request, new JsonObject().put(Field.ERROR, err.getMessage()))));
         else
