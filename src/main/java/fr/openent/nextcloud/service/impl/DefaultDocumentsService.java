@@ -357,6 +357,7 @@ public class DefaultDocumentsService implements DocumentsService {
      */
     Future<JsonObject> folderCopy(JsonArray fileInfo, String file, String parentId, UserInfos user, UserNextcloud.TokenProvider userSession) {
         Promise<JsonObject> promise = Promise.promise();
+        JsonObject folderData = new JsonObject();
         NextcloudFolder ncFolder = new NextcloudFolder(fileInfo);
         if (!ncFolder.isSet()) {
             String messageToFormat = "[Nextcloud@%s::folderCopy] Error while retrieve folder data : %s";
@@ -373,9 +374,10 @@ public class DefaultDocumentsService implements DocumentsService {
         EventBusHelper.requestJsonObject(eventBus, action)
                 .compose(folderInfos -> {
                     ncFolder.setWorkspaceId(folderInfos.getString(Field.UNDERSCORE_ID));
+                    folderData.put(Field.DATA, folderInfos);
                     return copyDocumentToWorkspace(userSession, user, ncFolder.getFolderItemPath(), ncFolder.getWorkspaceId());
                 })
-                .onSuccess(resultFolderMove -> promise.complete(new JsonObject()
+                .onSuccess(resultFolderMove -> promise.complete(folderData.getJsonObject(Field.DATA)
                         .put(Field.NAME, ncFolder.getName())
                         .put(Field.ISFOLDER, Field.YES)
                         .put(Field.STATUS, Field.OK_LOWER)
