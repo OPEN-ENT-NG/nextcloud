@@ -4,4 +4,16 @@
       object-fit: cover;
     }
   }
+  .emptyscreen {
+    &-nextcloud {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-content: center;
+      text-align: center;
+      height: inherit;
+      align-items: center;
+      margin-top: 25px;
+    }
+  }
 }
