@@ -3,6 +3,7 @@ import {RootsConst} from "../../core/constants/roots.const";
 import {SyncDocument} from "../../models";
 import models = workspace.v2.models;
 import service = workspace.v2.service;
+import {WorkspaceEntcoreUtils} from "../../utils/workspace-entcore.utils";
 
 interface IViewModel {
     copyingForShare: boolean;
@@ -64,6 +65,10 @@ export class ToolbarShareSnipletViewModel implements IViewModel {
 
     async onSubmitSharedElements(share: SharePayload): Promise<void> {
         this.toggleShareView(false);
+        setTimeout(() => {
+            WorkspaceEntcoreUtils.toggleWorkspaceContentDisplay(false);
+            this.vm.safeApply();
+        }, 500);
     }
 
     async onCancelShareElements(): Promise<void> {
