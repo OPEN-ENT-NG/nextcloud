@@ -1,18 +1,17 @@
 package fr.openent.nextcloud.helper;
 
-import fr.openent.nextcloud.core.constants.Field;
-import fr.openent.nextcloud.core.enums.WorkspaceEventBusActions;
-import fr.openent.nextcloud.service.impl.DefaultDocumentsService;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.LoggerFactory;
 
 
 public class EventBusHelper {
+    private EventBusHelper() {
+        throw new UnsupportedOperationException("Class instantiation not allowed");
+    }
+
     private static final String WORKSPACE_BUS_ADDRESS = "org.entcore.workspace";
 
     /**
@@ -32,6 +31,4 @@ public class EventBusHelper {
         eb.request(WORKSPACE_BUS_ADDRESS, action, MessageResponseHandler.messageJsonArrayHandler(PromiseHelper.handlerJsonArray(promise)));
         return promise.future();
     }
-
-
 }

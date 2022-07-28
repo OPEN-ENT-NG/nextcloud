@@ -23,7 +23,7 @@ export class WorkspaceEntcoreUtils {
      * @param state boolean determine display default or none
      */
     static toggleWorkspaceButtonsDisplay(state: boolean): void {
-        const htmlQuery: string = `.mobile-navigation > a, sniplet[application="lool"`;
+        const htmlQuery: string = `.mobile-navigation > a, .zero-mobile > div, sniplet[application="lool"`;
         Array.from(document.querySelectorAll(htmlQuery))
             .forEach((elem: Element) => (<HTMLElement>elem).style.display =  state ? "block" : "none");
     }

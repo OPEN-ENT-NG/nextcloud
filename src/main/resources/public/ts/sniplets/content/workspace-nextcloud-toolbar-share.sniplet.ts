@@ -49,6 +49,7 @@ export class ToolbarShareSnipletViewModel implements IViewModel {
                 this.sharedElement = workspaceDocuments;
                 this.vm.updateTree();
                 const pathTemplate: string = `../../../${RootsConst.template}/behaviours/sniplet-nextcloud-content/toolbar/share/share`;
+                this.vm.selectedDocuments = [];
                 template.open('workspace-nextcloud-toolbar-share', pathTemplate);
             });
     }
