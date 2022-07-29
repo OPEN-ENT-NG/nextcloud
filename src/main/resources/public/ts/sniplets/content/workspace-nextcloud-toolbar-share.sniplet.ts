@@ -75,7 +75,6 @@ export class ToolbarShareSnipletViewModel implements IViewModel {
     async onCancelShareElements(): Promise<void> {
         if (this.sharedElement.length) {
             service.deleteAll(this.sharedElement)
-                .then()
                 .catch(err => {
                     console.error((err));
                 })
