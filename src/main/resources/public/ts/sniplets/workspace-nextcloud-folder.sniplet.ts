@@ -227,6 +227,10 @@ class ViewModel implements IViewModel {
 
             // using nextcloud content display
             template.open('documents', `../../../${RootsConst.template}/behaviours/workspace-nextcloud`);
+            let selectedDocuments: Array<Document> = WorkspaceEntcoreUtils.workspaceScope()['openedFolder']['documents'];
+            let folders: Array<Document> = WorkspaceEntcoreUtils.workspaceScope()['openedFolder']['folders'];
+            selectedDocuments.forEach(doc => doc.selected = false);
+            folders.forEach(fol => fol.selected = false);
 
             // clear all potential "selected" class workspace folder tree
             $workspaceFolderTree.each((index: number, element: Element): void => element.classList.remove("selected"));
