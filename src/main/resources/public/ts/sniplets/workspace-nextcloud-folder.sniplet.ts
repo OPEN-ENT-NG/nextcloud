@@ -37,6 +37,7 @@ interface IViewModel {
     // drag & drop actions
     initDraggable(): void;
     resolveDragTarget(event: DragEvent): Promise<void>;
+    removeSelectedDocuments(): void;
     droppable: Draggable;
 }
 
@@ -215,6 +216,17 @@ class ViewModel implements IViewModel {
     }
 
     /**
+     * remove all the selected folders and documents of workspace
+     */
+    removeSelectedDocuments(): void {
+        let selectedDocuments: Array<Document> = WorkspaceEntcoreUtils.workspaceScope()['openedFolder']['documents'];
+        let folders: Array<Document> = WorkspaceEntcoreUtils.workspaceScope()['openedFolder']['folders'];
+        if (selectedDocuments != null && folders != null) {
+            selectedDocuments.forEach((doc: Document) => doc.selected = false);
+            folders.forEach((fol: Document) => fol.selected = false);
+        }
+    }
+    /**
      * Remove workspace tree and use nextcloud tree instead.
      */
     private switchWorkspaceTreeHandler() {
@@ -228,6 +240,7 @@ class ViewModel implements IViewModel {
             // using nextcloud content display
             template.open('documents', `../../../${RootsConst.template}/behaviours/workspace-nextcloud`);
 
+            viewModel.removeSelectedDocuments();
             // clear all potential "selected" class workspace folder tree
             $workspaceFolderTree.each((index: number, element: Element): void => element.classList.remove("selected"));
             // hide workspace progress bar
