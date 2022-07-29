@@ -77,10 +77,10 @@ export class ToolbarShareSnipletViewModel implements IViewModel {
         if (this.sharedElement.length) {
             try {
                 await service.deleteAll(this.sharedElement);
-                this.sharedElement = [];
             } catch (e) {
                 console.error((e));
             }
+            this.sharedElement = [];
         }
         this.toggleShareView(false);
     }
