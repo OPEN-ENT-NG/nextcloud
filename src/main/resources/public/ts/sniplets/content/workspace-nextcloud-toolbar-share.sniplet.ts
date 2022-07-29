@@ -70,15 +70,18 @@ export class ToolbarShareSnipletViewModel implements IViewModel {
             WorkspaceEntcoreUtils.toggleWorkspaceContentDisplay(false);
             this.vm.safeApply();
         }, 500);
+        this.sharedElement = [];
     }
 
     async onCancelShareElements(): Promise<void> {
         if (this.sharedElement.length) {
-            service.deleteAll(this.sharedElement)
-                .catch(err => {
-                    console.error((err));
-                })
+            try {
+                await service.deleteAll(this.sharedElement);
+            } catch (e) {
+                console.error((e));
+            }
         }
+        this.sharedElement = [];
         this.toggleShareView(false);
     }
 }
