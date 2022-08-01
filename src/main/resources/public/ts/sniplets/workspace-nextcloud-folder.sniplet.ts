@@ -235,7 +235,7 @@ class ViewModel implements IViewModel {
             if (!viewModel.selectedFolder) {
                 viewModel.folderTree.openFolder(viewModel.documents[0]);
             }
-            const $workspaceFolderTree: JQuery = $(WorkspaceEntcoreUtils.$ENTCORE_WORKSPACE + ' li > a');
+            const $workspaceFolderTree: JQuery = $(WorkspaceEntcoreUtils.$ENTCORE_WORKSPACE).find('li a');
 
             // using nextcloud content display
             template.open('documents', `../../../${RootsConst.template}/behaviours/workspace-nextcloud`);
