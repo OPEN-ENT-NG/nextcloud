@@ -109,9 +109,9 @@ class ViewModel implements IViewModel {
                 return viewModel.selectedFolder === folder;
             },
             async openFolder(folder: models.Element): Promise<void> {
+                viewModel.selectedFolder = folder;
                 viewModel.setSwitchDisplayHandler();
                 // create handler in case icon are only clicked
-                viewModel.selectedFolder = folder;
                 viewModel.watchFolderState();
                 if (!viewModel.openedFolder.some((openFolder: models.Element) => openFolder === folder)) {
                     viewModel.openedFolder = viewModel.openedFolder.filter((e: models.Element) => (<any> e).path != (<any> folder).path);
@@ -201,7 +201,7 @@ class ViewModel implements IViewModel {
 
     setSwitchDisplayHandler(): void {
         const viewModel: IViewModel = this;
-        const $workspaceFolderTree: JQuery = $(WorkspaceEntcoreUtils.$ENTCORE_WORKSPACE + ' li > a');
+
         // case nextcloud folder tree is interacted
         // checking if listener does not exist in order to create one
         $($nextcloudFolder)
@@ -210,7 +210,7 @@ class ViewModel implements IViewModel {
 
         // case entcore workspace folder tree is interacted
         // we unbind its handler and rebind it in order to keep our list of workspace updated
-        $workspaceFolderTree
+        $(WorkspaceEntcoreUtils.$ENTCORE_WORKSPACE)
             .off('click.nextcloudHandler')
             .on('click.nextcloudHandler', this.switchNextcloudTreeHandler(viewModel));
     }
@@ -257,23 +257,33 @@ class ViewModel implements IViewModel {
      */
     private switchNextcloudTreeHandler(viewModel: IViewModel) {
         return function (): void {
-            // go back to workspace content display
-            // clear nextCloudTree interaction
-            viewModel.selectedFolder = null;
-            arguments[0].currentTarget.classList.add('selected');
-            // update workspace folder content
-            WorkspaceEntcoreUtils.updateWorkspaceDocuments(angular.element(arguments[0].target).scope().folder);
-            //set the right openedFolder
-            WorkspaceEntcoreUtils.workspaceScope()['openedFolder']['folder'] = angular.element(arguments[0].target).scope().folder;
-            // display workspace buttons interactions
-            WorkspaceEntcoreUtils.toggleProgressBarDisplay(true);
-            // display workspace buttons interactions
-            WorkspaceEntcoreUtils.toggleWorkspaceButtonsDisplay(true);
-            // display workspace contents (search bar, menu, list of folder/files...) interactions
-            WorkspaceEntcoreUtils.toggleWorkspaceContentDisplay(true);
-            // remove any content context cache
-            Behaviours.applicationsBehaviours[NEXTCLOUD_APP].nextcloudService.setContentContext(null);
-            template.open('documents', `icons`);
+            let element: Element = arguments[0].target;
+            let target: Element;
+            if (element && element.tagName === 'A') {
+                target = element;
+            } else if (element && element.parentElement && element.parentElement.tagName === 'A') {
+                target = element.parentElement;
+            }
+
+            if (target && viewModel.selectedFolder) {
+                // go back to workspace content display
+                // clear nextCloudTree interaction
+                viewModel.selectedFolder = null;
+                target.classList.add('selected');
+                // update workspace folder content
+                WorkspaceEntcoreUtils.updateWorkspaceDocuments(angular.element(target).scope().folder);
+                //set the right openedFolder
+                WorkspaceEntcoreUtils.workspaceScope()['openedFolder']['folder'] = angular.element(target).scope().folder;
+                // display workspace buttons interactions
+                WorkspaceEntcoreUtils.toggleProgressBarDisplay(true);
+                // display workspace buttons interactions
+                WorkspaceEntcoreUtils.toggleWorkspaceButtonsDisplay(true);
+                // display workspace contents (search bar, menu, list of folder/files...) interactions
+                WorkspaceEntcoreUtils.toggleWorkspaceContentDisplay(true);
+                // remove any content context cache
+                Behaviours.applicationsBehaviours[NEXTCLOUD_APP].nextcloudService.setContentContext(null);
+                template.open('documents', `icons`);
+            }
         };
     }
 
