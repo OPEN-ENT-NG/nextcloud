@@ -1,5 +1,6 @@
-import {model, idiom as lang} from "entcore";
+import {model, idiom as lang, workspace} from "entcore";
 import {DocumentRole} from "../core/enums/document-role";
+import models = workspace.v2.models;
 
 export interface IDocumentResponse {
     path: string;
@@ -25,6 +26,8 @@ export class SyncDocument {
     isFolder: boolean;
     role: string | typeof DocumentRole;
     children: Array<SyncDocument>;
+    cacheChildren: models.CacheList<any>;
+    cacheDocument: models.CacheList<any>;
 
     // custom field bound by other entity/model
     selected?: boolean;
@@ -42,6 +45,13 @@ export class SyncDocument {
         this.isFolder = data.isFolder;
         this.role = this.determineRole();
         this.children = [];
+        this.cacheChildren = new models.CacheList<any>(0, () => false, () => false);
+        this.cacheChildren.setData([]);
+        this.cacheChildren.disableCache();
+        this.cacheDocument = new models.CacheList<any>(0, () => false, () => false);
+        this.cacheDocument.setData([]);
+        this.cacheDocument.disableCache();
+
         return this;
     }
 
@@ -68,6 +78,13 @@ export class SyncDocument {
         parentNextcloudFolder.fileId = null;
         parentNextcloudFolder.isFolder = true;
         parentNextcloudFolder.children = [];
+        parentNextcloudFolder.cacheChildren = new models.CacheList<any>(0, () => false, () => false);
+        parentNextcloudFolder.cacheChildren.setData([]);
+        parentNextcloudFolder.cacheChildren.disableCache();
+        parentNextcloudFolder.cacheDocument = new models.CacheList<any>(0, () => false, () => false);
+        parentNextcloudFolder.cacheDocument.setData([]);
+        parentNextcloudFolder.cacheDocument.disableCache();
+
         parentNextcloudFolder.isNextcloudParent = true;
         return parentNextcloudFolder;
     }
