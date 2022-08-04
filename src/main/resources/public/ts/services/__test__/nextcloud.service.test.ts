@@ -2,6 +2,7 @@ import axios from 'axios';
 import MockAdapter from 'axios-mock-adapter';
 import {nextcloudService} from '../nextcloud.service';
 import {IDocumentResponse} from "../../models";
+import {workspace} from "../../models/__mocks__/entcore";
 
 describe('NextcloudService', () => {
 
@@ -109,12 +110,19 @@ describe('NextcloudService', () => {
 
 
         nextcloudService.listDocument(userId1, path).then(response => {
-            expect(response).toEqual([syncDocument1, syncDocument2])
+            response.forEach(res => {
+               if (res.cacheChildren) delete res.cacheChildren;
+               if (res.cacheDocument) delete res.cacheDocument;
+            });
+            expect(response).toEqual([syncDocument1, syncDocument2]);
             mock.onGet(`/nextcloud/files/user/userId2`).reply(200, data);
 
-
             nextcloudService.listDocument(userId2).then(response => {
-                expect(response).toEqual([syncDocument1, syncDocument2])
+                response.forEach(res => {
+                    if (res.cacheChildren) delete res.cacheChildren;
+                    if (res.cacheDocument) delete res.cacheDocument;
+                });
+                expect(response).toEqual([syncDocument1, syncDocument2]);
                 done();
             });
         });
