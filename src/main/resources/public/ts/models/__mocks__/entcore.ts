@@ -20,7 +20,14 @@ const directives: Array<IDirective> = []
 const services: Array<IService> = [];
 export const workspace = {
     v2: {
-        models: {}
+        models: {
+            CacheList: jest.fn().mockImplementation(() => {
+                return {
+                    setData: () => jest.fn(),
+                    disableCache: () => jest.fn(),
+                };
+            })
+        }
     }
 };
 
