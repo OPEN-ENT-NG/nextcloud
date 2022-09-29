@@ -123,7 +123,7 @@ END
 $BODY$
     LANGUAGE plpgsql;
 
-CREATE TRIGGER propagate_user
+CREATE TRIGGER delete_propagate_user
     AFTER DELETE
     ON oc_user_saml_users
     FOR EACH ROW
