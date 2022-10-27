@@ -1,9 +1,8 @@
 import {SyncDocument} from "../../models";
-import {model, toasts} from "entcore";
+import {model} from "entcore";
 import {AxiosError} from "axios";
 import {safeApply} from "../../utils/safe-apply.utils";
 import {ToolbarShareSnipletViewModel} from "./workspace-nextcloud-toolbar-share.sniplet";
-import {nextcloudService} from "../../services";
 
 declare let window: any;
 
@@ -24,8 +23,8 @@ interface IViewModel {
 
     // properties action
     toggleRenameView(state: boolean, selectedDocuments: Array<SyncDocument>): void;
-    toggleEdit(): void;
-    isSelectedEditable(selectedDocuments: Array<SyncDocument>): boolean;
+    toggleEdit(state: boolean, selectedDocuments: Array<SyncDocument>);
+    isSelectedDocumentAFolder(selectedDocuments: Array<SyncDocument>);
     renameDocument();
 
     // delete documents action
@@ -57,8 +56,8 @@ export class ToolbarSnipletViewModel implements IViewModel {
         this.currentDocument = null;
         this.share = new ToolbarShareSnipletViewModel(this);
     }
-    isSelectedEditable(selectedDocuments: Array<SyncDocument>): boolean {
-        return selectedDocuments.length > 0 && selectedDocuments[0].editable;
+    isSelectedDocumentAFolder(selectedDocuments: Array<SyncDocument>): boolean {
+        return selectedDocuments[0].isFolder;
     }
 
     hasOneDocumentSelected(selectedDocuments: Array<SyncDocument>): boolean {
@@ -66,16 +65,10 @@ export class ToolbarSnipletViewModel implements IViewModel {
         return total == 1;
     }
 
-    toggleEdit(): void {
-        if (this.vm.selectedDocuments.length > 0) {
-            nextcloudService.openNextcloudLink(this.vm.selectedDocuments[0], this.vm.nextcloudUrl);
-        }
-    }
-
     downloadFiles(selectedDocuments: Array<SyncDocument>): void {
         if (selectedDocuments.length === 1) {
             window.open(this.vm.nextcloudService.getFile(model.me.userId, selectedDocuments[0].name,
-                selectedDocuments[0].path, selectedDocuments[0].contentType, selectedDocuments[0].isFolder))
+                selectedDocuments[0].path, selectedDocuments[0].contentType))
         } else {
             const selectedDocumentsName: Array<string> = selectedDocuments.map((selectedDocuments: SyncDocument) => selectedDocuments.name);
             // if path parent is null (meaning is the parent folder sync), we return "/"
@@ -91,6 +84,12 @@ export class ToolbarSnipletViewModel implements IViewModel {
         } else {
             this.currentDocument = null;
         }
+    }
+
+    toggleEdit(state: boolean, selectedDocuments?: Array<SyncDocument>): void {
+        const selected = this.vm.selectedDocuments[0];
+        const url = selected.path;
+        window.open(this.vm.nextcloudUrl + "/index.php/apps/files?dir=" + url.substring(0, url.lastIndexOf('/')) + "&fileid=" + selected.fileId);
     }
 
     renameDocument(): void {
@@ -137,7 +136,6 @@ export class ToolbarSnipletViewModel implements IViewModel {
         const paths: Array<string> = this.vm.selectedDocuments.map((selectedDocument: SyncDocument) => selectedDocument.path);
         this.vm.nextcloudService.deleteDocuments(model.me.userId, paths)
             .then(() => {
-                toasts.info("nextcloud.documents.deletion.confirmation");
                 return this.vm.nextcloudService.listDocument(model.me.userId, this.vm.parentDocument.path ?
                     this.vm.parentDocument.path : null);
             })
