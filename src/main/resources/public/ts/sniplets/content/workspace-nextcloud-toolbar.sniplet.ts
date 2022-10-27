@@ -23,6 +23,8 @@ interface IViewModel {
 
     // properties action
     toggleRenameView(state: boolean, selectedDocuments: Array<SyncDocument>): void;
+    toggleEdit(state: boolean, selectedDocuments: Array<SyncDocument>);
+    isSelectedDocumentAFolder(selectedDocuments: Array<SyncDocument>);
     renameDocument();
 
     // delete documents action
@@ -54,6 +56,9 @@ export class ToolbarSnipletViewModel implements IViewModel {
         this.currentDocument = null;
         this.share = new ToolbarShareSnipletViewModel(this);
     }
+    isSelectedDocumentAFolder(selectedDocuments: Array<SyncDocument>): boolean {
+        return selectedDocuments[0].isFolder;
+    }
 
     hasOneDocumentSelected(selectedDocuments: Array<SyncDocument>): boolean {
         const total: number = selectedDocuments ? selectedDocuments.length : 0;
@@ -79,6 +84,12 @@ export class ToolbarSnipletViewModel implements IViewModel {
         } else {
             this.currentDocument = null;
         }
+    }
+
+    toggleEdit(state: boolean, selectedDocuments?: Array<SyncDocument>): void {
+        const selected = this.vm.selectedDocuments[0];
+        const url = selected.path;
+        window.open(this.vm.nextcloudUrl + "/index.php/apps/files?dir=" + url.substring(0, url.lastIndexOf('/')) + "&fileid=" + selected.fileId);
     }
 
     renameDocument(): void {

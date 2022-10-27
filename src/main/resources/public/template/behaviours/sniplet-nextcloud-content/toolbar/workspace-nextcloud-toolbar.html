@@ -26,6 +26,12 @@
                 <div ng-include="'/nextcloud/public/template/behaviours/sniplet-nextcloud-content/toolbar/workspace-nextcloud-toolbar-delete.html'"></div>
             </div>
 
+            <!-- edit document(s) -->
+            <div id="nextcloud-toolbar-edit" ng-if="vm.toolbar.hasOneDocumentSelected(vm.selectedDocuments) && !vm.toolbar.isSelectedDocumentAFolder(vm.selectedDocuments)">
+                <button ng-click="vm.toolbar.toggleEdit()">
+                    <i18n>workspace.external.open</i18n>
+                </button>
+            </div>
 
             <!-- share document(s) -->
             <div id="nextcloud-toolbar-share">
