@@ -8,6 +8,7 @@ import {ToolbarSnipletViewModel} from "./workspace-nextcloud-toolbar.sniplet";
 import {AxiosError, AxiosResponse} from "axios";
 import {UploadFileSnipletViewModel} from "./workspace-nextcloud-upload-file.sniplet";
 import models = workspace.v2.models;
+import {NextcloudDocumentsUtils} from "../../utils/nextcloud-documents.utils";
 
 declare let window: any;
 
@@ -266,7 +267,13 @@ class ViewModel implements IViewModel {
             // reset all selected documents switch we switch folder
             this.selectedDocuments = [];
         } else {
-            window.open(this.getFile(document));
+            if (NextcloudDocumentsUtils.isDocumentEditable(document)) {
+                const url = document.path;
+                window.open(this.nextcloudUrl + "/index.php/apps/files?dir=" + url.substring(0, url.lastIndexOf('/')) + "&openfile=" + document.fileId);
+            } else {
+                window.open(this.getFile(document));
+            }
+
         }
     }
 

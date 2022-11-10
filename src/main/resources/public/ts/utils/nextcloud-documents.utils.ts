@@ -1,8 +1,13 @@
 import {SyncDocument} from "../models";
 import {model} from "entcore";
+import {editableType} from "../core/enums/document-content";
 
 export class NextcloudDocumentsUtils {
-
+    static isDocumentEditable(document: SyncDocument): boolean {
+        return !document.isFolder
+            && (document.contentType.startsWith(editableType.text)
+                || document.contentType.startsWith(editableType.application));
+    }
     static filterRemoveNameFile(): (syncDocument: SyncDocument) => boolean {
         return (syncDocument: SyncDocument) => syncDocument.name !== model.me.userId;
     }
