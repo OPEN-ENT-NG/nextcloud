@@ -1,26 +1,13 @@
 import {SyncDocument} from "../models";
 import {model} from "entcore";
-import {DocumentRole} from "../core/enums/document-role";
+import {editableType} from "../core/enums/document-content";
 
 export class NextcloudDocumentsUtils {
-    static typeMap: Map<string, DocumentRole> = new Map<string, DocumentRole>()
-        .set("doc", DocumentRole.DOC)
-        .set("pdf", DocumentRole.PDF)
-        .set("markdown", DocumentRole.MARKDOWN)
-        .set("octet-stream", DocumentRole.OCTET_STEAM)
-        .set("moodle", DocumentRole.MOODLE)
-        .set("image", DocumentRole.IMG)
-        .set("video", DocumentRole.VIDEO);
-
-    static determineRole(contentType: string): DocumentRole {
-        for (let pattern of Array.from(this.typeMap.keys())) {
-            if (contentType.includes(pattern)) {
-                return this.typeMap.get(pattern);
-            }
-        }
-        return DocumentRole.UNKNOWN;
+    static isDocumentEditable(document: SyncDocument): boolean {
+        return !document.isFolder
+            && (document.contentType.startsWith(editableType.text)
+                || document.contentType.startsWith(editableType.application));
     }
-
     static filterRemoveNameFile(): (syncDocument: SyncDocument) => boolean {
         return (syncDocument: SyncDocument) => syncDocument.name !== model.me.userId;
     }

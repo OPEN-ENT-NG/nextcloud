@@ -3,6 +3,7 @@ import {model} from "entcore";
 import {AxiosError} from "axios";
 import {safeApply} from "../../utils/safe-apply.utils";
 import {ToolbarShareSnipletViewModel} from "./workspace-nextcloud-toolbar-share.sniplet";
+import {NextcloudDocumentsUtils} from "../../utils/nextcloud-documents.utils";
 
 declare let window: any;
 
@@ -23,8 +24,8 @@ interface IViewModel {
 
     // properties action
     toggleRenameView(state: boolean, selectedDocuments: Array<SyncDocument>): void;
-    toggleEdit(state: boolean, selectedDocuments: Array<SyncDocument>);
-    isSelectedDocumentAFolder(selectedDocuments: Array<SyncDocument>);
+    toggleEdit();
+    isSelectedEditable(selectedDocuments: Array<SyncDocument>);
     renameDocument();
 
     // delete documents action
@@ -56,8 +57,8 @@ export class ToolbarSnipletViewModel implements IViewModel {
         this.currentDocument = null;
         this.share = new ToolbarShareSnipletViewModel(this);
     }
-    isSelectedDocumentAFolder(selectedDocuments: Array<SyncDocument>): boolean {
-        return selectedDocuments[0].isFolder;
+    isSelectedEditable(selectedDocuments: Array<SyncDocument>): boolean {
+        return NextcloudDocumentsUtils.isDocumentEditable(selectedDocuments[0]);
     }
 
     hasOneDocumentSelected(selectedDocuments: Array<SyncDocument>): boolean {
@@ -86,10 +87,10 @@ export class ToolbarSnipletViewModel implements IViewModel {
         }
     }
 
-    toggleEdit(state: boolean, selectedDocuments?: Array<SyncDocument>): void {
+    toggleEdit(): void {
         const selected = this.vm.selectedDocuments[0];
         const url = selected.path;
-        window.open(this.vm.nextcloudUrl + "/index.php/apps/files?dir=" + url.substring(0, url.lastIndexOf('/')) + "&fileid=" + selected.fileId);
+        window.open(this.vm.nextcloudUrl + "/index.php/apps/files?dir=" + url.substring(0, url.lastIndexOf('/')) + "&openfile=" + selected.fileId);
     }
 
     renameDocument(): void {
