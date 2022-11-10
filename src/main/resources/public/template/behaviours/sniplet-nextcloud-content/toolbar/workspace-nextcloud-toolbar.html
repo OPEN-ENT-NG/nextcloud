@@ -28,7 +28,7 @@
 
             <!-- edit document(s) -->
             <div id="nextcloud-toolbar-edit" ng-if="vm.toolbar.hasOneDocumentSelected(vm.selectedDocuments) && vm.toolbar.isSelectedEditable(vm.selectedDocuments)">
-                <button ng-click="vm.toolbar.toggleEdit()">
+                <button ng-click="vm.toggleEdit()">
                     <i18n>workspace.external.open</i18n>
                 </button>
             </div>

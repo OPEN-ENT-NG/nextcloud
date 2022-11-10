@@ -22,7 +22,7 @@ interface IViewModel {
     onSelectContent(document: SyncDocument): void;
     onOpenContent(document: SyncDocument): void;
     getFile(document: SyncDocument): string;
-
+    toggleEdit();
     nextcloudUrl: string;
 
     draggable: Draggable;
@@ -212,6 +212,12 @@ class ViewModel implements IViewModel {
         }
     }
 
+    toggleEdit(): void {
+        const selected = this.selectedDocuments[0];
+        const url = selected.path;
+        window.open(this.nextcloudUrl + "/index.php/apps/files?dir=" + url.substring(0, url.lastIndexOf('/')) + "&openfile=" + selected.fileId);
+    }
+
     private async moveAllDocuments(document: SyncDocument, target: SyncDocument): Promise<AxiosResponse[]> {
         const promises: Array<Promise<AxiosResponse>> = [];
         this.selectedDocuments.push(document);
@@ -268,8 +274,7 @@ class ViewModel implements IViewModel {
             this.selectedDocuments = [];
         } else {
             if (NextcloudDocumentsUtils.isDocumentEditable(document)) {
-                const url = document.path;
-                window.open(this.nextcloudUrl + "/index.php/apps/files?dir=" + url.substring(0, url.lastIndexOf('/')) + "&openfile=" + document.fileId);
+                this.toggleEdit();
             } else {
                 window.open(this.getFile(document));
             }
