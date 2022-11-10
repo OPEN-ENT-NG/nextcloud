@@ -24,7 +24,6 @@ interface IViewModel {
 
     // properties action
     toggleRenameView(state: boolean, selectedDocuments: Array<SyncDocument>): void;
-    toggleEdit();
     isSelectedEditable(selectedDocuments: Array<SyncDocument>);
     renameDocument();
 
@@ -85,12 +84,6 @@ export class ToolbarSnipletViewModel implements IViewModel {
         } else {
             this.currentDocument = null;
         }
-    }
-
-    toggleEdit(): void {
-        const selected = this.vm.selectedDocuments[0];
-        const url = selected.path;
-        window.open(this.vm.nextcloudUrl + "/index.php/apps/files?dir=" + url.substring(0, url.lastIndexOf('/')) + "&openfile=" + selected.fileId);
     }
 
     renameDocument(): void {
