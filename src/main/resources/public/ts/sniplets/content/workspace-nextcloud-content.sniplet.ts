@@ -213,9 +213,11 @@ class ViewModel implements IViewModel {
     }
 
     toggleEdit(): void {
-        const selected = this.selectedDocuments[0];
-        const url = selected.path;
-        window.open(this.nextcloudUrl + "/index.php/apps/files?dir=" + url.substring(0, url.lastIndexOf('/')) + "&openfile=" + selected.fileId);
+        if (this.selectedDocuments.length > 0) {
+            const selected: SyncDocument = this.selectedDocuments[0];
+            const url: string = selected.path;
+            window.open(this.nextcloudUrl + "/index.php/apps/files?dir=" + url.substring(0, url.lastIndexOf('/')) + "&openfile=" + selected.fileId);
+        }
     }
 
     private async moveAllDocuments(document: SyncDocument, target: SyncDocument): Promise<AxiosResponse[]> {
