@@ -8,6 +8,7 @@ import fr.openent.nextcloud.helper.HttpResponseHelper;
 import fr.openent.nextcloud.helper.PromiseHelper;
 import fr.openent.nextcloud.model.OCSResponse;
 import fr.openent.nextcloud.model.UserNextcloud;
+import fr.openent.nextcloud.service.DocumentsService;
 import fr.openent.nextcloud.service.ServiceFactory;
 import fr.openent.nextcloud.service.TokenProviderService;
 import fr.openent.nextcloud.service.UserService;
@@ -32,6 +33,7 @@ public class DefaultUserService implements UserService {
     private final WebClient client;
     private final NextcloudConfig nextcloudConfig;
     private final TokenProviderService tokenProviderService;
+    private final DocumentsService documentsService;
 
     private static final String USER_ENDPOINT = "/cloud/users";
 
@@ -39,6 +41,7 @@ public class DefaultUserService implements UserService {
         this.client = serviceFactory.webClient();
         this.nextcloudConfig = serviceFactory.nextcloudConfig();
         this.tokenProviderService = serviceFactory.tokenProviderService();
+        this.documentsService = serviceFactory.documentsService();
     }
 
     @Override
@@ -76,6 +79,7 @@ public class DefaultUserService implements UserService {
                                     .onSuccess(res -> promise.complete())
                                     .onFailure(promise::fail);
                         } else {
+                            checkTokenValidity(userSession);
                             promise.complete();
                         }
                     })
@@ -89,6 +93,23 @@ public class DefaultUserService implements UserService {
                     .onFailure(promise::fail);
         }
         return promise.future();
+    }
+
+    private void checkTokenValidity(UserNextcloud.TokenProvider userSession) {
+        documentsService.parametrizedListFiles(userSession, "/", response -> {
+            if (response.failed()) {
+                //mettre les logs ici
+            } else {
+                int statusCode = response.result().statusCode();
+                handleAccessTokenValidity(statusCode);
+            }
+        });
+    }
+
+    private void handleAccessTokenValidity(int statusCode) {
+        if (statusCode == 401) {
+
+        }
     }
 
     @Override

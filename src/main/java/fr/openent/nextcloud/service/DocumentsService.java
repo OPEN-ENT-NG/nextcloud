@@ -2,7 +2,9 @@ package fr.openent.nextcloud.service;
 
 import fr.openent.nextcloud.helper.Attachment;
 import fr.openent.nextcloud.model.UserNextcloud;
+import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
+import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -21,6 +23,8 @@ public interface DocumentsService {
      * @return  Future List of folder/list {@link JsonArray}
      */
     Future<JsonArray> listFiles(UserNextcloud.TokenProvider userSession, String path);
+
+    public void parametrizedListFiles(UserNextcloud.TokenProvider userSession, String path, Handler<AsyncResult<HttpResponse<String>>> handler);
 
     /**
      * get/download file
