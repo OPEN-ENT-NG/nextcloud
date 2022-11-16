@@ -207,6 +207,17 @@ public class DefaultDocumentsService implements DocumentsService {
     }
 
     @Override
+    public Future<HttpResponse<Buffer>> getFolder(UserNextcloud.TokenProvider userSession, String path) {
+        Promise<HttpResponse<Buffer>> promise = Promise.promise();
+        this.client.getAbs(nextcloudConfig.host() + DOWNLOAD_ENDPOINT)
+                .basicAuthentication(userSession.userId(), userSession.token())
+                .addQueryParam(Field.DIR, path)
+                .send(responseAsync -> proceedGetFile(responseAsync, promise));
+        return promise.future();
+    }
+
+
+    @Override
     public Future<JsonObject> moveDocument(UserNextcloud.TokenProvider userSession, String path, String destPath) {
         Promise<JsonObject> promise = Promise.promise();
 

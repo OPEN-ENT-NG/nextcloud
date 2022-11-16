@@ -56,11 +56,26 @@ public class DocumentsController extends ControllerHelper {
         String contentType = request.getParam(Field.CONTENTTYPE);
         UserUtils.getUserInfos(eb, request, user ->
                 userService.getUserSession(user.getUserId())
-                        .compose(userSession -> documentsService.getFile(userSession, path.replace(" ", "%20")))
-                        .onSuccess(fileResponse -> request.response()
-                                .putHeader("Content-type", contentType + "; charset=utf-8")
-                                .putHeader("Content-Disposition", "attachment; filename=" + fileName)
-                                .end(fileResponse.body()))
+                        .compose(userSession -> {
+                            if (contentType == null) {
+                                return documentsService.getFolder(userSession, path);
+                            } else {
+                                return documentsService.getFile(userSession, path.replace(" ", "%20"));
+                            }
+                        })
+                        .onSuccess(fileResponse -> {
+                            HttpServerResponse resp = request.response();
+                            if (contentType == null) {
+                                resp.putHeader("Content-Type", "application/octet-stream")
+                                        .putHeader("Content-Disposition", "attachment; filename=\" "+ fileName +" .zip\"")
+                                        .putHeader("Content-Description", "File Transfer")
+                                        .putHeader("Content-Transfer-Encoding", "binary");
+                            } else {
+                                resp.putHeader("Content-type", contentType + "; charset=utf-8")
+                                        .putHeader("Content-Disposition", "attachment; filename=" + fileName);
+                            }
+                            resp.end(fileResponse.body());
+                        })
                         .onFailure(err -> renderError(request)));
     }
 
