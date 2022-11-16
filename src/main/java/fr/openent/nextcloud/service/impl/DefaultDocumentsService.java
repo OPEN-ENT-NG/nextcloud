@@ -170,7 +170,7 @@ public class DefaultDocumentsService implements DocumentsService {
         this.client.getAbs(nextcloudConfig.host() + nextcloudConfig.webdavEndpoint() + "/" +
                         userSession.userId() + (path != null ? "/" + path : "" ))
                 .basicAuthentication(userSession.userId(), userSession.token())
-                .send(responseAsync -> proceedGetFile(responseAsync, promise));
+                .send(responseAsync -> proceedGetDocument(responseAsync, promise));
         return promise.future();
     }
 
@@ -180,14 +180,14 @@ public class DefaultDocumentsService implements DocumentsService {
      * @param   responseAsync   HttpResponse of string depending on its state {@link AsyncResult}
      * @param   promise         Promise that could be completed or fail sending {@link Buffer}
      */
-    private void proceedGetFile(AsyncResult<HttpResponse<Buffer>> responseAsync, Promise<HttpResponse<Buffer>> promise) {
+    private void proceedGetDocument(AsyncResult<HttpResponse<Buffer>> responseAsync, Promise<HttpResponse<Buffer>> promise) {
         if (responseAsync.failed()) {
-            String messageToFormat = "[Nextcloud@%s::proceedGetFile] An error has occurred during fetching endpoint : %s";
+            String messageToFormat = "[Nextcloud@%s::proceedGetDocument] An error has occurred during fetching endpoint : %s";
             PromiseHelper.reject(log, messageToFormat, this.getClass().getSimpleName(), responseAsync, promise);
         } else {
             HttpResponse<Buffer> response = responseAsync.result();
             if (response.statusCode() != 200) {
-                String messageToFormat = "[Nextcloud@%s::proceedGetFile] Response status is not a HTTP 200 : %s : %s";
+                String messageToFormat = "[Nextcloud@%s::proceedGetDocument] Response status is not a HTTP 200 : %s : %s";
                 HttpResponseHelper.reject(log, messageToFormat, this.getClass().getSimpleName(), response, promise);
             } else {
                 promise.complete(response);
@@ -202,7 +202,7 @@ public class DefaultDocumentsService implements DocumentsService {
                 .basicAuthentication(userSession.userId(), userSession.token())
                 .addQueryParam(Field.DIR, path)
                 .addQueryParam(Field.FILES, new JsonArray(files).toString())
-                .send(responseAsync -> proceedGetFile(responseAsync, promise));
+                .send(responseAsync -> proceedGetDocument(responseAsync, promise));
         return promise.future();
     }
 
@@ -212,7 +212,7 @@ public class DefaultDocumentsService implements DocumentsService {
         this.client.getAbs(nextcloudConfig.host() + DOWNLOAD_ENDPOINT)
                 .basicAuthentication(userSession.userId(), userSession.token())
                 .addQueryParam(Field.DIR, path)
-                .send(responseAsync -> proceedGetFile(responseAsync, promise));
+                .send(responseAsync -> proceedGetDocument(responseAsync, promise));
         return promise.future();
     }
 
