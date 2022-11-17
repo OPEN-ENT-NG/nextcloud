@@ -9,5 +9,7 @@
   "workspace.folder.create": "Create",
   "cancel": "Cancel",
   "folder.new": "Create folder",
-  "nextcloud.url.connect": "To connect from your phone or computer"
+  "nextcloud.url.connect": "To connect from your phone or computer",
+  "nextcloud.documents.confirm.deletion": "Do you want to permanently delete these documents",
+  "nextcloud.documents.deletion.confirmation": "Items have been permanently deleted."
 }

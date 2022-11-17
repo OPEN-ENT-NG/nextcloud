@@ -9,5 +9,7 @@
   "folder.new.title": "Créer un dossier",
   "folder.new": "Créer un dossier",
   "workspace.folder.create": "Créer",
-  "nextcloud.url.connect": "Pour se connecter depuis votre téléphone ou votre ordinateur"
+  "nextcloud.url.connect": "Pour se connecter depuis votre téléphone ou votre ordinateur",
+  "nextcloud.documents.confirm.deletion": "Voulez-vous supprimer définitivement ces documents",
+  "nextcloud.documents.deletion.confirmation": "Les éléments ont été définitivement supprimés."
 }
