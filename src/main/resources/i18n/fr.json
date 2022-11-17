@@ -11,5 +11,5 @@
   "workspace.folder.create": "Créer",
   "nextcloud.url.connect": "Pour se connecter depuis votre téléphone ou votre ordinateur",
   "nextcloud.documents.confirm.remove": "Voulez-vous supprimer définitivement ces documents ?",
-  "nextcloud.documents.toast": "Les documents ont bien été supprimés."
+  "nextcloud.documents.toast": "Les éléments ont été définitivement supprimés."
 }

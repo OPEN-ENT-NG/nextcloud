@@ -11,5 +11,5 @@
   "folder.new": "Create folder",
   "nextcloud.url.connect": "To connect from your phone or computer",
   "nextcloud.documents.confirm.remove": "Do you want to permanently delete these documents?",
-  "nextcloud.documents.toast": "The documents have been successfully deleted."
+  "nextcloud.documents.toast": "Items have been permanently deleted."
 }
