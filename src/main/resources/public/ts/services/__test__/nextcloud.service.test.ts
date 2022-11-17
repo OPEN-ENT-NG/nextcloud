@@ -128,22 +128,43 @@ describe('NextcloudService', () => {
         });
     });
 
-    it('Test getFile method', done => {
+    it('Test getFile method with file', done => {
         const mock = new MockAdapter(axios);
 
         const userId = "userId";
         const path = "path";
         const fileName = "fileName";
         const contentType = "contentType";
+        const isFolder = false;
 
         expect(nextcloudService.getFile(userId, fileName, path, contentType))
-            .toEqual("/nextcloud/files/user/userId/file/fileName/download?path=path&contentType=contentType")
+            .toEqual("/nextcloud/files/user/userId/file/fileName/download?path=path&contentType=contentType&isFolder=false")
         expect(nextcloudService.getFile(userId, fileName, null, contentType))
-            .toEqual("/nextcloud/files/user/userId/file/fileName/download")
+            .toEqual("/nextcloud/files/user/userId/file/fileName/download?isFolder=false")
         expect(nextcloudService.getFile(userId, fileName, path, null))
-            .toEqual("/nextcloud/files/user/userId/file/fileName/download?path=path")
+            .toEqual("/nextcloud/files/user/userId/file/fileName/download?path=path&isFolder=false")
         expect(nextcloudService.getFile(userId, fileName, null, null))
-            .toEqual("/nextcloud/files/user/userId/file/fileName/download")
+            .toEqual("/nextcloud/files/user/userId/file/fileName/download?isFolder=false")
+        done();
+    });
+
+    it('Test getFile method with folder', done => {
+        const mock = new MockAdapter(axios);
+
+        const userId = "userId";
+        const path = "path";
+        const fileName = "fileName";
+        const contentType = "contentType";
+        const isFolder = true;
+
+        expect(nextcloudService.getFile(userId, fileName, path, contentType, isFolder))
+            .toEqual("/nextcloud/files/user/userId/file/fileName/download?path=path&contentType=contentType&isFolder=true")
+        expect(nextcloudService.getFile(userId, fileName, null, contentType, isFolder))
+            .toEqual("/nextcloud/files/user/userId/file/fileName/download?isFolder=true")
+        expect(nextcloudService.getFile(userId, fileName, path, null, isFolder))
+            .toEqual("/nextcloud/files/user/userId/file/fileName/download?path=path&isFolder=true")
+        expect(nextcloudService.getFile(userId, fileName, null, null, isFolder))
+            .toEqual("/nextcloud/files/user/userId/file/fileName/download?isFolder=true")
         done();
     });
 

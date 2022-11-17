@@ -32,6 +32,15 @@ public interface DocumentsService {
     Future<HttpResponse<Buffer>> getFile(UserNextcloud.TokenProvider userSession, String path);
 
     /**
+     * get/download folder
+     *
+     * @param userSession   User Session {@link UserNextcloud.TokenProvider}
+     * @param path          folder path of nextcloud's user
+     * @return  Future containing Buffer of folder {@link Buffer}
+     */
+    Future<HttpResponse<Buffer>> getFolder(UserNextcloud.TokenProvider userSession, String path);
+
+    /**
      * download multiple files (.zip given)
      *
      * @param userSession       User Session {@link UserNextcloud.TokenProvider}
