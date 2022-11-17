@@ -1,5 +1,5 @@
 import {SyncDocument} from "../../models";
-import {model, notify} from "entcore";
+import {model, toasts} from "entcore";
 import {AxiosError} from "axios";
 import {safeApply} from "../../utils/safe-apply.utils";
 import {ToolbarShareSnipletViewModel} from "./workspace-nextcloud-toolbar-share.sniplet";
@@ -125,7 +125,7 @@ export class ToolbarSnipletViewModel implements IViewModel {
         const paths: Array<string> = this.vm.selectedDocuments.map((selectedDocument: SyncDocument) => selectedDocument.path);
         this.vm.nextcloudService.deleteDocuments(model.me.userId, paths)
             .then(() => {
-                notify.info("nextcloud.documents.confirm.confirmation");
+                toasts.info("nextcloud.documents.deletion.confirmation");
                 return this.vm.nextcloudService.listDocument(model.me.userId, this.vm.parentDocument.path ?
                     this.vm.parentDocument.path : null);
             })
