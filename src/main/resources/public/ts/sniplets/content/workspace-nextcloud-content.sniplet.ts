@@ -8,7 +8,6 @@ import {ToolbarSnipletViewModel} from "./workspace-nextcloud-toolbar.sniplet";
 import {AxiosError, AxiosResponse} from "axios";
 import {UploadFileSnipletViewModel} from "./workspace-nextcloud-upload-file.sniplet";
 import models = workspace.v2.models;
-import {NextcloudDocumentsUtils} from "../../utils/nextcloud-documents.utils";
 
 declare let window: any;
 
@@ -22,7 +21,6 @@ interface IViewModel {
     onSelectContent(document: SyncDocument): void;
     onOpenContent(document: SyncDocument): void;
     getFile(document: SyncDocument): string;
-    toggleEdit();
     nextcloudUrl: string;
 
     draggable: Draggable;
@@ -212,14 +210,6 @@ class ViewModel implements IViewModel {
         }
     }
 
-    toggleEdit(): void {
-        if (this.selectedDocuments.length > 0) {
-            const selected: SyncDocument = this.selectedDocuments[0];
-            const url: string = selected.path;
-            window.open(this.nextcloudUrl + "/index.php/apps/files?dir=" + url.substring(0, url.lastIndexOf('/')) + "&openfile=" + selected.fileId);
-        }
-    }
-
     private async moveAllDocuments(document: SyncDocument, target: SyncDocument): Promise<AxiosResponse[]> {
         const promises: Array<Promise<AxiosResponse>> = [];
         this.selectedDocuments.push(document);
@@ -275,8 +265,8 @@ class ViewModel implements IViewModel {
             // reset all selected documents switch we switch folder
             this.selectedDocuments = [];
         } else {
-            if (NextcloudDocumentsUtils.isDocumentEditable(document)) {
-                this.toggleEdit();
+            if (document.editable) {
+                nextcloudService.openNextcloudLink(document, this.nextcloudUrl);
             } else {
                 window.open(this.getFile(document));
             }

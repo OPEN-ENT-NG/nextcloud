@@ -1,5 +1,7 @@
-import {model, idiom as lang, workspace} from "entcore";
+import {idiom as lang, model, workspace} from "entcore";
 import {DocumentRole} from "../core/enums/document-role";
+import {DocumentsType} from "../core/enums/documents-type";
+import {NextcloudDocumentsUtils} from "../utils/nextcloud-documents.utils";
 import models = workspace.v2.models;
 
 export interface IDocumentResponse {
@@ -14,17 +16,20 @@ export interface IDocumentResponse {
     isFolder: boolean;
 }
 
-export class SyncDocument {
+export class SyncDocument  {
     path: string;
     name: string;
     ownerDisplayName: string;
     contentType: string;
+    role: DocumentRole;
     size: number;
     favorite: number;
+    editable: boolean;
     etag: string;
+    extension: string;
     fileId: number;
     isFolder: boolean;
-    role: string | typeof DocumentRole;
+    type: string | typeof DocumentsType;
     children: Array<SyncDocument>;
     cacheChildren: models.CacheList<any>;
     cacheDocument: models.CacheList<any>;
@@ -43,7 +48,9 @@ export class SyncDocument {
         this.etag = data.etag;
         this.fileId = data.fileId;
         this.isFolder = data.isFolder;
+        this.type = this.determineType();
         this.role = this.determineRole();
+        this.editable = this.isEditable();
         this.children = [];
         this.cacheChildren = new models.CacheList<any>(0, () => false, () => false);
         this.cacheChildren.setData([]);
@@ -55,16 +62,24 @@ export class SyncDocument {
         return this;
     }
 
-    determineRole(): string {
-        if (this.isFolder) {
-            return DocumentRole.FOLDER;
+    determineRole(): DocumentRole {
+        if (this.contentType) {
+            return NextcloudDocumentsUtils.determineRole(this.contentType);
+        } else {
+            return DocumentRole.UNKNOWN;
         }
-        if (this.contentType.includes('image')) {
-            return DocumentRole.IMG;
-        }
-        return DocumentRole.UNKNOWN;
     }
 
+    determineType(): string {
+        if (this.isFolder) {
+            return DocumentsType.FOLDER;
+        }  else
+            return DocumentsType.FILE;
+    }
+
+    isEditable() {
+        return (<any>[DocumentRole.DOC, DocumentRole.PDF, DocumentRole.MARKDOWN, DocumentRole.OCTET_STEAM]).includes(this.role);
+    }
     // create a folder with only one content (synchronized document) and its children all sync documents
     initParent(): SyncDocument {
         const parentNextcloudFolder: SyncDocument = new SyncDocument();
