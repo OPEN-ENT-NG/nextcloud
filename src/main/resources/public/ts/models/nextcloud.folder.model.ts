@@ -16,7 +16,7 @@ export interface IDocumentResponse {
     isFolder: boolean;
 }
 
-export class SyncDocument  {
+export class SyncDocument {
     path: string;
     name: string;
     ownerDisplayName: string;
