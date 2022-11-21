@@ -3,6 +3,7 @@ import {model, toasts} from "entcore";
 import {AxiosError} from "axios";
 import {safeApply} from "../../utils/safe-apply.utils";
 import {ToolbarShareSnipletViewModel} from "./workspace-nextcloud-toolbar-share.sniplet";
+import {nextcloudService} from "../../services";
 
 declare let window: any;
 
@@ -23,6 +24,8 @@ interface IViewModel {
 
     // properties action
     toggleRenameView(state: boolean, selectedDocuments: Array<SyncDocument>): void;
+    toggleEdit(): void;
+    isSelectedEditable(selectedDocuments: Array<SyncDocument>): boolean;
     renameDocument();
 
     // delete documents action
@@ -54,10 +57,19 @@ export class ToolbarSnipletViewModel implements IViewModel {
         this.currentDocument = null;
         this.share = new ToolbarShareSnipletViewModel(this);
     }
+    isSelectedEditable(selectedDocuments: Array<SyncDocument>): boolean {
+        return selectedDocuments.length > 0 && selectedDocuments[0].editable;
+    }
 
     hasOneDocumentSelected(selectedDocuments: Array<SyncDocument>): boolean {
         const total: number = selectedDocuments ? selectedDocuments.length : 0;
         return total == 1;
+    }
+
+    toggleEdit(): void {
+        if (this.vm.selectedDocuments.length > 0) {
+            nextcloudService.openNextcloudLink(this.vm.selectedDocuments[0], this.vm.nextcloudUrl);
+        }
     }
 
     downloadFiles(selectedDocuments: Array<SyncDocument>): void {

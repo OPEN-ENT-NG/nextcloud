@@ -21,7 +21,6 @@ interface IViewModel {
     onSelectContent(document: SyncDocument): void;
     onOpenContent(document: SyncDocument): void;
     getFile(document: SyncDocument): string;
-
     nextcloudUrl: string;
 
     draggable: Draggable;
@@ -266,7 +265,12 @@ class ViewModel implements IViewModel {
             // reset all selected documents switch we switch folder
             this.selectedDocuments = [];
         } else {
-            window.open(this.getFile(document));
+            if (document.editable) {
+                nextcloudService.openNextcloudLink(document, this.nextcloudUrl);
+            } else {
+                window.open(this.getFile(document));
+            }
+
         }
     }
 

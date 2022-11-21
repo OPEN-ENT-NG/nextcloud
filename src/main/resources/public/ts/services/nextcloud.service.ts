@@ -4,6 +4,7 @@ import {IDocumentResponse, SyncDocument} from "../models";
 import models = workspace.v2.models;
 
 export interface INextcloudService {
+    openNextcloudLink(document: SyncDocument, nextcloudUrl: string): void;
     getNextcloudUrl(): Promise<string>;
     listDocument(userid: string, path?: string): Promise<Array<SyncDocument>>;
     uploadDocuments(userid: string, files: Array<File>): Promise<AxiosResponse>;
@@ -18,6 +19,10 @@ export interface INextcloudService {
 }
 
 export const nextcloudService: INextcloudService = {
+    openNextcloudLink: (document: SyncDocument, nextcloudUrl: string): void => {
+        const url: string = document.path;
+        window.open(`${nextcloudUrl}/index.php/apps/files?dir=${url.substring(0, url.lastIndexOf('/'))}&openfile=${document.fileId}`);
+    },
 
     getNextcloudUrl: async (): Promise<string> => {
         return http.get(`/nextcloud/config/url`).then((res: AxiosResponse) => res.data.url);
