@@ -67,7 +67,7 @@ export class ToolbarSnipletViewModel implements IViewModel {
 
     toggleEdit() {
         if (this.vm.selectedDocuments.length > 0) {
-            nextcloudService.openNextcloudLink(this.vm.selectedDocuments.length[0], this.vm.nextcloudUrl);
+            nextcloudService.openNextcloudLink(this.vm.selectedDocuments[0], this.vm.nextcloudUrl);
         }
     }
 

@@ -29,7 +29,7 @@ export class SyncDocument {
     extension: string;
     fileId: number;
     isFolder: boolean;
-    type: string | typeof DocumentsType;
+    type: DocumentsType;
     children: Array<SyncDocument>;
     cacheChildren: models.CacheList<any>;
     cacheDocument: models.CacheList<any>;
@@ -70,11 +70,12 @@ export class SyncDocument {
         }
     }
 
-    determineType(): string {
+    determineType(): DocumentsType {
         if (this.isFolder) {
             return DocumentsType.FOLDER;
-        }  else
+        }  else {
             return DocumentsType.FILE;
+        }
     }
 
     isEditable() {
