@@ -79,7 +79,7 @@ public class DefaultUserService implements UserService {
                                     .onSuccess(res -> promise.complete())
                                     .onFailure(promise::fail);
                         } else {
-                            checkTokenValidity(userSession);
+                            checkTokenValidity(userBody, userSession);
                             promise.complete();
                         }
                     })
@@ -95,7 +95,7 @@ public class DefaultUserService implements UserService {
         return promise.future();
     }
 
-    private void checkTokenValidity(UserNextcloud.TokenProvider userSession) {
+    private void checkTokenValidity(UserNextcloud.RequestBody userBody, UserNextcloud.TokenProvider userSession) {
         documentsService.parametrizedListFiles(userSession, "/", response -> {
             if (response.failed()) {
                 //TODO mettre les logs
@@ -103,18 +103,19 @@ public class DefaultUserService implements UserService {
             } else {
                 //TODO handle le retour
                 int statusCode = response.result().statusCode();
-                handleAccessTokenValidity(statusCode);
+                handleAccessTokenValidity(statusCode, userBody);
             }
         });
     }
 
-    private void handleAccessTokenValidity(int statusCode) {
+    private void handleAccessTokenValidity(int statusCode, UserNextcloud.RequestBody userBody) {
         //TODO if 401 then handle token replacement in db
         if (statusCode == 401) {
-
-        } else {
-            //TODO else then print the error
-        }
+            this.tokenProviderService.provideNextcloudSession(userBody);
+        } //else {
+//            return;
+//            //TODO else then print the error
+//        }
     }
 
     @Override
