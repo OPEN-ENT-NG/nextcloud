@@ -3,7 +3,7 @@ import {model} from "entcore";
 import {DocumentRole} from "../core/enums/document-role";
 
 export class NextcloudDocumentsUtils {
-    static typeMap = new Map<string, DocumentRole>()
+    static typeMap: Map<string, DocumentRole> = new Map<string, DocumentRole>()
         .set("doc", DocumentRole.DOC)
         .set("pdf", DocumentRole.PDF)
         .set("markdown", DocumentRole.MARKDOWN)

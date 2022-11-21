@@ -78,7 +78,7 @@ export class SyncDocument {
         }
     }
 
-    isEditable() {
+    isEditable(): boolean {
         return (<any>[DocumentRole.DOC, DocumentRole.PDF, DocumentRole.MARKDOWN, DocumentRole.OCTET_STEAM]).includes(this.role);
     }
     // create a folder with only one content (synchronized document) and its children all sync documents

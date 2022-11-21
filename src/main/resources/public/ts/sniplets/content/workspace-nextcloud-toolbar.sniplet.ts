@@ -24,7 +24,8 @@ interface IViewModel {
 
     // properties action
     toggleRenameView(state: boolean, selectedDocuments: Array<SyncDocument>): void;
-    isSelectedEditable(selectedDocuments: Array<SyncDocument>);
+    toggleEdit(): void;
+    isSelectedEditable(selectedDocuments: Array<SyncDocument>): boolean;
     renameDocument();
 
     // delete documents action
@@ -65,7 +66,7 @@ export class ToolbarSnipletViewModel implements IViewModel {
         return total == 1;
     }
 
-    toggleEdit() {
+    toggleEdit(): void {
         if (this.vm.selectedDocuments.length > 0) {
             nextcloudService.openNextcloudLink(this.vm.selectedDocuments[0], this.vm.nextcloudUrl);
         }
