@@ -98,8 +98,10 @@ public class DefaultUserService implements UserService {
     private void checkTokenValidity(UserNextcloud.TokenProvider userSession) {
         documentsService.parametrizedListFiles(userSession, "/", response -> {
             if (response.failed()) {
-                //mettre les logs ici
+                //TODO mettre les logs
+
             } else {
+                //TODO handle le retour
                 int statusCode = response.result().statusCode();
                 handleAccessTokenValidity(statusCode);
             }
@@ -107,8 +109,11 @@ public class DefaultUserService implements UserService {
     }
 
     private void handleAccessTokenValidity(int statusCode) {
+        //TODO if 401 then handle token replacement in db
         if (statusCode == 401) {
 
+        } else {
+            //TODO else then print the error
         }
     }
 
