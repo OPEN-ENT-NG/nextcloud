@@ -26,7 +26,7 @@ interface IViewModel {
     documents: Array<SyncDocument>;
     initTree(folder: Array<SyncDocument>): void;
     watchFolderState(): void;
-    openDocument(folder: any): void;
+    openDocument(folder: any): Promise<void>;
     setSwitchDisplayHandler(): void;
 
     userInfo: UserNextcloud;
@@ -38,7 +38,15 @@ interface IViewModel {
     initDraggable(): void;
     resolveDragTarget(event: DragEvent): Promise<void>;
     removeSelectedDocuments(): void;
+    addDragEventListeners(): void;
+    removeDragEventListeners(): void;
+    addDragOverlays(): void;
+    removeDragOverlays(): void;
+    addDragFeedback(): void;
+    removeDragFeedback(): void;
     droppable: Draggable;
+    dragOverEventListeners: Map<HTMLElement, EventListener>;
+    dragLeaveEventListeners: Map<HTMLElement, EventListener>;
 }
 
 class ViewModel implements IViewModel {
@@ -52,6 +60,8 @@ class ViewModel implements IViewModel {
     openedFolder: Array<models.Element> = [];
     droppable: Draggable;
     documents: Array<SyncDocument>;
+    dragOverEventListeners: Map<HTMLElement, EventListener> = new Map<HTMLElement, EventListener>();
+    dragLeaveEventListeners: Map<HTMLElement, EventListener> = new Map<HTMLElement, EventListener>();
 
     subscriptions: Subscription = new Subscription();
 
@@ -87,6 +97,9 @@ class ViewModel implements IViewModel {
                 this.folderTree.openFolder(getFolderContext ? getFolderContext : document);
             }));
 
+        scope.$parent.$on("$destroy", () => {
+            this.removeDragFeedback();
+        });
     }
 
 
@@ -118,7 +131,11 @@ class ViewModel implements IViewModel {
                     viewModel.openedFolder.push(folder);
                 }
                 // synchronize documents and send content to its other sniplet content
-                viewModel.openDocument(folder);
+                await viewModel.openDocument(folder);
+
+                // reset drag feedback
+                viewModel.removeDragFeedback();
+                viewModel.addDragFeedback();
             },
         };
     }
@@ -137,7 +154,6 @@ class ViewModel implements IViewModel {
             dropConditionHandler(event: DragEvent, content?: any): boolean {
                 return false;
             }
-
         }
     }
 
@@ -226,6 +242,84 @@ class ViewModel implements IViewModel {
             folders.forEach((fol: Document) => fol.selected = false);
         }
     }
+
+    /**
+     * add dragover/dragleave listeners
+     */
+    private addDragEventListeners(): void {
+        const folders: HTMLElement[] = Array.from(document.getElementsByTagName('folder-tree-inner')) as HTMLElement[];
+        folders.forEach((element: HTMLElement) => {
+            element.addEventListener('dragover', this.onDragOver(element));
+            element.addEventListener('dragleave', this.onDragLeave(element));
+
+            this.dragOverEventListeners.set(element, this.onDragOver(element));
+            this.dragOverEventListeners.set(element, this.onDragLeave(element));
+        });
+    }
+
+    /**
+     * inject drag over overlays
+     */
+    private addDragOverlays(): void {
+        const folders: HTMLElement[] = Array.from(document.getElementsByTagName('folder-tree-inner')) as HTMLElement[];
+        folders.forEach((element: HTMLElement, i: number) => {
+            const span: HTMLElement = document.createElement('span');
+            span.id = 'droptarget-' + i;
+            span.className = 'highlight-title highlight-title-border ng-scope';
+            const subSpan: HTMLElement = document.createElement('span');
+            subSpan.className = 'count-badge ng-binding';
+            span.appendChild(subSpan);
+
+            const ul: Element = element.lastElementChild;
+            if (ul.tagName === 'UL') {
+                element.insertBefore(span, ul);
+            } else {
+                element.appendChild(span);
+            }
+            element.style.position = 'relative';
+        })
+    }
+
+    /**
+     * remove drag over overlay
+     */
+    private removeDragOverlays(): void {
+        const spans: HTMLElement[] = Array.from(document.querySelectorAll(`[id^="droptarget-"]`)) as HTMLElement[];
+        spans.forEach((element: HTMLElement) => element.remove());
+    }
+
+    /**
+     * remove dragover and dragleave event listeners
+     */
+    private removeDragEventListeners (): void {
+        this.dragOverEventListeners.forEach((listener: EventListener, element: HTMLElement) => element.removeEventListener('dragover', this.onDragOver(element)));
+        this.dragOverEventListeners.clear()
+        this.dragLeaveEventListeners.forEach((listener: EventListener, element: HTMLElement) => element.removeEventListener('dragleave', this.onDragLeave(element)));
+        this.dragLeaveEventListeners.clear()
+    }
+
+    addDragFeedback(): void {
+        this.addDragOverlays();
+        this.addDragEventListeners();
+    }
+
+    removeDragFeedback(): void {
+        this.removeDragOverlays();
+        this.removeDragEventListeners();
+    }
+
+    private onDragLeave = (element: HTMLElement): EventListener => (event: Event): void => {
+        event.preventDefault();
+        event.stopPropagation();
+        element.firstElementChild.classList.remove('droptarget');
+    }
+
+    private onDragOver = (element: HTMLElement): EventListener => (event: Event): void => {
+        event.preventDefault();
+        event.stopPropagation();
+        element.firstElementChild.classList.add('droptarget');
+    }
+
     /**
      * Remove workspace tree and use nextcloud tree instead.
      */
