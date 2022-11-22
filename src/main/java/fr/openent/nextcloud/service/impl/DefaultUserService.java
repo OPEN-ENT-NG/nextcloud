@@ -71,6 +71,7 @@ public class DefaultUserService implements UserService {
         Promise<Void> promise = Promise.promise();
         if (userNextcloud.id() != null) {
             this.getUserSession(userBody.userId())
+                    .compose(userSession -> checkTokenValidity(userBody, userSession))
                     .onSuccess(userSession -> {
                         if (userSession.isEmpty()) {
                             userBody.setPassword(generateUserPassword());
@@ -95,17 +96,24 @@ public class DefaultUserService implements UserService {
         return promise.future();
     }
 
-    private void checkTokenValidity(UserNextcloud.RequestBody userBody, UserNextcloud.TokenProvider userSession) {
-        documentsService.parametrizedListFiles(userSession, "/", response -> {
-            if (response.failed()) {
-                //TODO mettre les logs
-
-            } else {
-                //TODO handle le retour
-                int statusCode = response.result().statusCode();
-                handleAccessTokenValidity(statusCode, userBody);
-            }
-        });
+    private Future<UserNextcloud.TokenProvider> checkTokenValidity(UserNextcloud.RequestBody userBody, UserNextcloud.TokenProvider userSession) {
+        Promise<UserNextcloud.TokenProvider> promise = Promise.promise();
+        if (userSession.isEmpty()) {
+            promise.complete(new UserNextcloud.TokenProvider());
+        } else {
+            documentsService.parametrizedListFiles(userSession, null, response -> {
+                if (response.failed()) {
+                    //TODO mettre les logs
+                } else {
+                    if (response.result().statusCode() != 200 && response.result().statusCode() != 207) {
+                        promise.complete(new UserNextcloud.TokenProvider());
+                    } else {
+                        promise.complete(userSession);
+                    }
+                }
+            });
+        }
+        return promise.future();
     }
 
     private void handleAccessTokenValidity(int statusCode, UserNextcloud.RequestBody userBody) {
