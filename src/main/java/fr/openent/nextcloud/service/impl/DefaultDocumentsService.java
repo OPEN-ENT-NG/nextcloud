@@ -15,6 +15,7 @@ import fr.openent.nextcloud.service.ServiceFactory;
 
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
+import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.EventBus;
@@ -64,12 +65,16 @@ public class DefaultDocumentsService implements DocumentsService {
     @Override
     public Future<JsonArray> listFiles(UserNextcloud.TokenProvider userSession, String path) {
         Promise<JsonArray> promise = Promise.promise();
+        parameterizedListFiles(userSession, path, responseAsync -> proceedListFiles(responseAsync, promise));
+        return promise.future();
+    }
+
+    public void parameterizedListFiles(UserNextcloud.TokenProvider userSession, String path, Handler<AsyncResult<HttpResponse<String>>> handler) {
         this.client.rawAbs(NextcloudHttpMethod.PROPFIND.method(), nextcloudConfig.host() +
                         nextcloudConfig.webdavEndpoint() + "/" + userSession.userId() + (path != null ? "/" + path.replace(" ", "%20") : "" ))
                 .basicAuthentication(userSession.userId(), userSession.token())
                 .as(BodyCodec.string(StandardCharsets.UTF_8.toString()))
-                .sendBuffer(Buffer.buffer(getListFilesPropsBody()), responseAsync -> proceedListFiles(responseAsync, promise));
-        return promise.future();
+                .sendBuffer(Buffer.buffer(getListFilesPropsBody()), handler);
     }
 
     /**
