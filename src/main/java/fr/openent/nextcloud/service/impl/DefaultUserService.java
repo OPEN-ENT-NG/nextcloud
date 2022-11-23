@@ -8,6 +8,7 @@ import fr.openent.nextcloud.helper.HttpResponseHelper;
 import fr.openent.nextcloud.helper.PromiseHelper;
 import fr.openent.nextcloud.model.OCSResponse;
 import fr.openent.nextcloud.model.UserNextcloud;
+import fr.openent.nextcloud.service.DocumentsService;
 import fr.openent.nextcloud.service.ServiceFactory;
 import fr.openent.nextcloud.service.TokenProviderService;
 import fr.openent.nextcloud.service.UserService;
@@ -32,6 +33,7 @@ public class DefaultUserService implements UserService {
     private final WebClient client;
     private final NextcloudConfig nextcloudConfig;
     private final TokenProviderService tokenProviderService;
+    private final DocumentsService documentsService;
 
     private static final String USER_ENDPOINT = "/cloud/users";
 
@@ -39,15 +41,16 @@ public class DefaultUserService implements UserService {
         this.client = serviceFactory.webClient();
         this.nextcloudConfig = serviceFactory.nextcloudConfig();
         this.tokenProviderService = serviceFactory.tokenProviderService();
+        this.documentsService = serviceFactory.documentsService();
     }
 
     @Override
     public Future<JsonObject> provideUserSession(UserNextcloud.RequestBody userBody) {
         Promise<JsonObject> promise = Promise.promise();
         this.getUserInfo(userBody.userId())
-               .compose(userNextcloud -> resolveUserSession(userBody, userNextcloud))
-               .onSuccess(res -> promise.complete())
-               .onFailure(promise::fail);
+                .compose(userNextcloud -> resolveUserSession(userBody, userNextcloud))
+                .onSuccess(res -> promise.complete())
+                .onFailure(promise::fail);
         return promise.future();
     }
 
@@ -68,6 +71,7 @@ public class DefaultUserService implements UserService {
         Promise<Void> promise = Promise.promise();
         if (userNextcloud.id() != null) {
             this.getUserSession(userBody.userId())
+                    .compose(this::checkSessionValidity)
                     .onSuccess(userSession -> {
                         if (userSession.isEmpty()) {
                             userBody.setPassword(generateUserPassword());
@@ -87,6 +91,32 @@ public class DefaultUserService implements UserService {
                     .compose(res -> this.tokenProviderService.provideNextcloudSession(userBody))
                     .onSuccess(res -> promise.complete())
                     .onFailure(promise::fail);
+        }
+        return promise.future();
+    }
+
+    /**
+     * Check if the user's token is still up-to-date in the database
+     * @param userSession   User session
+     * @return              Future with the updated session if update needed, else old session.
+     */
+    private Future<UserNextcloud.TokenProvider> checkSessionValidity(UserNextcloud.TokenProvider userSession) {
+        Promise<UserNextcloud.TokenProvider> promise = Promise.promise();
+        if (userSession.isEmpty()) {
+            promise.complete(new UserNextcloud.TokenProvider());
+        } else {
+            documentsService.parametrizedListFiles(userSession, null, response -> {
+                if (response.failed()) {
+                    String messageToFormat = "[Nextcloud@%s::checkSessionValidity] Error during token validity check : %s";
+                    PromiseHelper.reject(log, messageToFormat, this.getClass().getSimpleName(), response.cause(), promise);
+                } else {
+                    if (response.result().statusCode() != 200 && response.result().statusCode() != 207) {
+                        promise.complete(new UserNextcloud.TokenProvider());
+                    } else {
+                        promise.complete(userSession);
+                    }
+                }
+            });
         }
         return promise.future();
     }
