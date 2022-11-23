@@ -71,7 +71,7 @@ public class DefaultUserService implements UserService {
         Promise<Void> promise = Promise.promise();
         if (userNextcloud.id() != null) {
             this.getUserSession(userBody.userId())
-                    .compose(userSession -> checkTokenValidity(userBody, userSession))
+                    .compose(this::checkSessionValidity)
                     .onSuccess(userSession -> {
                         if (userSession.isEmpty()) {
                             userBody.setPassword(generateUserPassword());
@@ -80,7 +80,6 @@ public class DefaultUserService implements UserService {
                                     .onSuccess(res -> promise.complete())
                                     .onFailure(promise::fail);
                         } else {
-                            checkTokenValidity(userBody, userSession);
                             promise.complete();
                         }
                     })
@@ -96,14 +95,20 @@ public class DefaultUserService implements UserService {
         return promise.future();
     }
 
-    private Future<UserNextcloud.TokenProvider> checkTokenValidity(UserNextcloud.RequestBody userBody, UserNextcloud.TokenProvider userSession) {
+    /**
+     * Check if the user's token is still up-to-date in the database
+     * @param userSession   User session
+     * @return              Future with the updated session if update needed, else old session.
+     */
+    private Future<UserNextcloud.TokenProvider> checkSessionValidity(UserNextcloud.TokenProvider userSession) {
         Promise<UserNextcloud.TokenProvider> promise = Promise.promise();
         if (userSession.isEmpty()) {
             promise.complete(new UserNextcloud.TokenProvider());
         } else {
             documentsService.parametrizedListFiles(userSession, null, response -> {
                 if (response.failed()) {
-                    //TODO mettre les logs
+                    String messageToFormat = "[Nextcloud@%s::checkSessionValidity] Error during token validity check : %s";
+                    PromiseHelper.reject(log, messageToFormat, this.getClass().getSimpleName(), response.cause(), promise);
                 } else {
                     if (response.result().statusCode() != 200 && response.result().statusCode() != 207) {
                         promise.complete(new UserNextcloud.TokenProvider());
@@ -116,15 +121,6 @@ public class DefaultUserService implements UserService {
         return promise.future();
     }
 
-    private void handleAccessTokenValidity(int statusCode, UserNextcloud.RequestBody userBody) {
-        //TODO if 401 then handle token replacement in db
-        if (statusCode == 401) {
-            this.tokenProviderService.provideNextcloudSession(userBody);
-        } //else {
-//            return;
-//            //TODO else then print the error
-//        }
-    }
 
     @Override
     public Future<JsonObject> addNewUser(UserNextcloud.RequestBody userBody) {
