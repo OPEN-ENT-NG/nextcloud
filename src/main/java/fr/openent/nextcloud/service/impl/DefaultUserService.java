@@ -105,7 +105,7 @@ public class DefaultUserService implements UserService {
         if (userSession.isEmpty()) {
             promise.complete(new UserNextcloud.TokenProvider());
         } else {
-            documentsService.parametrizedListFiles(userSession, null, response -> {
+            documentsService.parameterizedListFiles(userSession, null, response -> {
                 if (response.failed()) {
                     String messageToFormat = "[Nextcloud@%s::checkSessionValidity] Error during request for token validity check : %s";
                     PromiseHelper.reject(log, messageToFormat, this.getClass().getSimpleName(), response.cause(), promise);
@@ -127,7 +127,7 @@ public class DefaultUserService implements UserService {
         int statusCode = response.result().statusCode();
         if (statusCode == 401) {
             promise.complete(new UserNextcloud.TokenProvider());
-        } else if (statusCode == 200 || statusCode == 207){
+        } else if (statusCode == 200 || statusCode == 207) {
             promise.complete(userSession);
         } else {
             String messageToFormat = "[Nextcloud@%s::handleSessionCheckStatus] Request responded error code : %s";

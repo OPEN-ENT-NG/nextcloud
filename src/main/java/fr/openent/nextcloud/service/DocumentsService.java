@@ -32,7 +32,7 @@ public interface DocumentsService {
      * @param handler       Specified handler
      * @return
      */
-    void parametrizedListFiles(UserNextcloud.TokenProvider userSession, String path, Handler<AsyncResult<HttpResponse<String>>> handler);
+    void parameterizedListFiles(UserNextcloud.TokenProvider userSession, String path, Handler<AsyncResult<HttpResponse<String>>> handler);
 
     /**
      * get/download file

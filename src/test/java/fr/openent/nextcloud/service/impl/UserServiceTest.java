@@ -26,7 +26,7 @@ public class UserServiceTest {
     @Before
     public void setUp() {
         vertx = Vertx.vertx();
-        ServiceFactory serviceFactory = new ServiceFactory(vertx, null,null,null,null,null,null);
+        ServiceFactory serviceFactory = new ServiceFactory(vertx, null, null, null, null, null, null);
         this.userService = new DefaultUserService(serviceFactory);
         Sql.getInstance().init(vertx.eventBus(), "fr.openent.next");
     }

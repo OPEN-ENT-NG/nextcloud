@@ -65,11 +65,11 @@ public class DefaultDocumentsService implements DocumentsService {
     @Override
     public Future<JsonArray> listFiles(UserNextcloud.TokenProvider userSession, String path) {
         Promise<JsonArray> promise = Promise.promise();
-        parametrizedListFiles(userSession, path, responseAsync -> proceedListFiles(responseAsync, promise));
+        parameterizedListFiles(userSession, path, responseAsync -> proceedListFiles(responseAsync, promise));
         return promise.future();
     }
 
-    public void parametrizedListFiles(UserNextcloud.TokenProvider userSession, String path, Handler<AsyncResult<HttpResponse<String>>> handler) {
+    public void parameterizedListFiles(UserNextcloud.TokenProvider userSession, String path, Handler<AsyncResult<HttpResponse<String>>> handler) {
         this.client.rawAbs(NextcloudHttpMethod.PROPFIND.method(), nextcloudConfig.host() +
                         nextcloudConfig.webdavEndpoint() + "/" + userSession.userId() + (path != null ? "/" + path.replace(" ", "%20") : "" ))
                 .basicAuthentication(userSession.userId(), userSession.token())
