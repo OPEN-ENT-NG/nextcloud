@@ -12,6 +12,8 @@ import org.entcore.common.sql.Sql;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.powermock.reflect.Whitebox;
 
 @RunWith(VertxUnitRunner.class)
@@ -24,7 +26,7 @@ public class UserServiceTest {
     @Before
     public void setUp() {
         vertx = Vertx.vertx();
-        ServiceFactory serviceFactory = new ServiceFactory(null, null,null,null,null,null,null);
+        ServiceFactory serviceFactory = new ServiceFactory(vertx, null,null,null,null,null,null);
         this.userService = new DefaultUserService(serviceFactory);
         Sql.getInstance().init(vertx.eventBus(), "fr.openent.next");
     }
