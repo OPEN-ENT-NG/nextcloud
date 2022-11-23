@@ -107,18 +107,32 @@ public class DefaultUserService implements UserService {
         } else {
             documentsService.parametrizedListFiles(userSession, null, response -> {
                 if (response.failed()) {
-                    String messageToFormat = "[Nextcloud@%s::checkSessionValidity] Error during token validity check : %s";
+                    String messageToFormat = "[Nextcloud@%s::checkSessionValidity] Error during request for token validity check : %s";
                     PromiseHelper.reject(log, messageToFormat, this.getClass().getSimpleName(), response.cause(), promise);
                 } else {
-                    if (response.result().statusCode() != 200 && response.result().statusCode() != 207) {
-                        promise.complete(new UserNextcloud.TokenProvider());
-                    } else {
-                        promise.complete(userSession);
-                    }
+                    handleSessionCheckStatus(userSession, response, promise);
                 }
             });
         }
         return promise.future();
+    }
+
+    /**
+     * Complete the promise depending on the status code of the token check request.
+     * @param userSession   User session.
+     * @param response      Check token request (can be anything, just to check user access to his nc account).
+     * @param promise       Promise to complete.
+     */
+    private void handleSessionCheckStatus(UserNextcloud.TokenProvider userSession, AsyncResult<HttpResponse<String>> response, Promise<UserNextcloud.TokenProvider> promise) {
+        int statusCode = response.result().statusCode();
+        if (statusCode == 401) {
+            promise.complete(new UserNextcloud.TokenProvider());
+        } else if (statusCode == 200 || statusCode == 207){
+            promise.complete(userSession);
+        } else {
+            String messageToFormat = "[Nextcloud@%s::handleSessionCheckStatus] Request responded error code : %s";
+            PromiseHelper.reject(log, messageToFormat, this.getClass().getSimpleName(), response.cause(), promise);
+        }
     }
 
     @Override
