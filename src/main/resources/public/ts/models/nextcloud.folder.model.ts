@@ -14,6 +14,7 @@ export interface IDocumentResponse {
     etag: string;
     fileId: number;
     isFolder: boolean;
+    lastModified: string;
 }
 
 export class SyncDocument {
@@ -29,6 +30,7 @@ export class SyncDocument {
     extension: string;
     fileId: number;
     isFolder: boolean;
+    lastModified: string;
     type: DocumentsType;
     children: Array<SyncDocument>;
     cacheChildren: models.CacheList<any>;
@@ -48,6 +50,7 @@ export class SyncDocument {
         this.etag = data.etag;
         this.fileId = data.fileId;
         this.isFolder = data.isFolder;
+        this.lastModified = data.lastModified;
         this.type = this.determineType();
         this.role = this.determineRole();
         this.editable = this.isEditable();
@@ -99,6 +102,7 @@ export class SyncDocument {
         parentNextcloudFolder.etag = null;
         parentNextcloudFolder.fileId = null;
         parentNextcloudFolder.isFolder = true;
+        parentNextcloudFolder.lastModified = new Date().toISOString();
         parentNextcloudFolder.children = [];
         parentNextcloudFolder.cacheChildren = new models.CacheList<any>(0, () => false, () => false);
         parentNextcloudFolder.cacheChildren.setData([]);
