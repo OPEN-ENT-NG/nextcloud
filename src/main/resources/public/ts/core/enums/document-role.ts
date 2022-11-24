@@ -1,14 +1,14 @@
 export enum DocumentRole {
+    XLS = 'spreadsheet',
+    PPT = 'presentation',
     VIDEO = 'video',
-    PDF = 'pdf',
-    UNKNOWN = 'unknown',
     IMG = 'img',
-    MARKDOWN = 'markdown',
-    DOC = 'doc',
-    MOODLE = 'moodle',
     OCTET_STEAM = 'octet-stream',
-    XLS = 'xls',
-    PPT = 'ppt',
     AUDIO = 'audio',
+    DOC = 'doc',
+    PDF = 'pdf',
+    MARKDOWN = 'markdown',
+    MOODLE = 'moodle',
+    UNKNOWN = 'unknown',
     FOLDER = 'folder'
 }

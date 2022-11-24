@@ -29,7 +29,7 @@
                 </a>
             </legend>
 
-            <a class="container" ng-switch="content.role">
+            <a class="container [[content.role]]" ng-switch="content.role">
                 <!-- img format -->
                 <div ng-switch-when="img" class="twelve cell">
                     <div class="clip">
@@ -37,11 +37,16 @@
                     </div>
                 </div>
 
-                <div class="img container video" ng-switch-when="video">
+                <div class="img video" ng-switch-when="video">
                     <i><svg class="icon-video" width="40" height="40"><use xlink:href="/workspace/public/img/illustrations.svg#icon-play"></use></svg></i>
                 </div>
-
-                <i ng-switch-default class="[[content.role]]-large"></i>
+                <i ng-switch-when="doc" class="doc-large"></i>
+                <i ng-switch-when="pdf" class="pdf-large"></i>
+                <i ng-switch-when="spreadsheet" class="xls-large"></i>
+                <i ng-switch-when="presentation" class="ppt-large"></i>
+                <i ng-switch-when="audio" class="audio-large"></i>
+                <i ng-switch-when="folder" class="folder-large"></i>
+                <i ng-switch-default class="unknown-large"></i>
             </a>
         </explorer>
     </article>
