@@ -133,8 +133,9 @@ class ViewModel implements IViewModel {
                 // synchronize documents and send content to its other sniplet content
                 await viewModel.openDocument(folder);
 
-                // reset drag feedback
+                // reset drag feedback by security
                 viewModel.removeDragFeedback();
+                // init drag over
                 viewModel.addDragFeedback();
             },
         };
