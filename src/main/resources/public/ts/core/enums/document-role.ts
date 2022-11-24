@@ -6,5 +6,9 @@ export enum DocumentRole {
     MARKDOWN = 'markdown',
     DOC = 'doc',
     MOODLE = 'moodle',
-    OCTET_STEAM = 'octet-stream'
+    OCTET_STEAM = 'octet-stream',
+    XLS = 'xls',
+    PPT = 'ppt',
+    AUDIO = 'audio',
+    FOLDER = 'folder'
 }

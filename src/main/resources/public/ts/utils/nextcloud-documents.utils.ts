@@ -4,15 +4,21 @@ import {DocumentRole} from "../core/enums/document-role";
 
 export class NextcloudDocumentsUtils {
     static typeMap: Map<string, DocumentRole> = new Map<string, DocumentRole>()
+
+        .set("image", DocumentRole.IMG)
+        .set("video", DocumentRole.VIDEO)
+        .set("audio", DocumentRole.AUDIO)
+        .set("presentation", DocumentRole.PPT)
+        .set("spreadsheet", DocumentRole.XLS)
+        .set("markdown", DocumentRole.MARKDOWN)
         .set("doc", DocumentRole.DOC)
         .set("pdf", DocumentRole.PDF)
-        .set("markdown", DocumentRole.MARKDOWN)
         .set("octet-stream", DocumentRole.OCTET_STEAM)
-        .set("moodle", DocumentRole.MOODLE)
-        .set("image", DocumentRole.IMG)
-        .set("video", DocumentRole.VIDEO);
+        .set("moodle", DocumentRole.MOODLE);
+
 
     static determineRole(contentType: string): DocumentRole {
+        console.log(Array.from(this.typeMap));
         for (let pattern of Array.from(this.typeMap.keys())) {
             if (contentType.includes(pattern)) {
                 return this.typeMap.get(pattern);

@@ -37,13 +37,16 @@
                     </div>
                 </div>
 
-                <!-- folder format -->
-                <div ng-switch-when="folder">
-                    <i class="folder-large"></i>
+                <div ng-switch-when="video" class="twelve cell video"
+                     ng-style="{'background-image': videoThumbUrl(document)}">
+                    <i>
+                        <svg class="icon-video" width="40" height="40">
+                            <use xlink:href="/workspace/public/img/illustrations.svg#icon-play"></use>
+                        </svg>
+                    </i>
                 </div>
-                
-                <!-- default file todo pdf-large is example but also unknown-large -->
-                <i ng-switch-default class="unknown-large"></i>
+
+                <i ng-switch-default class="[[content.role]]-large"></i>
             </a>
         </explorer>
     </article>
