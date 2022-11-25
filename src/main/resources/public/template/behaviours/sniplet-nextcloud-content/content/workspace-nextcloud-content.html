@@ -29,7 +29,7 @@
                 </a>
             </legend>
 
-            <a class="container" ng-switch="content.role">
+            <a class="container [[content.role]]" ng-switch="content.role">
                 <!-- img format -->
                 <div ng-switch-when="img" class="twelve cell">
                     <div class="clip">
@@ -37,13 +37,12 @@
                     </div>
                 </div>
 
-                <!-- folder format -->
-                <div ng-switch-when="folder">
-                    <i class="folder-large"></i>
+                <div class="img video" ng-switch-when="video">
+                    <i><svg class="icon-video" width="40" height="40"><use xlink:href="/workspace/public/img/illustrations.svg#icon-play"></use></svg></i>
                 </div>
-                
-                <!-- default file todo pdf-large is example but also unknown-large -->
-                <i ng-switch-default class="unknown-large"></i>
+                <i ng-switch-when="presentation" class="ppt-large"></i>
+                <i ng-switch-when="spreadsheet" class="xls-large"></i>
+                <i ng-switch-default class="[[content.role]]-large"></i>
             </a>
         </explorer>
     </article>

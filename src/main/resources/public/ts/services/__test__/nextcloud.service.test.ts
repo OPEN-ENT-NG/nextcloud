@@ -102,7 +102,7 @@ describe('NextcloudService', () => {
             path: "path2",
             size: 0,
             type: "folder",
-            role: "unknown",
+            role: "folder",
             editable: false
         }
 

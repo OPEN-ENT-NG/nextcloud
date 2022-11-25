@@ -63,7 +63,9 @@ export class SyncDocument {
     }
 
     determineRole(): DocumentRole {
-        if (this.contentType) {
+        if (this.isFolder) {
+            return DocumentRole.FOLDER
+        } else if (this.contentType) {
             return NextcloudDocumentsUtils.determineRole(this.contentType);
         } else {
             return DocumentRole.UNKNOWN;
@@ -79,7 +81,11 @@ export class SyncDocument {
     }
 
     isEditable(): boolean {
-        return (<any>[DocumentRole.DOC, DocumentRole.PDF, DocumentRole.MARKDOWN, DocumentRole.OCTET_STEAM]).includes(this.role);
+        return (<any>[  DocumentRole.DOC,
+                        DocumentRole.PDF,
+                        DocumentRole.XLS,
+                        DocumentRole.PPT
+        ]).includes(this.role);
     }
     // create a folder with only one content (synchronized document) and its children all sync documents
     initParent(): SyncDocument {

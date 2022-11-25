@@ -3,19 +3,10 @@ import {model} from "entcore";
 import {DocumentRole} from "../core/enums/document-role";
 
 export class NextcloudDocumentsUtils {
-    static typeMap: Map<string, DocumentRole> = new Map<string, DocumentRole>()
-        .set("doc", DocumentRole.DOC)
-        .set("pdf", DocumentRole.PDF)
-        .set("markdown", DocumentRole.MARKDOWN)
-        .set("octet-stream", DocumentRole.OCTET_STEAM)
-        .set("moodle", DocumentRole.MOODLE)
-        .set("image", DocumentRole.IMG)
-        .set("video", DocumentRole.VIDEO);
-
     static determineRole(contentType: string): DocumentRole {
-        for (let pattern of Array.from(this.typeMap.keys())) {
-            if (contentType.includes(pattern)) {
-                return this.typeMap.get(pattern);
+        for (let role in DocumentRole) {
+            if (contentType.includes(DocumentRole[role])) {
+                return <DocumentRole>DocumentRole[role];
             }
         }
         return DocumentRole.UNKNOWN;
