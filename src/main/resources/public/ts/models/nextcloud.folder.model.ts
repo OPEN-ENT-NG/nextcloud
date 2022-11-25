@@ -83,8 +83,6 @@ export class SyncDocument {
     isEditable(): boolean {
         return (<any>[  DocumentRole.DOC,
                         DocumentRole.PDF,
-                        DocumentRole.MARKDOWN,
-                        DocumentRole.OCTET_STEAM,
                         DocumentRole.XLS,
                         DocumentRole.PPT
         ]).includes(this.role);
