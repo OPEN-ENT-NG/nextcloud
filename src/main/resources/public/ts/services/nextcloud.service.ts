@@ -20,8 +20,8 @@ export interface INextcloudService {
 
 export const nextcloudService: INextcloudService = {
     openNextcloudLink: (document: SyncDocument, nextcloudUrl: string): void => {
-        const url: string = document.path.includes("/") ? document.path.substring(0, document.path.lastIndexOf('/')) : "/";
-        const dir: string = url ? url : "/";
+        const url: string = document.path.substring(0, document.path.lastIndexOf('/'));
+        const dir: string = url.includes("/") ? url : "/";
         window.open(`${nextcloudUrl}/index.php/apps/files?dir=${dir}&openfile=${document.fileId}`);
     },
 
