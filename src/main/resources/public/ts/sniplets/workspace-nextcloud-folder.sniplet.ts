@@ -247,7 +247,7 @@ class ViewModel implements IViewModel {
     /**
      * add dragover/dragleave listeners
      */
-    private addDragEventListeners(): void {
+    addDragEventListeners(): void {
         const folders: HTMLElement[] = Array.from(document.getElementsByTagName('folder-tree-inner')) as HTMLElement[];
         folders.forEach((element: HTMLElement) => {
             element.addEventListener('dragover', this.onDragOver(element));
@@ -261,7 +261,7 @@ class ViewModel implements IViewModel {
     /**
      * inject drag over overlays
      */
-    private addDragOverlays(): void {
+    addDragOverlays(): void {
         const folders: HTMLElement[] = Array.from(document.getElementsByTagName('folder-tree-inner')) as HTMLElement[];
         folders.forEach((element: HTMLElement, i: number) => {
             const span: HTMLElement = document.createElement('span');
@@ -284,7 +284,7 @@ class ViewModel implements IViewModel {
     /**
      * remove drag over overlay
      */
-    private removeDragOverlays(): void {
+    removeDragOverlays(): void {
         const spans: HTMLElement[] = Array.from(document.querySelectorAll(`[id^="droptarget-"]`)) as HTMLElement[];
         spans.forEach((element: HTMLElement) => element.remove());
     }
@@ -292,7 +292,7 @@ class ViewModel implements IViewModel {
     /**
      * remove dragover and dragleave event listeners
      */
-    private removeDragEventListeners (): void {
+    removeDragEventListeners (): void {
         this.dragOverEventListeners.forEach((listener: EventListener, element: HTMLElement) => element.removeEventListener('dragover', this.onDragOver(element)));
         this.dragOverEventListeners.clear()
         this.dragLeaveEventListeners.forEach((listener: EventListener, element: HTMLElement) => element.removeEventListener('dragleave', this.onDragLeave(element)));
