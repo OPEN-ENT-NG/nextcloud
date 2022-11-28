@@ -132,6 +132,33 @@ describe('NextcloudService', () => {
         });
     });
 
+    it('Test openNextcloudLink with root file', done => {
+        const syncDocument1: any = {
+            children: [],
+            contentType: "doc",
+            etag: "etag1",
+            favorite: 1,
+            fileId: 1,
+            isFolder: false,
+            name: "displayname1",
+            ownerDisplayName: "ownerDisplayName1",
+            path: "/",
+            size: 0,
+            type: "file",
+            role: "doc",
+            editable: true
+        }
+
+        const url = "url";
+        const fileId = 1;
+
+        window.open = jest.fn();
+        nextcloudService.openNextcloudLink(syncDocument1, url);
+        expect(window.open).toHaveBeenCalledTimes(1);
+        expect(window.open).toHaveBeenCalledWith(url + "/index.php/apps/files?dir=/&openfile=" + fileId);
+        done();
+    });
+
     it('Test getFile method with file', done => {
         const mock = new MockAdapter(axios);
 
