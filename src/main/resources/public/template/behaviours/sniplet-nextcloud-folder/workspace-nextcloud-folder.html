@@ -1,4 +1,4 @@
-<div class="nextcloud vertical-spacing" ng-if="vm.userInfo">
+<div class="nextcloud vertical-spacing-six" ng-if="vm.userInfo">
     <!-- nextcloud folder tree -->
     <folder-tree id="nextcloud-folder-tree"
                  tree-props="vm.folderTree"
@@ -6,9 +6,9 @@
     </folder-tree>
 
     <!-- nextcloud navigation contents -->
-    <div class="nextcloud-content bottom-spacing-three" ng-show="vm.selectedFolder">
+    <div class="nextcloud-content bottom-spacing-three">
         <!-- create synchronize folder -->
-        <div id="nextcloud-folder-create">
+        <div id="nextcloud-folder-create" ng-show="vm.selectedFolder">
             <a class="classic-link centered-bloc-text vertical-spacing-twice-1d ng-scope" ng-click="vm.folderCreation.toggleCreateFolder(true, null)">
                 <i18n>folder.new</i18n>
             </a>
