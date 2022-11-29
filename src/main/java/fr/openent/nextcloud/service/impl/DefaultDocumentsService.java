@@ -71,7 +71,7 @@ public class DefaultDocumentsService implements DocumentsService {
 
     public void parameterizedListFiles(UserNextcloud.TokenProvider userSession, String path, Handler<AsyncResult<HttpResponse<String>>> handler) {
         this.client.rawAbs(NextcloudHttpMethod.PROPFIND.method(), nextcloudConfig.host() +
-                        nextcloudConfig.webdavEndpoint() + "/" + userSession.userId() + (path != null ? "/" + path.replace(" ", "%20") : "" ))
+                        nextcloudConfig.webdavEndpoint() + "/" + userSession.userId() + (path != null ? "/" + StringHelper.encodeUrlForNc(path) : "" ))
                 .basicAuthentication(userSession.userId(), userSession.token())
                 .as(BodyCodec.string(StandardCharsets.UTF_8.toString()))
                 .sendBuffer(Buffer.buffer(getListFilesPropsBody()), handler);
@@ -523,7 +523,8 @@ public class DefaultDocumentsService implements DocumentsService {
                                                String parentId) {
         Promise<JsonObject> promiseResult = Promise.promise();
         //The listFiles function here is called to gather data on one specific file.
-        listFiles(userSession, file)
+        String decodedPath = StringHelper.decodeUrlForNc(file).replace(Field.ASCIISPACE, Field.PLUS_SIGN);
+        listFiles(userSession, decodedPath)
                 .onSuccess(fileInfo -> {
                     if (!fileInfo.isEmpty()) {
                         JsonObject resJson = fileInfo.getJsonObject(0);
@@ -576,7 +577,8 @@ public class DefaultDocumentsService implements DocumentsService {
                                                String parentId) {
         Promise<JsonObject> promiseResult = Promise.promise();
         //The listFiles function here is called to gather data on one specific file.
-        listFiles(userSession, file)
+        String decodedPath = StringHelper.decodeUrlForNc(file).replace(Field.ASCIISPACE, Field.PLUS_SIGN);
+        listFiles(userSession, decodedPath)
                 .onSuccess(fileInfo -> {
                     if (!fileInfo.isEmpty()) {
                         JsonObject resJson = fileInfo.getJsonObject(0);
@@ -982,8 +984,8 @@ public class DefaultDocumentsService implements DocumentsService {
 
         workspaceHelper.readDocument(id, file -> {
             if (file != null) {
-                String docName = file.getDocument().getString(Field.NAME).replace(" ", "%20");
-                getUniqueFileName(userSession, finalPath.replace(" ", "%20") + docName, 0)
+                String docName = file.getDocument().getString(Field.NAME);
+                getUniqueFileName(userSession, StringHelper.encodeUrlForNc(finalPath + docName), 0)
                         .onSuccess(name -> {
                             this.client.putAbs(nextcloudConfig.host() + nextcloudConfig.webdavEndpoint() + "/" + userSession.userId() + "/" +
                                             name)

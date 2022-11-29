@@ -61,7 +61,7 @@ public class DocumentsController extends ControllerHelper {
                             if (isFolder) {
                                 return documentsService.getFolder(userSession, path);
                             } else {
-                                return documentsService.getFile(userSession, path.replace(" ", "%20"));
+                                return documentsService.getFile(userSession, StringHelper.encodeUrlForNc(path));
                             }
                         })
                         .onSuccess(fileResponse -> {
