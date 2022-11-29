@@ -107,6 +107,13 @@ class ViewModel implements IViewModel {
     initTree(folder: Array<SyncDocument>): void {
         // use this const to make it accessible to its folderTree inner context
         const viewModel: IViewModel = this;
+
+        // move nextcloud tree under workspace tree
+        const nextcloudElement: HTMLElement = document.querySelector('[application="nextcloud"]').parentElement;
+        if (nextcloudElement) {
+            nextcloudElement.parentNode.appendChild(nextcloudElement);
+        }
+
         this.folderTree = {
             cssTree: "folders-tree",
             get trees(): any | Array<Tree> {
@@ -338,10 +345,6 @@ class ViewModel implements IViewModel {
             viewModel.removeSelectedDocuments();
             // clear all potential "selected" class workspace folder tree
             $workspaceFolderTree.each((index: number, element: Element): void => element.classList.remove("selected"));
-            // hide workspace progress bar
-            WorkspaceEntcoreUtils.toggleProgressBarDisplay(false);
-            // hide workspace buttons interactions
-            WorkspaceEntcoreUtils.toggleWorkspaceButtonsDisplay(false);
             // hide workspace contents (search bar, menu, list of folder/files...) interactions
             WorkspaceEntcoreUtils.toggleWorkspaceContentDisplay(false);
         };
@@ -369,10 +372,6 @@ class ViewModel implements IViewModel {
                 WorkspaceEntcoreUtils.updateWorkspaceDocuments(angular.element(target).scope().folder);
                 //set the right openedFolder
                 WorkspaceEntcoreUtils.workspaceScope()['openedFolder']['folder'] = angular.element(target).scope().folder;
-                // display workspace buttons interactions
-                WorkspaceEntcoreUtils.toggleProgressBarDisplay(true);
-                // display workspace buttons interactions
-                WorkspaceEntcoreUtils.toggleWorkspaceButtonsDisplay(true);
                 // display workspace contents (search bar, menu, list of folder/files...) interactions
                 WorkspaceEntcoreUtils.toggleWorkspaceContentDisplay(true);
                 // remove any content context cache
