@@ -731,32 +731,25 @@ public class DefaultDocumentsService implements DocumentsService {
     @Override
     public Future<JsonObject> uploadFile(UserNextcloud.TokenProvider user, Attachment file, String path) {
         //Final path on the nextcloud server
-        String finalPath = (path != null ? path + "/" : "" ) + file.metadata().filename();
+        String finalPath = (path != null ? path + "/" : "" ) + StringHelper.encodeUrlForNc(file.metadata().filename());
         Promise<JsonObject> promise = Promise.promise();
-        this.listFiles(user, finalPath) //check if the file currently exists on the nextcloud server
-                .onSuccess(files -> {
-                    if (files.isEmpty()) {
-                        //Read the file on the vertx container, id is needed to locate it
-                        storage.readFile(file.id(), res ->
-                            this.client.putAbs(nextcloudConfig.host() + nextcloudConfig.webdavEndpoint() + "/" + user.userId() + "/" + finalPath.replace(" ", "%20"))
-                                    .basicAuthentication(user.userId(), user.token())
-                                    .as(BodyCodec.jsonObject())
-                                    .sendBuffer(res, responseAsync -> {
-                                        if (responseAsync.failed()) {
-                                            String messageToFormat = "[Nextcloud@%s::uploadFile] An error has occurred during uploading file : %s";
-                                            PromiseHelper.reject(log, messageToFormat, this.getClass().getSimpleName(), responseAsync.cause(), promise);
-                                        } else {
-                                            promise.complete(new JsonObject()
-                                                    .put(Field.NAME, file.metadata().filename())
-                                                    .put(Field.STATUSCODE, responseAsync.result().statusCode()));
-                                        }
-                                    }));
-
-                    } else {
-                        promise.complete(new JsonObject()
-                                .put(Field.NAME, file.metadata().filename())
-                                .put(Field.ERROR, "nextcloud.file.already.exist"));
-                    }
+        this.getUniqueFileName(user, finalPath, 0) //check if the file currently exists on the nextcloud server
+                .onSuccess(filePath -> {
+                    //Read the file on the vertx container, id is needed to locate it
+                    storage.readFile(file.id(), res ->
+                        this.client.putAbs(nextcloudConfig.host() + nextcloudConfig.webdavEndpoint() + "/" + user.userId() + "/" + filePath)
+                                .basicAuthentication(user.userId(), user.token())
+                                .as(BodyCodec.jsonObject())
+                                .sendBuffer(res, responseAsync -> {
+                                    if (responseAsync.failed()) {
+                                        String messageToFormat = "[Nextcloud@%s::uploadFile] An error has occurred during uploading file : %s";
+                                        PromiseHelper.reject(log, messageToFormat, this.getClass().getSimpleName(), responseAsync.cause(), promise);
+                                    } else {
+                                        promise.complete(new JsonObject()
+                                                .put(Field.NAME, file.metadata().filename())
+                                                .put(Field.STATUSCODE, responseAsync.result().statusCode()));
+                                    }
+                                }));
                     storage.removeFile(file.id(), e -> {});
                 })
                 .onFailure(err -> {
