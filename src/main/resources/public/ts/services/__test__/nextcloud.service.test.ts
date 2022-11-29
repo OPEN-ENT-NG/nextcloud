@@ -51,6 +51,8 @@ describe('NextcloudService', () => {
 
     it('Test listDocument method', done => {
         const mock = new MockAdapter(axios);
+        const date1 = "2022-11-24T14:23:22.213Z"
+        const date2 = "2022-11-22T14:23:22.213Z"
         const iDocumentResponse1: IDocumentResponse = {
             contentType: "doc",
             displayname: "displayname1",
@@ -60,7 +62,8 @@ describe('NextcloudService', () => {
             isFolder: false,
             ownerDisplayName: "ownerDisplayName1",
             path: "path1",
-            size: 0
+            size: 0,
+            lastModified: date1
         }
         const iDocumentResponse2: IDocumentResponse = {
             contentType: "contentType2",
@@ -72,6 +75,7 @@ describe('NextcloudService', () => {
             ownerDisplayName: "ownerDisplayName2",
             path: "path2",
             size: 0,
+            lastModified: date2
         }
         const data = {data: [iDocumentResponse1, iDocumentResponse2]};
 
@@ -88,7 +92,8 @@ describe('NextcloudService', () => {
             size: 0,
             type: "file",
             role: "doc",
-            editable: true
+            editable: true,
+            lastModified: date1
         }
         const syncDocument2: any = {
             children: [],
@@ -103,7 +108,8 @@ describe('NextcloudService', () => {
             size: 0,
             type: "folder",
             role: "folder",
-            editable: false
+            editable: false,
+            lastModified: date2
         }
 
         const userId1 = "userId1";
