@@ -51,7 +51,7 @@ public class DocumentsController extends ControllerHelper {
     @SecuredAction(value = "", type = ActionType.RESOURCE)
     @ResourceFilter(OwnerFilter.class)
     public void getFile(HttpServerRequest request) {
-        String fileName = request.getParam(Field.FILENAME);
+        String fileName = StringHelper.decodeUrlForNc(request.getParam(Field.FILENAME));
         String path = request.getParam(Field.PATH);
         String contentType = request.getParam(Field.CONTENTTYPE);
         boolean isFolder = Boolean.parseBoolean(request.getParam(Field.ISFOLDER));
@@ -117,9 +117,7 @@ public class DocumentsController extends ControllerHelper {
             UserUtils.getUserInfos(eb, request, user ->
                     userService.getUserSession(user.getUserId())
                             .compose(userSession -> {
-                                        String finalPath = StringHelper.encodeUrlForNc(path);
-                                        String finalDestPath = StringHelper.encodeUrlForNc(destPath);
-                                        return documentsService.moveDocument(userSession, finalPath, finalDestPath);
+                                        return documentsService.moveDocument(userSession, path, destPath);
                                     }
                             )
                             .onSuccess(res -> renderJson(request, res))

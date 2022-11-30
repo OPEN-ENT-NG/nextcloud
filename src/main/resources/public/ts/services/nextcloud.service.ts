@@ -95,7 +95,7 @@ export const nextcloudService: INextcloudService = {
         const contentTypeParam: string = path && contentType ? `&contentType=${contentType}` : '';
         const isFolderParam: string = pathParam ? `&isFolder=${isFolder}` : `?isFolder=${isFolder}`;
         const urlParam: string = `${pathParam}${contentTypeParam}${isFolderParam}`;
-        return `/nextcloud/files/user/${userid}/file/${fileName}/download${urlParam}`;
+        return `/nextcloud/files/user/${userid}/file/${encodeURI(fileName)}/download${urlParam}`;
     },
 
     getFiles: (userid: string, path: string, files: Array<string>): string => {

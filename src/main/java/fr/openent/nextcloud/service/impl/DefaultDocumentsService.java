@@ -230,7 +230,7 @@ public class DefaultDocumentsService implements DocumentsService {
                 .onSuccess(fileInfo -> {
                             if (fileInfo.isEmpty()) {
                                 String endpoint = nextcloudConfig.host() + nextcloudConfig.webdavEndpoint() + "/" + userSession.userId();
-                                this.client.rawAbs(NextcloudHttpMethod.MOVE.method(), endpoint + "/" + path)
+                                this.client.rawAbs(NextcloudHttpMethod.MOVE.method(), endpoint + "/" + StringHelper.encodeUrlForNc(path))
                                         .basicAuthentication(userSession.userId(), userSession.token())
                                         .putHeader(Field.DESTINATION, endpoint + "/" + destPath)
                                         .send(responseAsync -> this.onMoveDocumentHandler(responseAsync, promise));
@@ -733,13 +733,13 @@ public class DefaultDocumentsService implements DocumentsService {
     @Override
     public Future<JsonObject> uploadFile(UserNextcloud.TokenProvider user, Attachment file, String path) {
         //Final path on the nextcloud server
-        String finalPath = (path != null ? path + "/" : "" ) + StringHelper.encodeUrlForNc(file.metadata().filename());
+        String finalPath = (path != null ? path + "/" : "" ) + file.metadata().filename();
         Promise<JsonObject> promise = Promise.promise();
         this.getUniqueFileName(user, finalPath, 0) //check if the file currently exists on the nextcloud server
                 .onSuccess(filePath -> {
                     //Read the file on the vertx container, id is needed to locate it
                     storage.readFile(file.id(), res ->
-                        this.client.putAbs(nextcloudConfig.host() + nextcloudConfig.webdavEndpoint() + "/" + user.userId() + "/" + filePath)
+                        this.client.putAbs(nextcloudConfig.host() + nextcloudConfig.webdavEndpoint() + "/" + user.userId() + "/" + StringHelper.encodeUrlForNc(filePath))
                                 .basicAuthentication(user.userId(), user.token())
                                 .as(BodyCodec.jsonObject())
                                 .sendBuffer(res, responseAsync -> {
@@ -950,7 +950,7 @@ public class DefaultDocumentsService implements DocumentsService {
             extension = path.substring(i);
             fileName = path.substring(0, i);
         }
-        String finalPath = fileName + (duplicateNumber != 0 ? "%20" + "(" + duplicateNumber + ")" : "") + extension;
+        String finalPath = fileName + (duplicateNumber != 0 ? " (" + duplicateNumber + ")" : "") + extension;
         listFiles(userSession, finalPath)
                 .onSuccess(filesData -> {
                     if (filesData.isEmpty())
