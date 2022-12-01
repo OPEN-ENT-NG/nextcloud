@@ -232,7 +232,7 @@ public class DefaultDocumentsService implements DocumentsService {
                                 String endpoint = nextcloudConfig.host() + nextcloudConfig.webdavEndpoint() + "/" + userSession.userId();
                                 this.client.rawAbs(NextcloudHttpMethod.MOVE.method(), endpoint + "/" + StringHelper.encodeUrlForNc(path))
                                         .basicAuthentication(userSession.userId(), userSession.token())
-                                        .putHeader(Field.DESTINATION, endpoint + "/" + destPath)
+                                        .putHeader(Field.DESTINATION, endpoint + "/" + StringHelper.encodeUrlForNc(destPath))
                                         .send(responseAsync -> this.onMoveDocumentHandler(responseAsync, promise));
 
                             } else {
