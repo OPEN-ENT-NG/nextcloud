@@ -734,7 +734,7 @@ public class DefaultDocumentsService implements DocumentsService {
     @Override
     public Future<JsonObject> uploadFile(UserNextcloud.TokenProvider user, Attachment file, String path) {
         //Final path on the nextcloud server
-        String finalPath = (path != null ? path + "/" : "" ) + file.metadata().filename();
+        String finalPath = (path != null ? path + "/" : "" ) + StringHelper.encodeUrlForNc(file.metadata().filename());
         Promise<JsonObject> promise = Promise.promise();
         this.getUniqueFileName(user, finalPath, 0) //check if the file currently exists on the nextcloud server
                 .onSuccess(filePath -> {

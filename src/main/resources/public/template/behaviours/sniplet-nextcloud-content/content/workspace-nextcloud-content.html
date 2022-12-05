@@ -1,7 +1,17 @@
 <div id="nextcloud-content" class="sniplet nextcloud nextcloud-content">
-    <!-- url connect -->
-    <div ng-if="vm.nextcloudUrl">
-        <i18n>nextcloud.url.connect</i18n> &#58; <a target="_blank" ng-href="[[vm.nextcloudUrl]]">[[vm.nextcloudUrl]]</a>
+    <div class="row">
+        <!-- url connect -->
+        <div ng-if="vm.nextcloudUrl" class="cell">
+            <i18n>nextcloud.url.connect</i18n> &#58; <a target="_blank" ng-href="[[vm.nextcloudUrl]]">[[vm.nextcloudUrl]]</a>
+        </div>
+
+        <!-- view mode -->
+        <div class="cell right-magnet">
+            <div class="choice-view">
+                <i class="show-icons" ng-class="{ selected: vm.isViewMode('icons') }" ng-click="vm.changeViewMode('icons')"></i>
+                <i class="show-list" ng-class="{ selected: vm.isViewMode('list') }" ng-click="vm.changeViewMode('list')"></i>
+            </div>
+        </div>
     </div>
 
     <!-- dropzone action file -->
@@ -12,40 +22,8 @@
             on-cannot-drop="vm.onCannotDropFile()">
     </dropzone-overlay>
 
-    <!-- list of documents -->
-    <article class="icons-view no-overflow no-margin-bottom ng-scope nextcloud-article" ng-if="vm.isLoaded" ng-show="vm.documents.length > 0">
-        <explorer class="radius explorer-hover"
-                  ng-repeat="content in vm.documents"
-                  ng-model="content.selected"
-                  ng-change="vm.onSelectContent(content)"
-                  on-open="vm.onOpenContent(content)"
-                  dragstart="vm.draggable.dragStartHandler($originalEvent, content)"
-                  dragdrop="vm.draggable.dragDropHandler($originalEvent, content)"
-                  dragend="vm.draggable.dragEndHandler($originalEvent, content)"
-                  dropcondition="vm.draggable.dropConditionHandler($originalEvent, content)">
-            <legend class="no-1d">
-                <a>
-                    <span tooltip-on-ellipsis="[[content.name]]">[[content.name]]</span>
-                </a>
-            </legend>
-
-            <a class="container [[content.role]]" ng-switch="content.role">
-                <!-- img format -->
-                <div ng-switch-when="image" class="twelve cell">
-                    <div class="clip">
-                        <img ng-src="[[vm.getFile(content)]]" alt="thumbnail" src="" width="117" height="115"/>
-                    </div>
-                </div>
-
-                <div class="img video" ng-switch-when="video">
-                    <i><svg class="icon-video" width="40" height="40"><use xlink:href="/workspace/public/img/illustrations.svg#icon-play"></use></svg></i>
-                </div>
-                <i ng-switch-when="presentation" class="ppt-large"></i>
-                <i ng-switch-when="spreadsheet" class="xls-large"></i>
-                <i ng-switch-default class="[[content.role]]-large"></i>
-            </a>
-        </explorer>
-    </article>
+    <!-- view content -->
+    <container template="documents-content"></container>
 
     <!-- empty state -->
     <div class="emptyscreen-nextcloud" ng-if="vm.isLoaded" ng-show="!vm.documents.length">

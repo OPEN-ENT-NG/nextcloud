@@ -1,4 +1,4 @@
-import {angular, Behaviours, idiom as lang, model, workspace} from "entcore";
+import {angular, Behaviours, idiom as lang, model, template, workspace} from "entcore";
 import {NEXTCLOUD_APP} from "../../nextcloud.behaviours";
 import {Subscription} from "rxjs";
 import {Draggable, SyncDocument} from "../../models";
@@ -7,7 +7,12 @@ import {INextcloudService, nextcloudService} from "../../services";
 import {ToolbarSnipletViewModel} from "./workspace-nextcloud-toolbar.sniplet";
 import {AxiosError, AxiosResponse} from "axios";
 import {UploadFileSnipletViewModel} from "./workspace-nextcloud-upload-file.sniplet";
+import {RootsConst} from "../../core/constants/roots.const";
+import {DateUtils} from "../../utils/date.utils";
+import {ViewMode} from "../../core/enums/view-mode";
 import models = workspace.v2.models;
+import {NextcloudViewList} from "./workspace-nextcloud-view-list.sniplet";
+import {NextcloudViewIcons} from "./workspace-nextcloud-view-icons.sniplet";
 
 declare let window: any;
 
@@ -28,7 +33,7 @@ interface IViewModel {
     parentDocument: SyncDocument;
     documents: Array<SyncDocument>;
     selectedDocuments: Array<SyncDocument>;
-
+    checkboxSelectAll: boolean;
     // drag & drop action
     moveDocument(element: any, document: SyncDocument): Promise<void>;
 
@@ -49,10 +54,14 @@ class ViewModel implements IViewModel {
     draggable: Draggable;
     lockDropzone: boolean;
 
+    orderField: string;
+    orderDesc: boolean;
+
     parentDocument: SyncDocument;
     documents: Array<SyncDocument>;
     selectedDocuments: Array<SyncDocument>;
     isLoaded: boolean;
+    checkboxSelectAll: boolean;
 
     constructor(scope, nextcloudService: INextcloudService) {
         this.isLoaded = false;
@@ -62,6 +71,8 @@ class ViewModel implements IViewModel {
         this.parentDocument = null;
         this.nextcloudUrl = null;
         this.selectedDocuments = new Array<SyncDocument>();
+
+        this.changeViewMode(ViewMode.ICONS);
 
         // on init we first sync its main folder content
         Promise.all<void, string>([this.initDocumentsContent(nextcloudService, scope), nextcloudService.getNextcloudUrl()])
@@ -83,7 +94,10 @@ class ViewModel implements IViewModel {
             .subscribe((res: {parentDocument: SyncDocument, documents: Array<SyncDocument>}) => {
                 if (res.documents && res.documents.length > 0) {
                     this.parentDocument = res.parentDocument;
-                    this.documents = res.documents.filter((syncDocument: SyncDocument) => syncDocument.name != model.me.userId);
+                    this.documents = res.documents.filter((syncDocument: SyncDocument) => syncDocument.name != model.me.userId)
+                        .sort(this.sortDocumentsByFolder);
+                    this.orderDesc = false;
+                    this.orderField = null;
                 } else {
                     this.parentDocument = res.parentDocument;
                     this.documents = [];
@@ -110,7 +124,8 @@ class ViewModel implements IViewModel {
                 if (!this.documents.length) {
                     this.documents = documents
                         .filter((syncDocument: SyncDocument) => syncDocument.path != selectedFolderFromNextcloudTree.path)
-                        .filter((syncDocument: SyncDocument) => syncDocument.name != model.me.userId);
+                        .filter((syncDocument: SyncDocument) => syncDocument.name != model.me.userId)
+                        .sort(this.sortDocumentsByFolder);
                     this.parentDocument = new SyncDocument().initParent();
                 }
                 safeApply(scope);
@@ -163,6 +178,15 @@ class ViewModel implements IViewModel {
                return true;
            }
         }
+    }
+
+    /**
+     * compare function to sort documents by folder
+     */
+    private sortDocumentsByFolder (syncDocumentA: SyncDocument, syncDocumentB: SyncDocument): number {
+        if (syncDocumentA.type === 'folder' && syncDocumentB.type === 'file') return -1;
+        if (syncDocumentA.type === 'file' && syncDocumentB.type === 'folder') return 1;
+        return 0;
     }
 
     async moveDocument(element: any, document: SyncDocument): Promise<void> {
@@ -256,7 +280,23 @@ class ViewModel implements IViewModel {
     };
 
     onSelectContent(content: SyncDocument): void {
+        content.selected = !content.selected;
         this.selectedDocuments = this.documents.filter((document: SyncDocument) => document.selected);
+    }
+
+    onSelectAll(): void {
+        this.documents.forEach(document => document.selected = this.checkboxSelectAll);
+        this.selectedDocuments = this.documents.filter((document: SyncDocument) => document.selected);
+    }
+
+    isViewMode(mode: ViewMode): boolean {
+        const pathTemplate = `../../../${RootsConst.template}/behaviours/sniplet-nextcloud-content/content/views/${mode}`;
+        return template.contains('documents-content', pathTemplate);
+    }
+
+    changeViewMode(mode: ViewMode): void {
+        const pathTemplate = `../../../${RootsConst.template}/behaviours/sniplet-nextcloud-content/content/views/${mode}`;
+        template.open('documents-content', pathTemplate);
     }
 
     onOpenContent(document: SyncDocument): void {
@@ -301,8 +341,9 @@ export const workspaceNextcloudContent = {
                 this.vm = new ViewModel(this, nextcloudService);
                 this.vm.toolbar = new ToolbarSnipletViewModel(this);
                 this.vm.upload = new UploadFileSnipletViewModel(this);
+                this.vm.viewList = new NextcloudViewList(this);
+                this.vm.viewIcons = new NextcloudViewIcons(this);
             });
         },
     }
-
 };

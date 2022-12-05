@@ -1,12 +1,16 @@
 package fr.openent.nextcloud.model;
 
 import fr.openent.nextcloud.core.constants.Field;
+import fr.openent.nextcloud.helper.DateHelper;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 
 import java.nio.file.Paths;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 public class Document {
 
@@ -17,6 +21,7 @@ public class Document {
     private final Number favorite;
     private final String etag;
     private final Number fileId;
+    private final Date lastModified;
 
     public Document(JsonObject documentResponse) {
         this.path = documentResponse.getString(Field.D_HREF);
@@ -48,6 +53,7 @@ public class Document {
         this.favorite = props.getInteger(Field.OC_FAVORITE);
         this.etag = props.getString(Field.D_GETETAG);
         this.fileId = props.getInteger(Field.OC_FILEID);
+        this.lastModified = DateHelper.parseDate(props.getString(Field.D_GETLASTMODIFIED), DateHelper.NEXTCLOUD_FORMAT);
     }
 
     public JsonObject toJSON() {
@@ -60,6 +66,7 @@ public class Document {
                 .put(Field.FAVORITE, this.favorite)
                 .put(Field.ETAG, this.etag)
                 .put(Field.FILEID, this.fileId)
+                .put(Field.LASTMODIFIED, DateHelper.getDateString(this.lastModified, DateHelper.UTC_FORMAT))
                 .put(Field.ISFOLDER, this.contentType == null);
     }
 
