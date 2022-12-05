@@ -41,7 +41,7 @@ export class FolderCreationModel implements IViewModel {
 
     public createFolder(folderCreate: models.Element): void {
         const folder: SyncDocument = this.vm.selectedFolder;
-        this.vm.nextcloudService.createFolder(model.me.userId, (folder.path != null ? folder.path + "/" : "") + folderCreate.name)
+        this.vm.nextcloudService.createFolder(model.me.userId, (folder.path != null ? folder.path + "/" : "") + encodeURI(folderCreate.name))
             .then(() => {
                 folderCreate.name = "";
                 this.toggleCreateFolder(false, folderCreate);
