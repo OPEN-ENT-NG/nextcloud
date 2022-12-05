@@ -10,7 +10,7 @@ import org.junit.runner.RunWith;
 public class StringHelperTest {
     @Test
     public void testDecode(TestContext ctx) {
-        String encodedURL = "test %c3%a0 accent";
+        String encodedURL = "test%20%C3%A0%20accent";
         String decodedURL = StringHelper.decodeUrlForNc(encodedURL);
         ctx.assertEquals(decodedURL, "test à accent");
     }
