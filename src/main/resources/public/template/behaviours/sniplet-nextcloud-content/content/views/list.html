@@ -62,7 +62,7 @@
             dragend="vm.draggable.dragEndHandler($originalEvent, document)"
             dragstart="vm.draggable.dragStartHandler($originalEvent, document)"
             dragcondition="vm.draggable.dropConditionHandler($originalEvent, document)">
-            <td class="icon"><input type="checkbox" data-ng-model="document.selected" ng-click="vm.onSelectContent(document)" /></td>
+            <td class="icon"><input type="checkbox" ng-model="document.selected" ng-change="vm.onSelectContent(content)" ng-click="vm.onSelectContent(document)" /></td>
             <td class="icon zero-mobile" ng-switch="document.role">
                 <div class="twelve cell">
                     <div class="img video" ng-switch-when="video">

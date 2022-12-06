@@ -280,7 +280,6 @@ class ViewModel implements IViewModel {
     };
 
     onSelectContent(content: SyncDocument): void {
-        content.selected = !content.selected;
         this.selectedDocuments = this.documents.filter((document: SyncDocument) => document.selected);
     }
 
@@ -296,6 +295,8 @@ class ViewModel implements IViewModel {
 
     changeViewMode(mode: ViewMode): void {
         const pathTemplate = `../../../${RootsConst.template}/behaviours/sniplet-nextcloud-content/content/views/${mode}`;
+        this.documents.forEach(document => document.selected = false);
+        this.selectedDocuments = [];
         template.open('documents-content', pathTemplate);
     }
 
