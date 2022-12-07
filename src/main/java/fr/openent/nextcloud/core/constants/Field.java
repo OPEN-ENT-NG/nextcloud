@@ -14,6 +14,7 @@ public class Field {
     public static final String YES = "yes";
     public static final String ETYPE = "eType";
     public static final String FOLDER = "folder";
+    public static final String ARCHIVE = "archive";
     public static final String DISPLAYNAMECAMEL = "displayName";
     public static final String EMAIL = "email";
     public static final String PHONE = "phone";
