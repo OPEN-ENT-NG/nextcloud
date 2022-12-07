@@ -102,7 +102,7 @@ export const nextcloudService: INextcloudService = {
         const pathParam: string = `?path=${path}`;
         let filesParam: string = '';
         files.forEach((file: string) => {
-            filesParam += `&file=${file}`;
+            filesParam += `&file=${encodeURI(file)}`;
         });
         const urlParam: string = `${pathParam}${filesParam}`;
         return `/nextcloud/files/user/${userid}/multiple/download${urlParam}`;
