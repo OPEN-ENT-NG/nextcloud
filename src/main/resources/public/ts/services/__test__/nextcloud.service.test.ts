@@ -214,12 +214,12 @@ describe('NextcloudService', () => {
 
         expect(nextcloudService.getFiles(userId, path, files))
             .toEqual("/nextcloud/files/user/userId/multiple/download?path=path")
-        files.push("file1")
+        files.push("file % 1")
         expect(nextcloudService.getFiles(userId, path, files))
-            .toEqual("/nextcloud/files/user/userId/multiple/download?path=path&file=file1")
+            .toEqual("/nextcloud/files/user/userId/multiple/download?path=path&file=file%20%25%201")
         files.push("file2")
         expect(nextcloudService.getFiles(userId, path, files))
-            .toEqual("/nextcloud/files/user/userId/multiple/download?path=path&file=file1&file=file2")
+            .toEqual("/nextcloud/files/user/userId/multiple/download?path=path&file=file%20%25%201&file=file2")
 
         done();
     });
