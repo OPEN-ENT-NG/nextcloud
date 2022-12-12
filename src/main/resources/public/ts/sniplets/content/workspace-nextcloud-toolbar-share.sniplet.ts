@@ -74,14 +74,14 @@ export class ToolbarShareSnipletViewModel implements IViewModel {
     }
 
     async onCancelShareElements(): Promise<void> {
-        if (this.sharedElement.length) {
-            try {
-                await service.deleteAll(this.sharedElement);
-            } catch (e) {
-                console.error((e));
-            }
-            this.sharedElement = [];
-        }
+        // if (this.sharedElement.length) {
+        //     try {
+        //         await service.deleteAll(this.sharedElement);
+        //     } catch (e) {
+        //         console.error((e));
+        //     }
+        //     this.sharedElement = [];
+        // }
         this.toggleShareView(false);
     }
 }
