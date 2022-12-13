@@ -64,7 +64,7 @@ class ViewModel implements IViewModel {
         this.selectedDocuments = new Array<SyncDocument>();
 
         // on init we first sync its main folder content
-        Promise.all<void, string>([this.initDocumentsContent(nextcloudService, scope), nextcloudService.getNextcloudUrl()])
+        Promise.all([this.initDocumentsContent(nextcloudService, scope), nextcloudService.getNextcloudUrl()])
             .then(([_, url]) => {
                 this.nextcloudUrl = url;
                 this.isLoaded = true;
