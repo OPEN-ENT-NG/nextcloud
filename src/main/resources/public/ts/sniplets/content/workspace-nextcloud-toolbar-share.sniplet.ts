@@ -2,8 +2,8 @@ import {model, SharePayload, template, workspace} from "entcore";
 import {RootsConst} from "../../core/constants/roots.const";
 import {SyncDocument} from "../../models";
 import models = workspace.v2.models;
-import service = workspace.v2.service;
 import {WorkspaceEntcoreUtils} from "../../utils/workspace-entcore.utils";
+import {nextcloudService} from "../../services";
 
 interface IViewModel {
     copyingForShare: boolean;
@@ -76,7 +76,9 @@ export class ToolbarShareSnipletViewModel implements IViewModel {
     async onCancelShareElements(): Promise<void> {
         if (this.sharedElement.length) {
             try {
-                await service.deleteAll(this.sharedElement);
+                await nextcloudService.moveDocumentWorkspaceToCloud(model.me.userId, this.sharedElement.map(doc => doc._id), this.vm.parentDocument.path);
+                this.vm.updateTree();
+                this.vm.safeApply();
             } catch (e) {
                 console.error((e));
             }
