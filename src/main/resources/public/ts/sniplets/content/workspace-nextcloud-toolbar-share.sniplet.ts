@@ -80,7 +80,7 @@ export class ToolbarShareSnipletViewModel implements IViewModel {
                 this.vm.updateTree();
                 this.vm.safeApply();
             } catch (e) {
-                console.error((e));
+                console.error("Error while canceling share: " + e);
             }
             this.sharedElement = [];
         }
