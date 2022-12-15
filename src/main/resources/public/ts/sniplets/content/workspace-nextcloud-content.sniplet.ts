@@ -8,7 +8,6 @@ import {ToolbarSnipletViewModel} from "./workspace-nextcloud-toolbar.sniplet";
 import {AxiosError, AxiosResponse} from "axios";
 import {UploadFileSnipletViewModel} from "./workspace-nextcloud-upload-file.sniplet";
 import {RootsConst} from "../../core/constants/roots.const";
-import {DateUtils} from "../../utils/date.utils";
 import {ViewMode} from "../../core/enums/view-mode";
 import models = workspace.v2.models;
 import {NextcloudViewList} from "./workspace-nextcloud-view-list.sniplet";

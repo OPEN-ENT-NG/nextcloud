@@ -1,4 +1,4 @@
-import {model} from "entcore";
+import {idiom as lang, model, notify} from "entcore";
 import {safeApply} from "../../utils/safe-apply.utils";
 import {AxiosError} from "axios";
 import {SyncDocument} from "../../models";
@@ -68,8 +68,13 @@ export class UploadFileSnipletViewModel implements IViewModel {
                 safeApply(this.scope);
             })
             .catch((err: AxiosError) => {
-                const message: string = "Error while uploading files to nextcloud";
-                console.error(`${message}${err.message}: ${this.vm.getErrorMessage(err)}`);
+                const message: string = "Error while uploading files to nextcloud: ";
+                console.error(`${message}${err.message}: ${this.vm.toolbar.getErrorMessage(err)}`);
+                if (err.message.includes("413") || err.message.includes("507")) {
+                    notify.error(lang.translate('file.too.large.limit'));
+                } else {
+                    notify.error(lang.translate('nextcloud.fail.upload'));
+                }
             })
         this.toggleUploadFilesView(false);
         safeApply(this.scope);
