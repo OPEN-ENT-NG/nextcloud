@@ -11,5 +11,6 @@
   "workspace.folder.create": "Créer",
   "nextcloud.url.connect": "Pour se connecter depuis votre téléphone ou votre ordinateur",
   "nextcloud.documents.confirm.deletion": "Voulez-vous supprimer définitivement ces documents",
-  "nextcloud.documents.deletion.confirmation": "Les éléments ont été définitivement supprimés."
+  "nextcloud.documents.deletion.confirmation": "Les éléments ont été définitivement supprimés.",
+  "nextcloud.fail.upload": "Une erreur est survenue pendant le téléchargement des fichiers."
 }
