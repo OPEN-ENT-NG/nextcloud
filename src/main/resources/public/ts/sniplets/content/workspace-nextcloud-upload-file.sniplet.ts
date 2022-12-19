@@ -63,7 +63,7 @@ export class UploadFileSnipletViewModel implements IViewModel {
                     if (userVm.userInfo.quota.total * 1024 * 1024 > 2000) {
                         userVm.userInfo.quota.used += Math.round((<File>file).size / (1000 * 1000)) / 1000;
                     } else {
-                        userVm.userInfo.quota.used += Math.round((<File>file).size / (1000)) / 1000;
+                        userVm.userInfo.quota.used += Math.round((<File>file).size / 1000) / 1000;
                     }
                 })
                 this.uploadedDocuments = [];
