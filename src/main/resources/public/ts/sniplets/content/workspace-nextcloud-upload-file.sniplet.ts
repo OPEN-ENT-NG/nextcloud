@@ -56,8 +56,17 @@ export class UploadFileSnipletViewModel implements IViewModel {
 
     onValidImportFiles(): void {
         let selectedFolderFromNextcloudTree: SyncDocument = this.vm.getNextcloudTreeController()['selectedFolder'];
+        let userVm: any = this.vm.getNextcloudTreeController();
         this.vm.nextcloudService.uploadDocuments(model.me.userId, this.uploadedDocuments, selectedFolderFromNextcloudTree.path)
             .then(() => {
+                this.uploadedDocuments.forEach(file => {
+                    if (userVm.userInfo.quota.total * 1024 * 1024 > 2000) {
+                        userVm.userInfo.quota.used += Math.round((<File>file).size / (1000 * 1000)) / 1000;
+                    } else {
+                        userVm.userInfo.quota.used += Math.round((<File>file).size / 1000) / 1000;
+                    }
+                })
+                this.uploadedDocuments = [];
                 return this.vm.nextcloudService.listDocument(model.me.userId, this.vm.parentDocument.path ?
                     this.vm.parentDocument.path : null);
             })
@@ -71,12 +80,12 @@ export class UploadFileSnipletViewModel implements IViewModel {
                 const message: string = "Error while uploading files to nextcloud: ";
                 console.error(`${message}${err.message}: ${this.vm.toolbar.getErrorMessage(err)}`);
                 if (err.message.includes("413") || err.message.includes("507")) {
-                    notify.error(lang.translate('file.too.large.limit'));
+                    notify.error(lang.translate('file.too.large.upload'));
                 } else {
                     notify.error(lang.translate('nextcloud.fail.upload'));
                 }
             })
-        this.toggleUploadFilesView(false);
+        this.lightbox.uploadFile = false;
         safeApply(this.scope);
     }
 
