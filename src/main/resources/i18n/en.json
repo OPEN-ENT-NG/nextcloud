@@ -12,5 +12,6 @@
   "nextcloud.url.connect": "To connect from your phone or computer",
   "nextcloud.documents.confirm.deletion": "Do you want to permanently delete these documents",
   "nextcloud.documents.deletion.confirmation": "Items have been permanently deleted.",
-  "nextcloud.fail.upload": "Error while uploading files"
+  "nextcloud.fail.upload": "Error while uploading files",
+  "file.too.large.upload": "File too large"
 }
