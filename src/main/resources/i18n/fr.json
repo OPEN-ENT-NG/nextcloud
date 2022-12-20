@@ -12,5 +12,6 @@
   "nextcloud.url.connect": "Pour se connecter depuis votre téléphone ou votre ordinateur",
   "nextcloud.documents.confirm.deletion": "Voulez-vous supprimer définitivement ces documents",
   "nextcloud.documents.deletion.confirmation": "Les éléments ont été définitivement supprimés.",
-  "nextcloud.fail.upload": "Une erreur est survenue pendant le téléchargement des fichiers."
+  "nextcloud.fail.upload": "Une erreur est survenue pendant le téléchargement des fichiers.",
+  "file.too.large.upload": "Fichier(s) trop volumineux"
 }
