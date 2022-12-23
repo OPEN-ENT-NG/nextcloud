@@ -140,7 +140,8 @@ public class Field {
     public static final String COMMENTSUNREAD = "commentsUnread";
     public static final String OWNERDISPLAYNAME = "ownerDisplayName";
     public static final String SHARETYPE = "shareTypes";
-
+    public static final String TRASH = "trash";
+    public static final String TRASHBIN = "trashbin";
 
 
     private Field() {

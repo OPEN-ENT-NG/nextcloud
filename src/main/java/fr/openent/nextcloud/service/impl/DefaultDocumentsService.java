@@ -299,6 +299,18 @@ public class DefaultDocumentsService implements DocumentsService {
     }
 
     /**
+     * method that delete trash
+     * @param   userSession     User Session {@link UserNextcloud.TokenProvider}
+     */
+    public Future<Void> deleteTrash(UserNextcloud.TokenProvider userSession) {
+        Promise<Void> promise = Promise.promise();
+        this.client.deleteAbs(nextcloudConfig.host() + nextcloudConfig.webdavEndpoint().replace(Field.FILES, "") + Field.TRASHBIN + "/" + userSession.userId() + "/" + Field.TRASH)
+                .basicAuthentication(userSession.userId(), userSession.token())
+                .send(responseAsync -> onDeleteDocumentHandler(responseAsync, promise));
+        return promise.future();
+    }
+
+    /**
      * Proceed async event after HTTP DELETE document API endpoint has been sent
      *
      * @param   responseAsync   HttpResponse of string depending on its state {@link AsyncResult}

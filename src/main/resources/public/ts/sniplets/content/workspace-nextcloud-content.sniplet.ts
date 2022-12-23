@@ -207,11 +207,14 @@ class ViewModel implements IViewModel {
 
     private processMoveTree(folderContent: any, document: SyncDocument, selectedFolderFromNextcloudTree: SyncDocument): void {
         if (folderContent.folder instanceof models.Element) {
+            const nextcloudController: any = this.getNextcloudTreeController();
             const filesToMove: Set<SyncDocument> = new Set(this.selectedDocuments).add(document);
             const filesPath: Array<string> = Array.from(filesToMove).map((file: SyncDocument) => file.path);
             if (filesPath.length) {
                 this.nextcloudService.moveDocumentNextcloudToWorkspace(model.me.userId, filesPath, folderContent.folder._id)
-                    .then(() => {
+                    .then(() => nextcloudController.nextcloudUserService.getUserInfo(model.me.userId))
+                    .then(userInfos => {
+                        nextcloudController.userInfo = userInfos;
                         return nextcloudService.listDocument(model.me.userId, selectedFolderFromNextcloudTree.path ?
                             selectedFolderFromNextcloudTree.path : null);
                     })
@@ -229,7 +232,7 @@ class ViewModel implements IViewModel {
                     });
             }
         } else {
-            this.processMoveToNextcloud(document, folderContent.folder, selectedFolderFromNextcloudTree);
+            this.processMoveToNextcloud(document, folderContent.folder, selectedFolderFromNextcloudTree)
         }
     }
 

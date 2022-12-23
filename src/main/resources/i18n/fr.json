@@ -13,5 +13,6 @@
   "nextcloud.documents.confirm.deletion": "Voulez-vous supprimer définitivement ces documents",
   "nextcloud.documents.deletion.confirmation": "Les éléments ont été définitivement supprimés.",
   "nextcloud.fail.upload": "Une erreur est survenue pendant le téléchargement des fichiers.",
-  "file.too.large.upload": "Fichier(s) trop volumineux"
+  "file.too.large.upload": "Fichier(s) trop volumineux",
+  "workspace.definitive.delete.confirm.action": "Supprimer définitivement"
 }

@@ -13,6 +13,7 @@ export interface INextcloudService {
     moveDocumentWorkspaceToCloud(userid: string, ids: Array<string>, cloudDocumentName?: string): Promise<AxiosResponse>;
     copyDocumentToWorkspace(userid: string, paths: Array<string>, parentId?: string): Promise<Array<models.Element>>;
     deleteDocuments(userid: string, path: Array<string>): Promise<AxiosResponse>;
+    deleteTrash(userid: string): Promise<AxiosResponse>;
     getFile(userid: string, fileName: string, path: string, contentType: string, isFolder?: boolean): string;
     getFiles(userid: string, path: string, files: Array<string>): string;
     createFolder(userid: string, folderPath: String): Promise<AxiosResponse>;
@@ -88,6 +89,10 @@ export const nextcloudService: INextcloudService = {
             urlParams.append('path', path);
         });
         return http.delete(`/nextcloud/files/user/${userid}/delete?${urlParams}`);
+    },
+
+    deleteTrash(userid: string): Promise<AxiosResponse> {
+        return http.delete(`/nextcloud/files/user/${userid}/trash/delete`);
     },
 
     getFile: (userid: string, fileName: string, path: string, contentType: string, isFolder: boolean = false): string => {

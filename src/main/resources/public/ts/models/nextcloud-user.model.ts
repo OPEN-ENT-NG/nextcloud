@@ -46,15 +46,9 @@ export class Quota {
         this.total = data.total / (1024 * 1024);
         this.relative = data.relative;
         this.quota = data.quota;
-        if (this.total > 2000) {
-            this.total = Math.round((this.total / 1024) * 100) / 100;
-            this.used = Math.round((this.used / 1024) * 100) / 100;
-            this.unit = 'Go';
-        } else {
-            this.total = Math.round(this.total);
-            this.used = Math.round(this.used);
-            this.unit = 'Mo';
-        }
+        this.total = Math.round((this.total / 1024) * 100) / 100;
+        this.used = Math.round((this.used / 1024) * 100) / 100;
+        this.unit = 'Go';
         return this;
     }
 }
