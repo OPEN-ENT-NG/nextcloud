@@ -57,7 +57,7 @@ export class UploadFileSnipletViewModel implements IViewModel {
 
     onValidImportFiles(): void {
         let selectedFolderFromNextcloudTree: SyncDocument = this.vm.getNextcloudTreeController()['selectedFolder'];
-        let nextcloudController: any = this.vm.getNextcloudTreeController();
+        const nextcloudController: any = this.vm.getNextcloudTreeController();
         this.vm.nextcloudService.uploadDocuments(model.me.userId, this.uploadedDocuments, selectedFolderFromNextcloudTree.path)
             .then(() => nextcloudController.nextcloudUserService.getUserInfo(model.me.userId))
             .then(userInfos => {
