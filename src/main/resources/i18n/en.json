@@ -13,5 +13,6 @@
   "nextcloud.documents.confirm.deletion": "Do you want to permanently delete these documents",
   "nextcloud.documents.deletion.confirmation": "Items have been permanently deleted.",
   "nextcloud.fail.upload": "Error while uploading files",
-  "file.too.large.upload": "File too large"
+  "file.too.large.upload": "File too large",
+  "workspace.definitive.delete.confirm.action": "Delete permanently"
 }

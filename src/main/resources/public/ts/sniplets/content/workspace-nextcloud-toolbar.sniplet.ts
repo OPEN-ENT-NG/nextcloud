@@ -135,8 +135,12 @@ export class ToolbarSnipletViewModel implements IViewModel {
 
     deleteDocuments(): void {
         const paths: Array<string> = this.vm.selectedDocuments.map((selectedDocument: SyncDocument) => selectedDocument.path);
+        const nextcloudTreeController = this.vm.getNextcloudTreeController();
         this.vm.nextcloudService.deleteDocuments(model.me.userId, paths)
-            .then(() => {
+            .then(() => this.vm.nextcloudService.deleteTrash(model.me.userId))
+            .then(() => nextcloudTreeController.nextcloudUserService.getUserInfo(model.me.userId))
+            .then(userInfos => {
+                nextcloudTreeController.userInfo = userInfos;
                 toasts.info("nextcloud.documents.deletion.confirmation");
                 return this.vm.nextcloudService.listDocument(model.me.userId, this.vm.parentDocument.path ?
                     this.vm.parentDocument.path : null);

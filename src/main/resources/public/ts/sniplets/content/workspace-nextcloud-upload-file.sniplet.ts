@@ -2,6 +2,7 @@ import {idiom as lang, model, notify} from "entcore";
 import {safeApply} from "../../utils/safe-apply.utils";
 import {AxiosError} from "axios";
 import {SyncDocument} from "../../models";
+import {Quota} from "../../models/nextcloud-user.model";
 
 declare let window: any;
 
@@ -56,17 +57,11 @@ export class UploadFileSnipletViewModel implements IViewModel {
 
     onValidImportFiles(): void {
         let selectedFolderFromNextcloudTree: SyncDocument = this.vm.getNextcloudTreeController()['selectedFolder'];
-        let userVm: any = this.vm.getNextcloudTreeController();
+        const nextcloudController: any = this.vm.getNextcloudTreeController();
         this.vm.nextcloudService.uploadDocuments(model.me.userId, this.uploadedDocuments, selectedFolderFromNextcloudTree.path)
-            .then(() => {
-                this.uploadedDocuments.forEach(file => {
-                    if (userVm.userInfo.quota.total * 1024 * 1024 > 2000) {
-                        userVm.userInfo.quota.used += Math.round((<File>file).size / (1000 * 1000)) / 1000;
-                    } else {
-                        userVm.userInfo.quota.used += Math.round((<File>file).size / 1000) / 1000;
-                    }
-                })
-                this.uploadedDocuments = [];
+            .then(() => nextcloudController.nextcloudUserService.getUserInfo(model.me.userId))
+            .then(userInfos => {
+                nextcloudController.userInfo = userInfos;
                 return this.vm.nextcloudService.listDocument(model.me.userId, this.vm.parentDocument.path ?
                     this.vm.parentDocument.path : null);
             })
@@ -85,7 +80,7 @@ export class UploadFileSnipletViewModel implements IViewModel {
                     notify.error(lang.translate('nextcloud.fail.upload'));
                 }
             })
-        this.lightbox.uploadFile = false;
+        this.toggleUploadFilesView(false);
         safeApply(this.scope);
     }
 

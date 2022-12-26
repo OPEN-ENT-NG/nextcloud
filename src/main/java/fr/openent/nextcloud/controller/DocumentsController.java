@@ -145,6 +145,18 @@ public class DocumentsController extends ControllerHelper {
         }
     }
 
+    @Delete("/files/user/:userid/trash/delete")
+    @ApiDoc("delete trash API")
+    @SecuredAction(value = "", type = ActionType.RESOURCE)
+    @ResourceFilter(OwnerFilter.class)
+    public void deleteTrash(HttpServerRequest request) {
+        UserUtils.getUserInfos(eb, request, user ->
+                userService.getUserSession(user.getUserId())
+                        .compose(documentsService::deleteTrash)
+                        .onSuccess(res -> renderJson(request, new JsonObject().put(Field.STATUS, Field.OK)))
+                        .onFailure(err -> renderError(request, new JsonObject().put(Field.MESSAGE, err.getMessage()))));
+    }
+
     @Put("/files/user/:userid/upload")
     @ApiDoc("Upload file")
     @SecuredAction(value = "", type = ActionType.RESOURCE)
