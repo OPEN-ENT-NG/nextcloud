@@ -1,9 +1,10 @@
-import {model, SharePayload, template, workspace} from "entcore";
+import {model, notify, idiom as lang, SharePayload, template, workspace} from "entcore";
 import {RootsConst} from "../../core/constants/roots.const";
 import {SyncDocument} from "../../models";
-import models = workspace.v2.models;
 import {WorkspaceEntcoreUtils} from "../../utils/workspace-entcore.utils";
 import {nextcloudService} from "../../services";
+import {setTimeout} from "core-js";
+import models = workspace.v2.models;
 
 interface IViewModel {
     copyingForShare: boolean;
@@ -45,17 +46,19 @@ export class ToolbarShareSnipletViewModel implements IViewModel {
     onShareAndNotCopy(): void {
         const paths: Array<string> = this.vm.selectedDocuments.map((document: SyncDocument) => document.path);
         this.vm.nextcloudService.moveDocumentNextcloudToWorkspace(model.me.userId, paths)
-            .then((workspaceDocuments: Array<models.Element>) => {
+            .then(async (workspaceDocuments: Array<models.Element>) => {
                 this.sharedElement = workspaceDocuments;
                 this.vm.updateTree();
                 const pathTemplate: string = `../../../${RootsConst.template}/behaviours/sniplet-nextcloud-content/toolbar/share/share`;
                 this.vm.selectedDocuments = [];
                 template.open('workspace-nextcloud-toolbar-share', pathTemplate);
+                try {
+                    this.vm.getNextcloudTreeController().userInfo = await this.vm.getNextcloudTreeController().nextcloudUserService.getUserInfo(model.me.userId);
+                } catch (e) {
+                    notify.error(lang.translate('error.user.info'));
+                }
+                this.vm.safeApply();
             })
-            .then(this.vm.getNextcloudTreeController().nextcloudUserService.getUserInfo(model.me.userId))
-            .then(userInfo => {
-                this.vm.getNextcloudTreeController().userInfo = userInfo;
-            });
     }
 
     onShareAndCopy(): void {

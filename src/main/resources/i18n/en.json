@@ -14,5 +14,6 @@
   "nextcloud.documents.deletion.confirmation": "Items have been permanently deleted.",
   "nextcloud.fail.upload": "Error while uploading files",
   "file.too.large.upload": "File too large",
+  "error.user.info": "Error while retrieving user infos",
   "workspace.definitive.delete.confirm.action": "Delete permanently"
 }
