@@ -56,6 +56,7 @@ export class ToolbarShareSnipletViewModel implements IViewModel {
                     this.vm.getNextcloudTreeController().userInfo = await this.vm.getNextcloudTreeController().nextcloudUserService.getUserInfo(model.me.userId);
                 } catch (e) {
                     notify.error(lang.translate('error.user.info'));
+                    console.error(e);
                 }
                 this.vm.safeApply();
             })
