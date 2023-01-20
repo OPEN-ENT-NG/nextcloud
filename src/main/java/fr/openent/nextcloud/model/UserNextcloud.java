@@ -1,5 +1,6 @@
 package fr.openent.nextcloud.model;
 
+import fr.openent.nextcloud.config.NextcloudConfig;
 import fr.openent.nextcloud.core.constants.Field;
 import io.vertx.core.json.JsonObject;
 
@@ -92,11 +93,20 @@ public class UserNextcloud {
         }
 
         public JsonObject toJSON() {
-            return new JsonObject()
+           return toJSON(new NextcloudConfig(new JsonObject()));
+        }
+
+        public JsonObject toJSON(NextcloudConfig nextcloudConfig) {
+            JsonObject bodyJson = new JsonObject()
                     .put(Field.USERID, this.userId)
                     .put(Field.DISPLAYNAMECAMEL, this.displayName)
-                    .put(Field.PASSWORD, this.password)
-                    .put(Field.QUOTA, "2 GB");
+                    .put(Field.PASSWORD, this.password);
+            if (nextcloudConfig.quota() == null || nextcloudConfig.quota().isEmpty()) {
+                bodyJson.put(Field.QUOTA, "2 GB");
+            } else {
+                bodyJson.put(Field.QUOTA, nextcloudConfig.quota());
+            }
+            return bodyJson;
         }
     }
 

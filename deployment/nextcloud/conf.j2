@@ -26,6 +26,7 @@
             "ocs-api": "{{ nextcloudOCSAPI | default('/ocs/v1.php') }}",
             "webdav-api": "{{ nextcloudWebdavAPI | default('/remote.php/dav/files') }}"
         },
+        "quota": "{{ nextcloudQuota | default('2 GB') }}",
         "publicConf": {
             "xiti": {
                 "LIBELLE_SERVICE": {

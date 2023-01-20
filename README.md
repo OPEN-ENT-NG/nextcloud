@@ -23,7 +23,8 @@ Specific configuration that must be seen :
         "endpoint" : {
             "ocs-api": "${nextcloudOCSAPI}",
             "webdav-api": "${nextcloudWebdavAPI}"
-        }
+        },
+        "quota": "${nextcloudQuota}"
       }
 }
 </pre>
@@ -36,10 +37,14 @@ adminNextcloudPassword=${String}
 nextcloudHost=${String}
 nextcloudOCSAPI=${String}
 nextcloudWebdavAPI=${String}
+nextcloudQuota=${String}
 
 # ENDPOINT
 nextcloudOCSAPI=/ocs/v1.php
 nextcloudWebdavAPI=/remote.php/dav/files
+
+# Misc
+nextcloudQuota=2 GB
 </pre>
 
 
