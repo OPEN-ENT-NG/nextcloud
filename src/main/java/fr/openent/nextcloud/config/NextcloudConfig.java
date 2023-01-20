@@ -9,6 +9,7 @@ public class NextcloudConfig {
     private final String password;
     private final String ocsEndpoint;
     private final String webdavEndpoint;
+    private final String quota;
 
     public NextcloudConfig(JsonObject config) {
         this.host = config.getString(Field.NEXTCLOUDHOST, null);
@@ -16,6 +17,7 @@ public class NextcloudConfig {
         this.password = config.getJsonObject(Field.ADMINCREDENTIAL, new JsonObject()).getString(Field.PASSWORD, null);
         this.ocsEndpoint = config.getJsonObject(Field.ENDPOINT, new JsonObject()).getString(Field.OCS_ENDPOINT_API, null);
         this.webdavEndpoint = config.getJsonObject(Field.ENDPOINT, new JsonObject()).getString(Field.WEBDAV_ENDPOINT_API, null);
+        this.quota = config.getString(Field.QUOTA, "2 GB");
     }
 
     public String host() {
@@ -29,4 +31,6 @@ public class NextcloudConfig {
     public String ocsEndpoint() { return this.ocsEndpoint; }
 
     public String webdavEndpoint() { return this.webdavEndpoint; }
+
+    public String quota() { return this.quota; }
 }

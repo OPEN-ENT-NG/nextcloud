@@ -143,7 +143,7 @@ public class DefaultUserService implements UserService {
                 .putHeader(Field.OCS_API_REQUEST, String.valueOf(true))
                 .addQueryParam(Field.FORMAT, Field.JSON)
                 .as(BodyCodec.string(StandardCharsets.UTF_8.toString()))
-                .sendJsonObject(userBody.toJSON(), responseAsync -> proceedUserCreation(userBody, responseAsync, promise));
+                .sendJsonObject(userBody.toJSON(this.nextcloudConfig), responseAsync -> proceedUserCreation(userBody, responseAsync, promise));
         return promise.future();
     }
 
@@ -167,7 +167,7 @@ public class DefaultUserService implements UserService {
             } else {
                 JsonObject result = new JsonObject()
                         .put(Field.STATUS, Field.OK)
-                        .put(Field.DATA, userBody.toJSON());
+                        .put(Field.DATA, userBody.toJSON(this.nextcloudConfig));
                 promise.complete(result);
             }
         }
