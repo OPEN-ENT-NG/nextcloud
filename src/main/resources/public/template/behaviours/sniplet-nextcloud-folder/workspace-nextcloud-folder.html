@@ -21,7 +21,8 @@
             <h2>
                 <i18n>nextcloud.quota</i18n>
             </h2>
-            <progress-bar max="vm.userInfo.quota.total" filled="vm.userInfo.quota.used" unit="[[vm.userInfo.quota.unit]]"></progress-bar>
+            <progress-bar ng-if="vm.userInfo.quota.total !== 0" max="vm.userInfo.quota.total" filled="vm.userInfo.quota.used" unit="[[vm.userInfo.quota.unit]]"></progress-bar>
+            <span ng-if="vm.userInfo.quota.total === 0">Espace illimité</span>
         </div>
     </div>
 </div>
