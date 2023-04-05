@@ -34,7 +34,7 @@ describe('NextcloudUserService', () => {
         const userId = "userId";
 
         const quota: any = {
-            free: "free", quota: 0, relative: 0, total: 0, unit: "Mo", used: 0
+            total: 0, unit: "Mo", used: 0
         }
         const result: any = {
             displayName: 0,

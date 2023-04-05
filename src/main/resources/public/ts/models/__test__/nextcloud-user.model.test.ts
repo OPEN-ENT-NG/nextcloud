@@ -5,7 +5,8 @@ describe('NextcloudModel', () => {
     it('test Quota.build with big used', () => {
         const quota = new Quota().build({
             used: 1342177280,
-            total: 2147483648,
+            quota: 2147483648,
+            unit: 'Go'
         })
 
 
@@ -17,7 +18,8 @@ describe('NextcloudModel', () => {
     it('test Quota.build with small used', () => {
         const quota = new Quota().build({
             used: 85899345,
-            total: 2147483648,
+            quota: 2147483648,
+            unit: 'Go'
         })
 
         expect(quota.total).toEqual(2);
@@ -28,7 +30,8 @@ describe('NextcloudModel', () => {
     it('test Quota.build with less than 2000 Mo', () => {
         const quota = new Quota().build({
             used: 1200312736,
-            total: 1610612736,
+            quota: 1610612736,
+            unit: 'Mo'
         })
 
 
