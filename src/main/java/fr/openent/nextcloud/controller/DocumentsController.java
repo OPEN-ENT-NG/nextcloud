@@ -92,9 +92,8 @@ public class DocumentsController extends ControllerHelper {
                     userService.getUserSession(user.getUserId())
                             .compose(userSession -> documentsService.getFiles(userSession, path, files))
                             .onSuccess(fileResponse -> {
-                                String pathName = path.equals("/") ? Field.ARCHIVE : path;
                                 HttpServerResponse resp = request.response();
-                                resp.putHeader("Content-Disposition", "attachment; filename=\"" + pathName + ".zip\"");
+                                resp.putHeader("Content-Disposition", "attachment; filename=\"" + Field.ARCHIVE + ".zip\"");
                                 resp.putHeader("Content-Type", "application/octet-stream");
                                 resp.putHeader("Content-Description", "File Transfer");
                                 resp.putHeader("Content-Transfer-Encoding", "binary");
