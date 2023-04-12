@@ -13,7 +13,7 @@ import models = workspace.v2.models;
 import {NextcloudViewList} from "./workspace-nextcloud-view-list.sniplet";
 import {NextcloudViewIcons} from "./workspace-nextcloud-view-icons.sniplet";
 import {NextcloudPreference, Preference} from "../../shared/services/nextcloud.preferences";
-import models = workspace.v2.models;
+
 
 declare let window: any;
 

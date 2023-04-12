@@ -51,42 +51,5 @@ export class Preference {
     private isEmpty(preference: NextcloudPreference): boolean {
         return !preference || !Object.keys(preference).length;
     }
-
-    // async initPreference(): Promise<any> {
-    //     let pref;
-    //     try {
-    //          pref = await Me.preference('nextcloud');
-    //          this._viewMode =
-    //     } catch (e) {
-    //         console.log(e + "nextcloud.preference.viewMode.initPreference")
-    //         pref = undefined;
-    //     }
-    //
-    //     if (typeof pref === 'undefined') {
-    //         Me.preferences.nextcloud = {"viewMode" : ViewMode.ICONS};
-    //         Me.savePreference('nextcloud');
-    //     }
-    //         return await Me.preference('nextcloud');
-    //     // Me.preference('nextcloud')
-    //     //     .then(res => res)
-    //     //     .then(res => res)
-    //     //     .then(res => res)
-    //     //     .catch(async() =>{
-    //     //         Me.preferences.nextcloud = {"viewMode" : ViewMode.ICONS};
-    //     //         await Me.savePreference('nextcloud');
-    //     //         return await Me.preference('nextcloud');
-    //     //     })
-    // }
-    //
-    //
-    // async updatePreference(value: ViewMode): Promise<void> {
-    //     Me.preference(Preferences.NEXTCLOUD)
-    //         .then(async obj => {
-    //             obj = {...obj};
-    //             obj.viewMode = value;
-    //             Me.preferences[Preferences.NEXTCLOUD] = obj;
-    //             await Me.savePreference(Preferences.NEXTCLOUD);
-    //         })
-    // }
-
+    
 }
