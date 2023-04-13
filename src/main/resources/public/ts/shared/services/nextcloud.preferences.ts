@@ -27,7 +27,6 @@ export class Preference {
                 if (this.isEmpty(preference)) {
                     // init default
                     preference.viewMode = ViewMode.ICONS;
-
                     // persist for the first time my nextcloud preference
                     await this.updatePreference(preference);
                 }
@@ -41,7 +40,13 @@ export class Preference {
 
     async updatePreference(preference: NextcloudPreference): Promise<void> {
         Me.preferences.nextcloud = preference;
-        await Me.savePreference('nextcloud');
+        try {
+            await Me.savePreference('nextcloud');
+            this.setProperties(preference);
+        } catch(e) {
+            notify.error('nextcloud.preferences.updatepreference.error');
+            throw e;
+        }
     }
 
     private setProperties(preference: NextcloudPreference): void {
