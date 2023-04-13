@@ -12,7 +12,7 @@ import {ViewMode} from "../../core/enums/view-mode";
 import models = workspace.v2.models;
 import {NextcloudViewList} from "./workspace-nextcloud-view-list.sniplet";
 import {NextcloudViewIcons} from "./workspace-nextcloud-view-icons.sniplet";
-import {NextcloudPreference, Preference} from "../../shared/services/nextcloud.preferences";
+import {NextcloudPreference, Preference} from "../../shared/services";
 
 
 declare let window: any;
@@ -80,7 +80,6 @@ class ViewModel implements IViewModel {
         this.nextcloudUrl = null;
         this.selectedDocuments = new Array<SyncDocument>();
         this.nextcloudPreference = new Preference();
-
         // on init we first sync its main folder content
         Promise.all([this.initDocumentsContent(nextcloudService, scope),
             nextcloudService.getNextcloudUrl(), this.nextcloudPreference.init()])

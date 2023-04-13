@@ -20,16 +20,14 @@ export class Preference {
     async init(): Promise<void> {
         try {
             // fetch nextcloud preference from Me
-            let preference: NextcloudPreference = Me.preferences['nextcloud'];
-            if (this.isEmpty(preference)) {
-                preference = await Me.preference('nextcloud');
-                // I have no pref, must init and save by default
-                if (this.isEmpty(preference)) {
-                    // init default
-                    preference.viewMode = ViewMode.ICONS;
-                    // persist for the first time my nextcloud preference
-                    await this.updatePreference(preference);
-                }
+            let preference = await Me.preference('nextcloud');
+            // Check on nextcloud preferences AND nextcloud viewMode preferences
+            if (this.isEmpty(preference) || !preference.viewMode) {
+                // If no view mode, we set it with default value
+                preference.viewMode = ViewMode.ICONS;
+                // persist for the first time my nextcloud preference
+                await this.updatePreference(preference);
+
             }
             this.setProperties(preference);
         } catch (e) {
