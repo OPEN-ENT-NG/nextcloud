@@ -1,4 +1,4 @@
-import {angular, Behaviours, idiom as lang, model, template, workspace} from "entcore";
+import {angular, Behaviours, idiom as lang, model, Me, template, workspace} from "entcore";
 import {NEXTCLOUD_APP} from "../../nextcloud.behaviours";
 import {Subscription} from "rxjs";
 import {Draggable, SyncDocument} from "../../models";
@@ -12,6 +12,8 @@ import {ViewMode} from "../../core/enums/view-mode";
 import models = workspace.v2.models;
 import {NextcloudViewList} from "./workspace-nextcloud-view-list.sniplet";
 import {NextcloudViewIcons} from "./workspace-nextcloud-view-icons.sniplet";
+import {NextcloudPreference, Preference} from "../../shared/services";
+
 
 declare let window: any;
 
@@ -22,23 +24,29 @@ interface IViewModel {
     safeApply(): void;
 
     initDraggable(): void;
-    onSelectContent(document: SyncDocument): void;
-    onOpenContent(document: SyncDocument): void;
-    getFile(document: SyncDocument): string;
-    nextcloudUrl: string;
 
+    onSelectContent(document: SyncDocument): void;
+
+    onOpenContent(document: SyncDocument): void;
+
+    getFile(document: SyncDocument): string;
+
+    nextcloudUrl: string;
     draggable: Draggable;
     lockDropzone: boolean;
     parentDocument: SyncDocument;
     documents: Array<SyncDocument>;
     selectedDocuments: Array<SyncDocument>;
     checkboxSelectAll: boolean;
+
     // drag & drop action
     moveDocument(element: any, document: SyncDocument): Promise<void>;
 
     // dropzone
     isDropzoneEnabled(): boolean;
+
     canDropOnFolder(): boolean;
+
     onCannotDropFile(): void;
 }
 
@@ -61,6 +69,7 @@ class ViewModel implements IViewModel {
     selectedDocuments: Array<SyncDocument>;
     isLoaded: boolean;
     checkboxSelectAll: boolean;
+    nextcloudPreference: Preference;
 
     constructor(scope, nextcloudService: INextcloudService) {
         this.isLoaded = false;
@@ -70,12 +79,12 @@ class ViewModel implements IViewModel {
         this.parentDocument = null;
         this.nextcloudUrl = null;
         this.selectedDocuments = new Array<SyncDocument>();
-
-        this.changeViewMode(ViewMode.ICONS);
-
+        this.nextcloudPreference = new Preference();
         // on init we first sync its main folder content
-        Promise.all([this.initDocumentsContent(nextcloudService, scope), nextcloudService.getNextcloudUrl()])
+        Promise.all([this.initDocumentsContent(nextcloudService, scope),
+            nextcloudService.getNextcloudUrl(), this.nextcloudPreference.init()])
             .then(([_, url]) => {
+                this.changeViewMode(this.nextcloudPreference.viewMode);
                 this.nextcloudUrl = url;
                 this.isLoaded = true;
                 safeApply(scope);
@@ -295,7 +304,11 @@ class ViewModel implements IViewModel {
         return template.contains('documents-content', pathTemplate);
     }
 
-    changeViewMode(mode: ViewMode): void {
+
+    async changeViewMode(mode: ViewMode): Promise<void> {
+        let preference: NextcloudPreference = Me.preferences['nextcloud'];
+        preference.viewMode = mode;
+        await this.nextcloudPreference.updatePreference(preference);
         const pathTemplate = `../../../${RootsConst.template}/behaviours/sniplet-nextcloud-content/content/views/${mode}`;
         this.documents.forEach(document => document.selected = false);
         this.selectedDocuments = [];

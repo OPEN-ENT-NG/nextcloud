@@ -40,7 +40,7 @@
     "@types/core-js": "0.9.42",
     "@types/jest": "^22.2.0",
     "@types/jquery": "^2.0.34",
-    "axios-mock-adapter": "^1.19.0",
+    "axios-mock-adapter": "1.21.2",
     "gulp-append-prepend": "^1.0.8",
     "jest": "^24.7.1",
     "jest-environment-node": "^23.0.0",
