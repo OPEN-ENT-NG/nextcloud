@@ -15,6 +15,3 @@ services:
       - ./:/home/node/app
       - ~/.npm:/.npm
       - ../recette:/home/node/recette
-      - ~/.npmrc:/home/node/.npmrc
-      - ~/.bowerrc:/home/node/.bowerrc
-      - ~/.gitconfig:/home/node/.gitconfig
