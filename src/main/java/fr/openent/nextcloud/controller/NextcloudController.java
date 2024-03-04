@@ -17,14 +17,16 @@ import org.entcore.common.events.EventStore;
 import org.entcore.common.events.EventStoreFactory;
 import org.entcore.common.http.filter.ResourceFilter;
 
+import java.util.Map;
+
 public class NextcloudController extends ControllerHelper {
 
     private final EventStore eventStore;
-    private final NextcloudConfig nextcloudConfig;
+    private final Map<String, NextcloudConfig> nextcloudConfigMapByHost;
 
     public NextcloudController(ServiceFactory serviceFactory) {
         this.eventStore = EventStoreFactory.getFactory().getEventStore(fr.openent.nextcloud.Nextcloud.class.getSimpleName());
-        this.nextcloudConfig = serviceFactory.nextcloudConfig();
+        this.nextcloudConfigMapByHost = serviceFactory.nextcloudConfigMapByHost();
     }
 
     @Get("")
@@ -39,6 +41,6 @@ public class NextcloudController extends ControllerHelper {
     @SecuredAction(value = "", type = ActionType.RESOURCE)
     @ResourceFilter(Access.class)
     public void getNextcloudUrl(HttpServerRequest request) {
-        Renders.renderJson(request, new JsonObject().put(Field.URL, nextcloudConfig.host()));
+        Renders.renderJson(request, new JsonObject().put(Field.URL, nextcloudConfigMapByHost.get(Renders.getHost(request)).host()));
     }
 }

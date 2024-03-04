@@ -21,22 +21,25 @@ import io.vertx.ext.web.codec.BodyCodec;
 import org.entcore.common.sql.Sql;
 import org.entcore.common.sql.SqlResult;
 
+import java.util.Map;
+
 public class DefaultTokenProviderService implements TokenProviderService {
     private final Logger log = LoggerFactory.getLogger(DefaultTokenProviderService.class);
     private final WebClient client;
-    private final NextcloudConfig nextcloudConfig;
+    private final Map<String, NextcloudConfig> nextcloudConfigMapByHost;
 
     private static final String TOKEN_ENDPOINT = "/core";
 
-    public DefaultTokenProviderService(WebClient webclient, NextcloudConfig nextcloudConfig) {
+    public DefaultTokenProviderService(WebClient webclient, Map<String, NextcloudConfig> nextcloudConfigMapByHost) {
         this.client = webclient;
-        this.nextcloudConfig = nextcloudConfig;
+        this.nextcloudConfigMapByHost = nextcloudConfigMapByHost;
     }
 
     @Override
-    public Future<JsonObject> provideNextcloudSession(UserNextcloud.RequestBody userBody) {
+    public Future<JsonObject> provideNextcloudSession(final String host, UserNextcloud.RequestBody userBody) {
         Promise<JsonObject> promise = Promise.promise();
-        this.client.getAbs(nextcloudConfig.host() + this.nextcloudConfig.ocsEndpoint() + TOKEN_ENDPOINT + "/getapppassword")
+        final NextcloudConfig config = nextcloudConfigMapByHost.get(host);
+        this.client.getAbs(config.host() + config.ocsEndpoint() + TOKEN_ENDPOINT + "/getapppassword")
                 .basicAuthentication(userBody.userId(), userBody.password())
                 .putHeader(Field.OCS_API_REQUEST, String.valueOf(true))
                 .as(BodyCodec.jsonObject())

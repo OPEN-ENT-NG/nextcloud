@@ -27,28 +27,29 @@ import org.entcore.common.sql.Sql;
 import org.entcore.common.sql.SqlResult;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Map;
 
 public class DefaultUserService implements UserService {
     private final Logger log = LoggerFactory.getLogger(DefaultUserService.class);
     private final WebClient client;
-    private final NextcloudConfig nextcloudConfig;
     private final TokenProviderService tokenProviderService;
     private final DocumentsService documentsService;
+    private final Map<String, NextcloudConfig> nextcloudConfigMapByHost;
 
     private static final String USER_ENDPOINT = "/cloud/users";
 
     public DefaultUserService(ServiceFactory serviceFactory) {
         this.client = serviceFactory.webClient();
-        this.nextcloudConfig = serviceFactory.nextcloudConfig();
         this.tokenProviderService = serviceFactory.tokenProviderService();
         this.documentsService = serviceFactory.documentsService();
+        this.nextcloudConfigMapByHost = serviceFactory.nextcloudConfigMapByHost();
     }
 
     @Override
-    public Future<JsonObject> provideUserSession(UserNextcloud.RequestBody userBody) {
+    public Future<JsonObject> provideUserSession(final String host, UserNextcloud.RequestBody userBody) {
         Promise<JsonObject> promise = Promise.promise();
-        this.getUserInfo(userBody.userId())
-                .compose(userNextcloud -> resolveUserSession(userBody, userNextcloud))
+        this.getUserInfo(host, userBody.userId())
+                .compose(userNextcloud -> resolveUserSession(host, userBody, userNextcloud))
                 .onSuccess(res -> promise.complete())
                 .onFailure(promise::fail);
         return promise.future();
@@ -63,20 +64,21 @@ public class DefaultUserService implements UserService {
      *
      *  If none is existent, we create a new user and we provide its session
      *
+     * @param host host
      * @param   userBody        User Body request {@link UserNextcloud.RequestBody}
      * @param   userNextcloud   user nextcloud info {@link UserNextcloud}
      * @return  Empty response (succeed will resolve user's session by persisting it via database)
      */
-    private Future<Void> resolveUserSession(UserNextcloud.RequestBody userBody, UserNextcloud userNextcloud) {
+    private Future<Void> resolveUserSession(final String host, UserNextcloud.RequestBody userBody, UserNextcloud userNextcloud) {
         Promise<Void> promise = Promise.promise();
         if (userNextcloud.id() != null) {
             this.getUserSession(userBody.userId())
-                    .compose(this::checkSessionValidity)
+                    .compose(userSession -> this.checkSessionValidity(host, userSession))
                     .onSuccess(userSession -> {
                         if (userSession.isEmpty()) {
                             userBody.setPassword(generateUserPassword());
-                            this.changeUserPassword(userBody)
-                                    .compose(res -> this.tokenProviderService.provideNextcloudSession(userBody))
+                            this.changeUserPassword(host, userBody)
+                                    .compose(res -> this.tokenProviderService.provideNextcloudSession(host, userBody))
                                     .onSuccess(res -> promise.complete())
                                     .onFailure(promise::fail);
                         } else {
@@ -87,8 +89,8 @@ public class DefaultUserService implements UserService {
         } else {
             // case no exist, we create a user and its session token
             userBody.setPassword(generateUserPassword());
-            this.addNewUser(userBody)
-                    .compose(res -> this.tokenProviderService.provideNextcloudSession(userBody))
+            this.addNewUser(host, userBody)
+                    .compose(res -> this.tokenProviderService.provideNextcloudSession(host, userBody))
                     .onSuccess(res -> promise.complete())
                     .onFailure(promise::fail);
         }
@@ -97,15 +99,16 @@ public class DefaultUserService implements UserService {
 
     /**
      * Check if the user's token is still up-to-date in the database
+     * @param host host
      * @param userSession   User session
      * @return              Future with the updated session if update needed, else old session.
      */
-    private Future<UserNextcloud.TokenProvider> checkSessionValidity(UserNextcloud.TokenProvider userSession) {
+    private Future<UserNextcloud.TokenProvider> checkSessionValidity(String host, UserNextcloud.TokenProvider userSession) {
         Promise<UserNextcloud.TokenProvider> promise = Promise.promise();
         if (userSession.isEmpty()) {
             promise.complete(new UserNextcloud.TokenProvider());
         } else {
-            documentsService.parameterizedListFiles(userSession, null, response -> {
+            documentsService.parameterizedListFiles(host, userSession, null, response -> {
                 if (response.failed()) {
                     String messageToFormat = "[Nextcloud@%s::checkSessionValidity] Error during request for token validity check : %s";
                     PromiseHelper.reject(log, messageToFormat, this.getClass().getSimpleName(), response.cause(), promise);
@@ -135,26 +138,27 @@ public class DefaultUserService implements UserService {
         }
     }
 
-    @Override
-    public Future<JsonObject> addNewUser(UserNextcloud.RequestBody userBody) {
+    private Future<JsonObject> addNewUser(final String host, UserNextcloud.RequestBody userBody) {
         Promise<JsonObject> promise = Promise.promise();
+        final NextcloudConfig nextcloudConfig = this.nextcloudConfigMapByHost.get(host);
         this.client.postAbs(nextcloudConfig.host() + nextcloudConfig.ocsEndpoint() + USER_ENDPOINT)
-                .basicAuthentication(this.nextcloudConfig.username(), this.nextcloudConfig.password())
+                .basicAuthentication(nextcloudConfig.username(), nextcloudConfig.password())
                 .putHeader(Field.OCS_API_REQUEST, String.valueOf(true))
                 .addQueryParam(Field.FORMAT, Field.JSON)
                 .as(BodyCodec.string(StandardCharsets.UTF_8.toString()))
-                .sendJsonObject(userBody.toJSON(this.nextcloudConfig), responseAsync -> proceedUserCreation(userBody, responseAsync, promise));
+                .sendJsonObject(userBody.toJSON(nextcloudConfig), responseAsync -> proceedUserCreation(nextcloudConfig, userBody, responseAsync, promise));
         return promise.future();
     }
 
     /**
      * Proceed async event after HTTP adding new user API endpoint has been sent
      *
+     * @param   nextcloudConfig nextcloudConfig
      * @param   userBody        request user body sent {@link UserNextcloud.RequestBody}
      * @param   responseAsync   HttpResponse of string depending on its state {@link AsyncResult}
      * @param   promise         Promise that could be completed or fail sending {@link JsonObject}
      */
-    private void proceedUserCreation(UserNextcloud.RequestBody userBody, AsyncResult<HttpResponse<String>> responseAsync,
+    private void proceedUserCreation(final NextcloudConfig nextcloudConfig, UserNextcloud.RequestBody userBody, AsyncResult<HttpResponse<String>> responseAsync,
                                      Promise<JsonObject> promise) {
         if (responseAsync.failed()) {
             String messageToFormat = "[Nextcloud@%s::proceedUserCreation] An error has occurred during fetching endpoint : %s";
@@ -167,17 +171,18 @@ public class DefaultUserService implements UserService {
             } else {
                 JsonObject result = new JsonObject()
                         .put(Field.STATUS, Field.OK)
-                        .put(Field.DATA, userBody.toJSON(this.nextcloudConfig));
+                        .put(Field.DATA, userBody.toJSON(nextcloudConfig));
                 promise.complete(result);
             }
         }
     }
 
     @Override
-    public Future<UserNextcloud> getUserInfo(String userId) {
+    public Future<UserNextcloud> getUserInfo(String host, String userId) {
         Promise<UserNextcloud> promise = Promise.promise();
+        final NextcloudConfig nextcloudConfig = this.nextcloudConfigMapByHost.get(host);
         this.client.getAbs(nextcloudConfig.host() + nextcloudConfig.ocsEndpoint() + USER_ENDPOINT + "/" + userId)
-                .basicAuthentication(this.nextcloudConfig.username(), this.nextcloudConfig.password())
+                .basicAuthentication(nextcloudConfig.username(), nextcloudConfig.password())
                 .putHeader(Field.OCS_API_REQUEST, String.valueOf(true))
                 .as(BodyCodec.jsonObject())
                 .addQueryParam(Field.FORMAT, Field.JSON)
@@ -229,9 +234,9 @@ public class DefaultUserService implements UserService {
     }
 
     @Override
-    public Future<JsonObject> changeUserPassword(UserNextcloud.RequestBody userBody) {
+    public Future<JsonObject> changeUserPassword(final String host, UserNextcloud.RequestBody userBody) {
         Promise<JsonObject> promise = Promise.promise();
-        this.editUserInfo(userBody.userId(), EditableDataField.PASSWORD, userBody.password())
+        this.editUserInfo(host, userBody.userId(), EditableDataField.PASSWORD, userBody.password())
                 .onSuccess(promise::complete)
                 .onFailure(promise::fail);
         return promise.future();
@@ -240,18 +245,20 @@ public class DefaultUserService implements UserService {
     /**
      * This method allows you to call it by any change of user's info
      *
+     * @param host host
      * @param   userId              user nextcloud identifier (not the ENT user identifier)
      * @param   editableDataField   dataField option to wish to edit {@link EditableDataField} enum
      * @param   value               Value to pass to its data field
      * @return  OCS response
      */
-    private Future<JsonObject> editUserInfo(String userId, EditableDataField editableDataField, String value) {
+    private Future<JsonObject> editUserInfo(String host, String userId, EditableDataField editableDataField, String value) {
         Promise<JsonObject> promise = Promise.promise();
         JsonObject payload = new JsonObject()
                 .put(Field.KEY, editableDataField.dataField())
                 .put(Field.VALUE, value);
+        final NextcloudConfig nextcloudConfig = this.nextcloudConfigMapByHost.get(host);
         this.client.putAbs(nextcloudConfig.host() + nextcloudConfig.ocsEndpoint() + USER_ENDPOINT + "/" + userId)
-                .basicAuthentication(this.nextcloudConfig.username(), this.nextcloudConfig.password())
+                .basicAuthentication(nextcloudConfig.username(), nextcloudConfig.password())
                 .putHeader(Field.OCS_API_REQUEST, String.valueOf(true))
                 .as(BodyCodec.jsonObject())
                 .addQueryParam(Field.FORMAT, Field.JSON)

@@ -14,23 +14,25 @@ import org.entcore.common.neo4j.Neo4j;
 import org.entcore.common.sql.Sql;
 import org.entcore.common.storage.Storage;
 
+import java.util.Map;
+
 public class ServiceFactory {
     private final Vertx vertx;
     private final Storage storage;
     private final Neo4j neo4j;
     private final Sql sql;
     private final MongoDb mongoDb;
-    private final NextcloudConfig nextcloudConfig;
+    private final Map<String, NextcloudConfig> nextcloudConfigMapByHost;
     private final WebClient webClient;
 
     public ServiceFactory(Vertx vertx, Storage storage, Neo4j neo4j, Sql sql, MongoDb mongoDb, WebClient webClient,
-                          NextcloudConfig nextcloudConfig) {
+                          Map<String, NextcloudConfig> nextcloudConfigMapByHost) {
         this.vertx = vertx;
         this.storage = storage;
         this.neo4j = neo4j;
         this.sql = sql;
         this.mongoDb = mongoDb;
-        this.nextcloudConfig = nextcloudConfig;
+        this.nextcloudConfigMapByHost = nextcloudConfigMapByHost;
         this.webClient = webClient;
     }
 
@@ -42,7 +44,7 @@ public class ServiceFactory {
     }
 
     public TokenProviderService tokenProviderService() {
-        return new DefaultTokenProviderService(webClient, nextcloudConfig);
+        return new DefaultTokenProviderService(webClient, nextcloudConfigMapByHost);
     }
 
     // Helpers
@@ -59,7 +61,7 @@ public class ServiceFactory {
         return new WorkspaceHelper(eventBus(), storage);
     }
 
-    public NextcloudConfig nextcloudConfig() {return this.nextcloudConfig;}
+    public Map<String, NextcloudConfig> nextcloudConfigMapByHost() { return this.nextcloudConfigMapByHost; }
 
     public EventBus eventBus() {
         return this.vertx.eventBus();

@@ -32,6 +32,9 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.powermock.modules.junit4.PowerMockRunnerDelegate;
 
+import java.util.HashMap;
+import java.util.Map;
+
 @RunWith(PowerMockRunner.class)
 @PowerMockRunnerDelegate(VertxUnitRunner.class)
 @PrepareForTest({DefaultDocumentsService.class})
@@ -43,6 +46,7 @@ public class DocumentServiceTest {
     private DocumentsService documentService;
     private ServiceFactory serviceFactory;
     private Storage storage;
+    private String host;
 
     @Before
     public void setUp() {
@@ -54,11 +58,14 @@ public class DocumentServiceTest {
                 .put(Field.ADMINCREDENTIAL, new JsonObject().put(Field.USERNAME, "test").put(Field.PASSWORD, "test"))
                 .put(Field.ENDPOINT, new JsonObject().put(Field.OCS_ENDPOINT_API, "ocs").put(Field.WEBDAV_ENDPOINT_API, "webdav"));
         NextcloudConfig nextcloudConfig = new NextcloudConfig(config);
+        final Map<String, NextcloudConfig> nextcloudConfigMapByHost = new HashMap<>();
+        nextcloudConfigMapByHost.put("localhost", nextcloudConfig);
         this.storage = Mockito.spy(new StorageFactory(vertx, null).getStorage());
-        serviceFactory = new ServiceFactory(vertx, this.storage, null, null, null, webClient, nextcloudConfig);
+        serviceFactory = new ServiceFactory(vertx, this.storage, null, null, null, webClient, nextcloudConfigMapByHost);
         PowerMockito.spy(DefaultDocumentsService.class);
         this.documentService = PowerMockito.spy(new DefaultDocumentsService(serviceFactory));
         Sql.getInstance().init(vertx.eventBus(), "fr.openent.next");
+        this.host = "localhost";
     }
 
     @Test
@@ -69,7 +76,7 @@ public class DocumentServiceTest {
         String userId = "1";
         String userName = "test";
         String userToken = "token";
-        String expectedURI = serviceFactory.nextcloudConfig().host() + serviceFactory.nextcloudConfig().webdavEndpoint() + "/" + userId + "/" + encodedFilePath;
+        String expectedURI = serviceFactory.nextcloudConfigMapByHost().get(host).host() + serviceFactory.nextcloudConfigMapByHost().get(host).webdavEndpoint() + "/" + userId + "/" + encodedFilePath;
 
 
         UserNextcloud.TokenProvider userSession = new UserNextcloud.TokenProvider();
@@ -78,7 +85,7 @@ public class DocumentServiceTest {
         userSession.setToken(userToken);
 
         HttpRequest<Buffer> httpRequest = Mockito.spy(HttpRequest.class);
-        PowerMockito.doReturn(Future.succeededFuture(filePath)).when(this.documentService, "getUniqueFileName", Mockito.any(), Mockito.anyString(), Mockito.eq(0));
+        PowerMockito.doReturn(Future.succeededFuture(filePath)).when(this.documentService, "getUniqueFileName", Mockito.anyString(), Mockito.any(), Mockito.anyString(), Mockito.eq(0));
         Mockito.doAnswer(invocation -> {
             Handler<Buffer> var2 = invocation.getArgument(1);
             var2.handle(new BufferImpl());
@@ -97,7 +104,7 @@ public class DocumentServiceTest {
 
         Mockito.doNothing().when(httpRequest).sendBuffer(Mockito.any(), Mockito.any());
         Mockito.doNothing().when(this.storage).removeFile(Mockito.anyString(), Mockito.any());
-        this.documentService.uploadFile(userSession, new Attachment("id", new Metadata(new JsonObject().put(Field.FILENAMELOWER, "filename"))), null);
+        this.documentService.uploadFile(host, userSession, new Attachment("id", new Metadata(new JsonObject().put(Field.FILENAMELOWER, "filename"))), null);
 
         async.awaitSuccess(10000);
     }
@@ -110,7 +117,7 @@ public class DocumentServiceTest {
         String userId = "1";
         String userName = "test";
         String userToken = "token";
-        String expectedURI = serviceFactory.nextcloudConfig().host() + serviceFactory.nextcloudConfig().webdavEndpoint() + "/" + userId + "/" + encodedFilePath;
+        String expectedURI = serviceFactory.nextcloudConfigMapByHost().get(host).host() + serviceFactory.nextcloudConfigMapByHost().get(host).webdavEndpoint() + "/" + userId + "/" + encodedFilePath;
 
         UserNextcloud.TokenProvider userSession = new UserNextcloud.TokenProvider();
         userSession.setUserId(userId);
@@ -133,7 +140,7 @@ public class DocumentServiceTest {
         PowerMockito.doReturn("").when(documentService, "getListFilesPropsBody");
         Mockito.doNothing().when(httpRequest).sendBuffer(Mockito.any(), Mockito.any());
 
-        this.documentService.parameterizedListFiles(userSession, filePath, null);
+        this.documentService.parameterizedListFiles(host, userSession, filePath, null);
 
         async.awaitSuccess(10000);
     }
@@ -146,22 +153,22 @@ public class DocumentServiceTest {
         String userId = "1";
         String userName = "test";
         String userToken = "token";
-        String expectedURI = serviceFactory.nextcloudConfig().host() + serviceFactory.nextcloudConfig().webdavEndpoint() + "/" + userId + "/" + encodedFilePath;
+        String expectedURI = serviceFactory.nextcloudConfigMapByHost().get(host).host() + serviceFactory.nextcloudConfigMapByHost().get(host).webdavEndpoint() + "/" + userId + "/" + encodedFilePath;
         String moveURI = "/test/" + filePath;
-        String expectedMoveURI = serviceFactory.nextcloudConfig().host() + serviceFactory.nextcloudConfig().webdavEndpoint() + "/" + userId + "/test/" + encodedFilePath;
+        String expectedMoveURI = serviceFactory.nextcloudConfigMapByHost().get(host).host() + serviceFactory.nextcloudConfigMapByHost().get(host).webdavEndpoint() + "/" + userId + "/test/" + encodedFilePath;
 
         UserNextcloud.TokenProvider userSession = new UserNextcloud.TokenProvider();
         userSession.setUserId(userId);
         userSession.setUserName(userName);
         userSession.setToken(userToken);
 
-        Mockito.doReturn(Future.succeededFuture(new JsonArray().add("not empty"))).when(this.documentService).listFiles(userSession, moveURI);
-        this.documentService.moveDocument(userSession, filePath, moveURI).onFailure(error -> {
+        Mockito.doReturn(Future.succeededFuture(new JsonArray().add("not empty"))).when(this.documentService).listFiles(host, userSession, moveURI);
+        this.documentService.moveDocument(host, userSession, filePath, moveURI).onFailure(error -> {
             ctx.assertEquals(error.getMessage(), "nextcloud.file.already.exist");
             async.countDown();
         });
 
-        Mockito.doReturn(Future.succeededFuture(new JsonArray())).when(this.documentService).listFiles(userSession, moveURI);
+        Mockito.doReturn(Future.succeededFuture(new JsonArray())).when(this.documentService).listFiles(host, userSession, moveURI);
 
         HttpRequest<Buffer> httpRequest = Mockito.spy(HttpRequest.class);
 
@@ -186,7 +193,7 @@ public class DocumentServiceTest {
         Mockito.doReturn(httpRequest).when(httpRequest).basicAuthentication(Mockito.anyString(), Mockito.anyString());
         Mockito.doReturn(httpRequest).when(httpRequest).as(Mockito.any());
         Mockito.doNothing().when(httpRequest).sendBuffer(Mockito.any(), Mockito.any());
-        this.documentService.moveDocument(userSession, filePath, moveURI);
+        this.documentService.moveDocument(host, userSession, filePath, moveURI);
 
         async.awaitSuccess(5000);
     }

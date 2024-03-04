@@ -10,6 +10,7 @@ import fr.wseduc.rs.ApiDoc;
 import fr.wseduc.rs.Get;
 import fr.wseduc.security.ActionType;
 import fr.wseduc.security.SecuredAction;
+import fr.wseduc.webutils.http.Renders;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.json.JsonObject;
 import org.entcore.common.controller.ControllerHelper;
@@ -34,7 +35,7 @@ public class UserController extends ControllerHelper {
             UserNextcloud.RequestBody userCreationBody = new UserNextcloud.RequestBody()
                     .setUserId(user.getUserId())
                     .setDisplayName(user.getUsername());
-            userService.provideUserSession(userCreationBody)
+            userService.provideUserSession(Renders.getHost(request), userCreationBody)
                     .onSuccess(userNextcloud -> renderJson(request, new JsonObject().put(Field.STATUS, Field.OK)))
                     .onFailure(err -> renderError(request));
         });
@@ -46,7 +47,7 @@ public class UserController extends ControllerHelper {
     @ResourceFilter(OwnerFilter.class)
     public void getUserInfo(HttpServerRequest request) {
         String userId = request.getParam(Field.USERID);
-        userService.getUserInfo(userId)
+        userService.getUserInfo(Renders.getHost(request), userId)
                 .onSuccess(userNextcloud -> renderJson(request, userNextcloud.toJSON()))
                 .onFailure(err -> renderError(request));
     }

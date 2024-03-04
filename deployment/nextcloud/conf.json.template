@@ -1,5 +1,5 @@
     {
-      "name": "fr.openent~nextcloud~1.2-SNAPSHOT",
+      "name": "fr.openent~nextcloud~1.2-dev-integration-SNAPSHOT",
       "config": {
         "main" : "fr.openent.nextcloud.Nextcloud",
         "port" : 8060,

@@ -9,35 +9,29 @@ public interface UserService {
     /**
      * add and/or provide new user nextcloud and its session
      *
+     * @param host host
      * @param   userBody        User Body request {@link UserNextcloud.RequestBody}
      * @return  Future Instance of User creation response {@link JsonObject}
      */
-    Future<JsonObject> provideUserSession(UserNextcloud.RequestBody userBody);
-
-    /**
-     * provide new nextcloud user
-     *
-     * @param   userBody  User Body request {@link UserNextcloud.RequestBody}
-     * @return  Future Instance of User creation response {@link JsonObject}
-     */
-    Future<JsonObject> addNewUser(UserNextcloud.RequestBody userBody);
-
+    Future<JsonObject> provideUserSession(final String host, UserNextcloud.RequestBody userBody);
 
     /**
      * change user info password
      *
+     * @param host host
      * @param   userBody  User Body request {@link UserNextcloud.RequestBody}
      * @return  Future Instance of User edit info response {@link JsonObject}
      */
-    Future<JsonObject> changeUserPassword(UserNextcloud.RequestBody userBody);
+    Future<JsonObject> changeUserPassword(final String host, UserNextcloud.RequestBody userBody);
 
     /**
      * Get User Nextcloud info
      *
+     * @param host host
      * @param   userId  User identifier (login ENT)
      * @return  Future Instance of User from Nextcloud {@link UserNextcloud}
      */
-    Future<UserNextcloud> getUserInfo(String userId);
+    Future<UserNextcloud> getUserInfo(String host, String userId);
 
     /**
      * Get User Session Token Provider

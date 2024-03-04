@@ -10,6 +10,7 @@ import fr.openent.nextcloud.service.UserService;
 import fr.wseduc.rs.*;
 import fr.wseduc.security.ActionType;
 import fr.wseduc.security.SecuredAction;
+import fr.wseduc.webutils.http.Renders;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.json.JsonObject;
@@ -41,7 +42,7 @@ public class DocumentsController extends ControllerHelper {
         String path = request.getParam(Field.PATH);
         UserUtils.getUserInfos(eb, request, user ->
                 userService.getUserSession(user.getUserId())
-                        .compose(userSession -> documentsService.listFiles(userSession, path))
+                        .compose(userSession -> documentsService.listFiles(Renders.getHost(request), userSession, path))
                         .onSuccess(files -> renderJson(request, new JsonObject().put(Field.DATA, files)))
                         .onFailure(err -> renderError(request)));
     }
@@ -59,9 +60,9 @@ public class DocumentsController extends ControllerHelper {
                 userService.getUserSession(user.getUserId())
                         .compose(userSession -> {
                             if (isFolder) {
-                                return documentsService.getFolder(userSession, path);
+                                return documentsService.getFolder(Renders.getHost(request), userSession, path);
                             } else {
-                                return documentsService.getFile(userSession, StringHelper.encodeUrlForNc(path));
+                                return documentsService.getFile(Renders.getHost(request), userSession, StringHelper.encodeUrlForNc(path));
                             }
                         })
                         .onSuccess(fileResponse -> {
@@ -90,7 +91,7 @@ public class DocumentsController extends ControllerHelper {
         if ((path != null && !path.isEmpty()) && (files != null && !files.isEmpty())) {
             UserUtils.getUserInfos(eb, request, user ->
                     userService.getUserSession(user.getUserId())
-                            .compose(userSession -> documentsService.getFiles(userSession, path, files))
+                            .compose(userSession -> documentsService.getFiles(Renders.getHost(request), userSession, path, files))
                             .onSuccess(fileResponse -> {
                                 HttpServerResponse resp = request.response();
                                 resp.putHeader("Content-Disposition", "attachment; filename=\"" + Field.ARCHIVE + ".zip\"");
@@ -116,7 +117,7 @@ public class DocumentsController extends ControllerHelper {
             UserUtils.getUserInfos(eb, request, user ->
                     userService.getUserSession(user.getUserId())
                             .compose(userSession -> {
-                                        return documentsService.moveDocument(userSession, path, destPath);
+                                        return documentsService.moveDocument(Renders.getHost(request), userSession, path, destPath);
                                     }
                             )
                             .onSuccess(res -> renderJson(request, res))
@@ -136,7 +137,7 @@ public class DocumentsController extends ControllerHelper {
         if ((paths != null && !paths.isEmpty())) {
             UserUtils.getUserInfos(eb, request, user ->
                     userService.getUserSession(user.getUserId())
-                            .compose(userSession -> documentsService.deleteDocuments(userSession, paths))
+                            .compose(userSession -> documentsService.deleteDocuments(Renders.getHost(request), userSession, paths))
                             .onSuccess(res -> renderJson(request, res))
                             .onFailure(err -> renderError(request, new JsonObject().put(Field.MESSAGE, err.getMessage()))));
         } else {
@@ -151,7 +152,7 @@ public class DocumentsController extends ControllerHelper {
     public void deleteTrash(HttpServerRequest request) {
         UserUtils.getUserInfos(eb, request, user ->
                 userService.getUserSession(user.getUserId())
-                        .compose(documentsService::deleteTrash)
+                        .compose(userSession -> documentsService.deleteTrash(Renders.getHost(request), userSession))
                         .onSuccess(res -> renderJson(request, new JsonObject().put(Field.STATUS, Field.OK)))
                         .onFailure(err -> renderError(request, new JsonObject().put(Field.MESSAGE, err.getMessage()))));
     }
@@ -168,7 +169,7 @@ public class DocumentsController extends ControllerHelper {
                         .compose(userSession -> {
                             request.resume();
                             return FileHelper.uploadMultipleFiles(Field.FILECOUNT, request, storage, vertx)
-                                    .compose(files -> documentsService.uploadFiles(userSession, files, path));
+                                    .compose(files -> documentsService.uploadFiles(Renders.getHost(request), userSession, files, path));
                         })
                         .onSuccess(res -> renderJson(request, res))
                         .onFailure(err -> renderError(request, new JsonObject().put(Field.ERROR, err.getMessage()))));
@@ -185,7 +186,7 @@ public class DocumentsController extends ControllerHelper {
         if (Boolean.FALSE.equals(listFiles.isEmpty()))
             UserUtils.getUserInfos(eb, request, user ->
                 userService.getUserSession(user.getUserId())
-                        .compose(userSession -> documentsService.moveDocumentToWorkspace(userSession, user, listFiles, parentId))
+                        .compose(userSession -> documentsService.moveDocumentToWorkspace(Renders.getHost(request), userSession, user, listFiles, parentId))
                         .onSuccess(res -> renderJson(request, new JsonObject().put(Field.DATA, res)))
                         .onFailure(err -> renderError(request, new JsonObject().put(Field.ERROR, err.getMessage()))));
         else
@@ -202,7 +203,7 @@ public class DocumentsController extends ControllerHelper {
         if (!listFiles.isEmpty())
             UserUtils.getUserInfos(eb, request, user ->
                 userService.getUserSession(user.getUserId())
-                        .compose(userSession -> documentsService.copyDocumentToWorkspace(userSession, user, listFiles, parentId))
+                        .compose(userSession -> documentsService.copyDocumentToWorkspace(Renders.getHost(request), userSession, user, listFiles, parentId))
                         .onSuccess(res -> renderJson(request, new JsonObject().put(Field.DATA, res)))
                         .onFailure(err -> renderError(request, new JsonObject().put(Field.ERROR, err.getMessage()))));
         else
@@ -219,7 +220,7 @@ public class DocumentsController extends ControllerHelper {
         if (!listFiles.isEmpty())
             UserUtils.getUserInfos(eb, request, user ->
                     userService.getUserSession(user.getUserId())
-                            .compose(userSession -> documentsService.moveDocumentsFromWorkspaceToNC(userSession, user, listFiles, parentId))
+                            .compose(userSession -> documentsService.moveDocumentsFromWorkspaceToNC(Renders.getHost(request), userSession, user, listFiles, parentId))
                             .onSuccess(res -> renderJson(request, res))
                             .onFailure(err -> renderError(request, new JsonObject().put(Field.ERROR, err.getMessage()))));
         else
@@ -236,7 +237,7 @@ public class DocumentsController extends ControllerHelper {
         if (!listFiles.isEmpty())
             UserUtils.getUserInfos(eb, request, user ->
                     userService.getUserSession(user.getUserId())
-                            .compose(userSession -> documentsService.copyDocumentsFromWorkspaceToNC(userSession, user, listFiles, parentId))
+                            .compose(userSession -> documentsService.copyDocumentsFromWorkspaceToNC(Renders.getHost(request), userSession, user, listFiles, parentId))
                             .onSuccess(res -> renderJson(request, res))
                             .onFailure(err -> renderError(request, new JsonObject().put(Field.ERROR, err.getMessage()))));
         else
@@ -252,7 +253,7 @@ public class DocumentsController extends ControllerHelper {
         if (!path.isEmpty())
             UserUtils.getUserInfos(eb, request, user ->
                     userService.getUserSession(user.getUserId())
-                            .compose(userSession -> documentsService.createFolderNextcloud(userSession, path))
+                            .compose(userSession -> documentsService.createFolderNextcloud(Renders.getHost(request), userSession, path))
                             .onSuccess(res -> renderJson(request, res))
                             .onFailure(err -> renderError(request, new JsonObject().put(Field.ERROR, err.getMessage()))));
         else
