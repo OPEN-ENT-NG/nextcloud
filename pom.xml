@@ -13,6 +13,7 @@
     <groupId>fr.openent</groupId>
     <artifactId>nextcloud</artifactId>
     <version>1.2-migration-SNAPSHOT</version>
+    <packaging>pom</packaging>
 
     <scm>
         <connection>scm:git:https://github.com/OPEN-ENT-NG/nextcloud.git</connection>
@@ -29,13 +30,13 @@
     </repositories>
 
     <properties>
-        <vertxVersion>3.9.5</vertxVersion>
+        <vertxVersion>4.4.5</vertxVersion>
         <toolsVersion>2.0.0-final</toolsVersion>
         <junitVersion>5.1.0</junitVersion>
         <vertxCronTimerVersion>2.0.0</vertxCronTimerVersion>
         <powerMockVersion>2.0.2</powerMockVersion>
         <mockitoVersion>[2.0,3.0)</mockitoVersion>
-        <entCoreVersion>4.10.2</entCoreVersion>
+        <entCoreVersion>5.0-b2school-SNAPSHOT</entCoreVersion>
     </properties>
 
 
@@ -50,6 +51,7 @@
             <groupId>org.entcore</groupId>
             <artifactId>common</artifactId>
             <version>${entCoreVersion}</version>
+            <classifier>fat</classifier>
             <scope>compile</scope>
         </dependency>
         <dependency>

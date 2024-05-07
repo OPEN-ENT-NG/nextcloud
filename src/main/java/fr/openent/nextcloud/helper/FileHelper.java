@@ -1,7 +1,7 @@
 package fr.openent.nextcloud.helper;
 
 import fr.openent.nextcloud.core.constants.Field;
-import fr.wseduc.swift.utils.FileUtils;
+import org.entcore.common.utils.FileUtils;
 import fr.wseduc.webutils.DefaultAsyncResult;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
