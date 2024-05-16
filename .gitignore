@@ -38,3 +38,7 @@ angularjs/src/js/*
 angularjs/src/view/*
 backend/src/main/resources/public/*
 backend/src/main/resources/view
+
+.env
+target
+dependency-reduced-pom.xml
