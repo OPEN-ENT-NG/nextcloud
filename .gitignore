@@ -31,3 +31,7 @@ module-starting-pack/src/main/resources/public/font
 /src/main/resources/view/
 /npm-debug.log
 /package-lock.json
+
+.env
+target
+dependency-reduced-pom.xml
