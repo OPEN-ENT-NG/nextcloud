@@ -7,6 +7,7 @@ import fr.openent.nextcloud.controller.UserController;
 import fr.openent.nextcloud.controller.NextcloudDesktopController;
 import fr.openent.nextcloud.service.ServiceFactory;
 import fr.wseduc.mongodb.MongoDb;
+import io.vertx.core.Promise;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.client.WebClientOptions;
@@ -25,8 +26,8 @@ public class Nextcloud extends BaseServer {
 	public static final String DB_SCHEMA = "nextcloud";
 
 	@Override
-	public void start() throws Exception {
-		super.start();
+	public void start(Promise<Void> startPromise) throws Exception {
+		super.start(startPromise);
 		final Map<String, NextcloudConfig> nextcloudConfigMapByHost = new HashMap<>();
 		if (config.containsKey("nextcloud-providers")) {
 			final JsonObject nexcloudProviders = config.getJsonObject("nextcloud-providers", new JsonObject());
@@ -50,6 +51,9 @@ public class Nextcloud extends BaseServer {
 		addController(new UserController(serviceFactory));
 		addController(new DocumentsController(serviceFactory));
 		addController(new NextcloudDesktopController(serviceFactory));
+
+        startPromise.tryComplete();
+		startPromise.tryFail("[NextCloud@NextCloud::start] Fail to start NextCloud");
 	}
 
 	private WebClient initWebClient() {
