@@ -19,6 +19,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.EventBus;
+import io.vertx.core.http.HttpMethod;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
@@ -71,10 +72,10 @@ public class DefaultDocumentsService implements DocumentsService {
     }
 
     @Override
-    public void parameterizedListFiles(String host, UserNextcloud.TokenProvider userSession, String path, Handler<AsyncResult<HttpResponse<String>>> handler) {
+    public void parameterizedListFiles(UserNextcloud.TokenProvider userSession, String path, Handler<AsyncResult<HttpResponse<String>>> handler) {
         final NextcloudConfig nextcloudConfig = this.nextcloudConfigMapByHost.get(host);
-        this.client.rawAbs(NextcloudHttpMethod.PROPFIND.method(), nextcloudConfig.host() +
-                        nextcloudConfig.webdavEndpoint() + "/" + userSession.userId() + (path != null ? "/" + StringHelper.encodeUrlForNc(path) : "" ))
+        this.client.requestAbs(HttpMethod.PROPFIND, nextcloudConfig.host() +
+                nextcloudConfig.webdavEndpoint() + "/" + userSession.userId() + (path != null ? "/" + StringHelper.encodeUrlForNc(path) : "" ))
                 .basicAuthentication(userSession.userId(), userSession.token())
                 .as(BodyCodec.string(StandardCharsets.UTF_8.toString()))
                 .sendBuffer(Buffer.buffer(getListFilesPropsBody()), handler);
@@ -131,8 +132,8 @@ public class DefaultDocumentsService implements DocumentsService {
     private Future<JsonObject> createFolder(String host, UserNextcloud.TokenProvider userSession, String path) {
         Promise<JsonObject> promise = Promise.promise();
         final NextcloudConfig nextcloudConfig = this.nextcloudConfigMapByHost.get(host);
-        this.client.rawAbs(NextcloudHttpMethod.MKCOL.method(), nextcloudConfig.host() + nextcloudConfig.webdavEndpoint() + "/" +
-                        userSession.userId() + (path != null ? "/" + path : "" ))
+        this.client.requestAbs(HttpMethod.MKCOL, nextcloudConfig.host() + nextcloudConfig.webdavEndpoint() + "/" +
+                userSession.userId() + (path != null ? "/" + path : "" ))
                 .basicAuthentication(userSession.userId(), userSession.token())
                 .send(responseAsync -> {
                     if (responseAsync.result().statusCode() != 201) {
@@ -239,7 +240,7 @@ public class DefaultDocumentsService implements DocumentsService {
                             if (fileInfo.isEmpty()) {
                                 final NextcloudConfig nextcloudConfig = this.nextcloudConfigMapByHost.get(host);
                                 String endpoint = nextcloudConfig.host() + nextcloudConfig.webdavEndpoint() + "/" + userSession.userId();
-                                this.client.rawAbs(NextcloudHttpMethod.MOVE.method(), endpoint + "/" + StringHelper.encodeUrlForNc(path))
+                                this.client.requestAbs(HttpMethod.MOVE, endpoint + "/" + StringHelper.encodeUrlForNc(path))
                                         .basicAuthentication(userSession.userId(), userSession.token())
                                         .putHeader(Field.DESTINATION, endpoint + "/" + StringHelper.encodeUrlForNc(destPath))
                                         .send(responseAsync -> this.onMoveDocumentHandler(responseAsync, promise));

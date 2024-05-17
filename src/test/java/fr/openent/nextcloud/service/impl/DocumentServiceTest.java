@@ -12,6 +12,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.buffer.impl.BufferImpl;
+import io.vertx.core.http.HttpMethod;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.unit.Async;
@@ -133,7 +134,7 @@ public class DocumentServiceTest {
             ctx.assertEquals(absoluteURI, expectedURI);
             async.complete();
             return httpRequest;
-        }).when(this.webClient).rawAbs(Mockito.anyString(), Mockito.anyString());
+        }).when(this.webClient).request(Mockito.any(HttpMethod.class), Mockito.anyString());
 
         Mockito.doReturn(httpRequest).when(httpRequest).basicAuthentication(Mockito.anyString(), Mockito.anyString());
         Mockito.doReturn(httpRequest).when(httpRequest).as(Mockito.any());
@@ -179,7 +180,7 @@ public class DocumentServiceTest {
             ctx.assertEquals(absoluteURI, expectedURI);
             async.countDown();
             return httpRequest;
-        }).when(this.webClient).rawAbs(Mockito.anyString(), Mockito.anyString());
+        }).when(this.webClient).request(Mockito.any(HttpMethod.class), Mockito.anyString());
 
         Mockito.doAnswer(invocation -> {
             String headerName = invocation.getArgument(0);
