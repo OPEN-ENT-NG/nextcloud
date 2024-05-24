@@ -13,7 +13,6 @@
     <groupId>fr.openent</groupId>
     <artifactId>nextcloud</artifactId>
     <version>1.2-migration-SNAPSHOT</version>
-    <packaging>pom</packaging>
 
     <scm>
         <connection>scm:git:https://github.com/OPEN-ENT-NG/nextcloud.git</connection>
