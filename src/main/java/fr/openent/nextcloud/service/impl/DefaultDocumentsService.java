@@ -72,7 +72,7 @@ public class DefaultDocumentsService implements DocumentsService {
     }
 
     @Override
-    public void parameterizedListFiles(UserNextcloud.TokenProvider userSession, String path, Handler<AsyncResult<HttpResponse<String>>> handler) {
+    public void parameterizedListFiles(String host, UserNextcloud.TokenProvider userSession, String path, Handler<AsyncResult<HttpResponse<String>>> handler) {
         final NextcloudConfig nextcloudConfig = this.nextcloudConfigMapByHost.get(host);
         this.client.requestAbs(HttpMethod.PROPFIND, nextcloudConfig.host() +
                 nextcloudConfig.webdavEndpoint() + "/" + userSession.userId() + (path != null ? "/" + StringHelper.encodeUrlForNc(path) : "" ))
