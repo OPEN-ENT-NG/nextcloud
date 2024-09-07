@@ -7,33 +7,33 @@ var argv = require('yargs').argv;
 var fs = require('fs');
 
 gulp.task('drop-cache', function(){
-    return gulp.src(['./src/main/resources/public/dist'], { read: false })
-        .pipe(clean());
+     return gulp.src(['./src/dist'], { read: false })
+		.pipe(clean());
 });
 
 gulp.task('webpack', ['drop-cache'], () => {
-    return gulp.src('./src/main/resources/public')
+    return gulp.src('./src/**/*.ts')
         .pipe(webpack(require('./webpack.config.js')))
         .on('error', function handleError() {
             this.emit('end'); // Recover from errors
         })
-        .pipe(gulp.dest('./src/main/resources/public/dist'));
+        .pipe(gulp.dest('./src/dist'));
 });
 
 gulp.task('build', ['webpack'], () => {
-    var refs = gulp.src("./src/main/resources/view-src/**/*.html")
+    var refs = gulp.src("./src/view-src/**/*.html")
         .pipe(replace('@@VERSION', Date.now()))
-        .pipe(gulp.dest("./src/main/resources/view"));
+        .pipe(gulp.dest("./src/view"));
 
-    var copyBehaviours = gulp.src('./src/main/resources/public/dist/behaviours.js')
-        .pipe(gulp.dest('./src/main/resources/public/js'));
+    var copyBehaviours = gulp.src('./src/dist/behaviours.js')
+        .pipe(gulp.dest('./src/js'));
 
     return merge[refs, copyBehaviours];
 });
 
 function getModName(fileContent){
     var getProp = function(prop){
-        return fileContent.split(prop + '=')[1].split(/\r?\n/)[0];
+        return fileContent.split(prop + '=')[1].split(/\\r?\\n/)[0];
     }
     return getProp('modowner') + '~' + getProp('modname') + '~' + getProp('version');
 }
@@ -47,19 +47,19 @@ gulp.task('watch', () => {
         springboard += '/';
     }
 
-    gulp.watch('./src/main/resources/public/ts/**/*.ts', () => gulp.start('build'));
+    gulp.watch('./angularJS/src/ts/**/*.ts', () => gulp.start('build'));
 
     fs.readFile("./gradle.properties", "utf8", function(error, content){
         var modName = getModName(content);
-        gulp.watch(['./src/main/resources/public/template/**/*.html', '!./src/main/resources/public/template/entcore/*.html'], () => {
+        gulp.watch(['./angularJS/src/template/**/*.html', '!./angularJS/src/template/entcore/*.html'], () => {
             console.log('Copying resources to ' + springboard + 'mods/' + modName);
-            gulp.src('./src/main/resources/**/*')
+            gulp.src('./angularJS/src/**/*')
                 .pipe(gulp.dest(springboard + 'mods/' + modName));
         });
 
-        gulp.watch('./src/main/resources/view/**/*.html', () => {
+        gulp.watch('./angularJS/src/view/**/*.html', () => {
             console.log('Copying resources to ' + springboard + 'mods/' + modName);
-            gulp.src('./src/main/resources/**/*')
+            gulp.src('./angularJS/src/**/*')
                 .pipe(gulp.dest(springboard + 'mods/' + modName));
         });
     });

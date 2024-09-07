@@ -7,17 +7,32 @@ jobs:
     runs-on: ubuntu-latest
 
     container:
-      image: opendigitaleducation/node:10-alpine
+      image: opendigitaleducation/node:18-alpine-pnpm
       options: --user root -v ${{ github.workspace }}:/home/node/:rw
 
     steps:
       - uses: actions/checkout@v1
+      - name: Run pnpm install
+        working-directory: ./frontend
+        run: pnpm install
+      - name: Check Quality Code
+        working-directory: ./frontend
+        run: pnpm run format:check && pnpm run lint
+      - name: Run Build Vite
+        working-directory: ./frontend
+        run: pnpm build
+      - name: Run tests
+        working-directory: ./frontend
+        run: pnpm test
       - name: Run npm install
-        run: npm install
+        working-directory: ./angularjs
+        run: yarn install
       - name: Run build node with Gulp
+        working-directory: ./angularjs
         run: node_modules/gulp/bin/gulp.js build
       - name: Run test
-        run: npm test
+        working-directory: ./angularjs
+        run: yarn test
 
   build-gradle-test:
     runs-on: ubuntu-latest
@@ -29,6 +44,8 @@ jobs:
     steps:
       - uses: actions/checkout@v1
       - name: Run build gradle
+        working-directory: ./backend
         run: gradle assemble -g gradle-user-home
       - name: Run gradle test
+        working-directory: ./backend
         run: gradle test  -g gradle-user-home --no-build-cache --rerun-tasks

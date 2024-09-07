@@ -2,13 +2,47 @@
 
 pipeline {
   agent any
-    stages {
-      stage('Build') {
-        steps {
-          checkout scm
-		  sh 'chmod +x ./build.sh'
-          sh './build.sh clean install publish'
+  stages {
+
+    stage('Frontend React') {
+      steps {
+        dir('frontend') {
+          sh 'chmod +x build.sh && ./build.sh installDeps build'
         }
       }
     }
+
+    stage('Frontend Angular') {
+      steps {
+        dir('angularJS') {
+          sh 'chmod +x build.sh && ./build.sh buildNode'
+        }
+      }
+    }
+
+    stage('Backend') {
+      steps {
+        dir('backend') {
+          sh 'cp -R ../frontend/dist/* ./src/main/resources/'
+          sh 'mkdir -p ./src/main/resources/view'
+          sh 'mkdir -p ./src/main/resources/public/template'
+          sh 'mkdir -p ./src/main/resources/public/img'
+          sh 'mkdir -p ./src/main/resources/public/js'
+          sh 'mv ./src/main/resources/*.html ./src/main/resources/view'
+          sh 'cp -R ../angularJS/src/view/* ./src/main/resources/view'
+          sh 'cp -R ../angularJS/src/css/* ./src/main/resources/public'
+          sh 'cp -R ../angularJS/src/dist/* ./src/main/resources/public/js'
+          sh 'cp -R ../angularJS/src/template/* ./src/main/resources/public/template'
+          sh 'cp -R ../angularJS/src/img/* ./src/main/resources/public/img'
+          sh 'cp -R ../frontend/public/* ./src/main/resources/public'
+          sh 'chmod +x build.sh && ./build.sh clean build publish'
+          sh 'rm -rf ../frontend/dist'
+          sh 'rm -rf ../angularJS/src/js'
+          sh 'rm -rf ../angularJS/src/view'
+          sh 'rm -rf ../angularJS/src/css'
+          sh 'rm -rf ../angularJS/src/dist'
+        }
+      }
+    }
+  }
 }

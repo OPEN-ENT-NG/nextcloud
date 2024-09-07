@@ -2,14 +2,13 @@ var webpack = require('webpack');
 var path = require('path');
 
 module.exports = {
-    context: path.resolve(__dirname, './src/main/resources/public/'),
+    context: path.resolve(__dirname, './src/'),
     entry: {
         application: './ts/app.ts',
         behaviours: './ts/behaviours.ts'
     },
     output: {
-        filename: './[name].js',
-        path: __dirname + 'dest'
+        filename: './[name].js'
     },
     externals: {
         "entcore/entcore": "entcore",
@@ -21,16 +20,19 @@ module.exports = {
     },
     resolve: {
         modulesDirectories: ['node_modules'],
-        root: path.resolve(__dirname),
         extensions: ['', '.ts', '.js']
     },
     devtool: "source-map",
     module: {
         loaders: [
             {
-                test: /\.ts$/,
-                loader: 'ts-loader'
+                test: /\.(ts|js)$/,
+                loader: 'ts-loader',
+                include: [
+                    path.resolve(__dirname, 'src/ts'),
+                    path.resolve(__dirname, 'node_modules/clipboard/src')
+                ]
             }
         ]
     }
-}
+};

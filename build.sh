@@ -1,115 +1,78 @@
 #!/bin/bash
 
-if [ ! -e node_modules ]
-then
-  mkdir node_modules
-fi
+# Clean files
+echo -e '\n------------------'
+echo 'Clean before build'
+echo '------------------'
+cd backend
+rm -rf ./.gradle
+rm -rf ./build
+rm -rf ./gradle
+rm -rf ./src/main/resources/public
+rm -rf ./src/main/resources/view
+echo 'Repo clean for build !'
+cd ..
 
-case `uname -s` in
-  MINGW*)
-    USER_UID=1000
-    GROUP_UID=1000
-    ;;
-  *)
-    if [ -z ${USER_UID:+x} ]
-    then
-      USER_UID=`id -u`
-      GROUP_GID=`id -g`
-    fi
-esac
+# Frontend
+echo -e '\n--------------'
+echo 'Build Frontend'
+echo '--------------'
+cd frontend
+#./build.sh --no-docker clean init build
+./build.sh installDeps build
+cd ..
 
-clean () {
-  docker-compose run --rm -u "$USER_UID:$GROUP_GID" gradle gradle clean
-}
+# AngularJS
+echo -e '\n---------------'
+echo 'Build AngularJS'
+echo '---------------'
+cd angularjs
+./build.sh buildNode
+cd ..
 
-buildNode () {
-  case `uname -s` in
-    MINGW*)
-      docker-compose run --rm -u "$USER_UID:$GROUP_GID" node sh -c "npm install --no-bin-links && node_modules/gulp/bin/gulp.js build"
-      ;;
-    *)
-      docker-compose run --rm -u "$USER_UID:$GROUP_GID" node sh -c "npm install && node_modules/gulp/bin/gulp.js build"
-  esac
-}
+# Create directory structure and copy frontend dist
+echo -e '\n--------------------'
+echo 'Copy front files built'
+echo '----------------------'
+cd backend
+cp -R ../frontend/dist/* ./src/main/resources
 
-buildGradle () {
-  docker-compose run --rm -u "$USER_UID:$GROUP_GID" gradle gradle shadowJar install publishToMavenLocal
-}
+# Move old ui to src/main/resources
+#cp -R ../frontend/old/* ./src/main/resources/public/
+#cp -R ../frontend/old/*.html ./src/main/resources/
 
-testNode () {
-  rm -rf coverage
-  rm -rf */build
-  case `uname -s` in
-    MINGW*)
-      docker-compose run --rm -u "$USER_UID:$GROUP_GID" node sh -c "npm install --no-bin-links && node_modules/gulp/bin/gulp.js drop-cache &&  npm test"
-      ;;
-    *)
-      docker-compose run --rm -u "$USER_UID:$GROUP_GID" node sh -c "npm install && node_modules/gulp/bin/gulp.js drop-cache && npm test"
-  esac
-}
+# Create view directory and copy HTML files into Backend
+mkdir -p ./src/main/resources/view
+mkdir -p ./src/main/resources/public/template
+mkdir -p ./src/main/resources/public/img
+mkdir -p ./src/main/resources/public/js
+mv ./src/main/resources/*.html ./src/main/resources/view
 
-testNodeDev () {
-  rm -rf coverage
-  rm -rf */build
-  case `uname -s` in
-    MINGW*)
-      docker-compose run --rm -u "$USER_UID:$GROUP_GID" node sh -c "npm install --no-bin-links && node_modules/gulp/bin/gulp.js drop-cache &&  npm run test:dev"
-      ;;
-    *)
-      docker-compose run --rm -u "$USER_UID:$GROUP_GID" node sh -c "npm install && node_modules/gulp/bin/gulp.js drop-cache && npm run test:dev"
-  esac
-}
+# Copy all built files from AngularJS into Backend
+cp -R ../angularjs/src/view/* ./src/main/resources/view
+cp -R ../angularjs/src/css/* ./src/main/resources/public
+cp -R ../angularjs/src/dist/* ./src/main/resources/public/js
+cp -R ../angularjs/src/template/* ./src/main/resources/public/template
+cp -R ../angularjs/src/img/* ./src/main/resources/public/img
 
-testGradle() {
-  docker-compose run --rm -u "$USER_UID:$GROUP_GID" gradle gradle test --no-build-cache --rerun-tasks
-}
+# Copy all public files from frontend into Backend
+cp -R ../frontend/public/* ./src/main/resources/public
+echo 'Files all copied !'
 
+# Build .
+echo -e '\n-------------'
+echo 'Build Backend'
+echo '-------------'
+#./build.sh --no-docker clean build
+./build.sh clean build
 
-publish () {
-  if [ -e "?/.gradle" ] && [ ! -e "?/.gradle/gradle.properties" ]
-  then
-    echo "odeUsername=$NEXUS_ODE_USERNAME" > "?/.gradle/gradle.properties"
-    echo "odePassword=$NEXUS_ODE_PASSWORD" >> "?/.gradle/gradle.properties"
-    echo "sonatypeUsername=$NEXUS_SONATYPE_USERNAME" >> "?/.gradle/gradle.properties"
-    echo "sonatypePassword=$NEXUS_SONATYPE_PASSWORD" >> "?/.gradle/gradle.properties"
-  fi
-  docker-compose run --rm -u "$USER_UID:$GROUP_GID" gradle gradle publish
-}
-
-for param in "$@"
-do
-  case $param in
-    clean)
-      clean
-      ;;
-    buildNode)
-      buildNode
-      ;;
-    buildGradle)
-      buildGradle
-      ;;
-    install)
-      buildNode && buildGradle
-      ;;
-    publish)
-      publish
-      ;;
-    test)
-      testNode ; testGradle
-      ;;
-    testNode)
-      testNode
-      ;;
-    testNodeDev)
-      testNodeDev
-      ;;
-    testGradle)
-      testGradle
-      ;;
-    *)
-      echo "Invalid argument : $param"
-  esac
-  if [ ! $? -eq 0 ]; then
-    exit 1
-  fi
-done
+# Clean up - remove compiled files in front folders
+echo -e '\n-------------'
+echo 'Clean front folders'
+echo '-------------'
+rm -rf ../frontend/dist
+rm -rf ../angularjs/src/js
+rm -rf ../angularjs/src/view
+rm -rf ../angularjs/src/css
+rm -rf ../angularjs/src/dist
+echo 'Folders cleaned !'
