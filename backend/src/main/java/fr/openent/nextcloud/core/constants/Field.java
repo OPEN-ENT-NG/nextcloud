@@ -143,6 +143,14 @@ public class Field {
     public static final String TRASH = "trash";
     public static final String TRASHBIN = "trashbin";
 
+    // desktop config
+    public static final String CONFIG = "config";
+    public static final String _ID = "_id";
+    public static final String UNIQUEID = "uniqueId";
+    public static final String DOWNLOADLIMIT = "downloadLimit";
+    public static final String UPLOADLIMIT = "uploadLimit";
+    public static final String SYNCFOLDER = "syncFolder";
+    public static final String EXCLUDEDEXTENSIONS = "excludedExtensions";
 
     private Field() {
         throw new IllegalStateException("Utility class");

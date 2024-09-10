@@ -70,4 +70,8 @@ public class ServiceFactory {
     public Vertx vertx() {
         return this.vertx;
     }
+
+    public MongoDb mongoDb() {
+        return this.mongoDb;
+    }
 }
