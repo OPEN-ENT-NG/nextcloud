@@ -32,3 +32,9 @@ module-starting-pack/src/main/resources/public/font
 /npm-debug.log
 /package-lock.json
 /angularjs/yarn.lock
+backend/.gradle
+angularjs/src/dist/*
+angularjs/src/js/*
+angularjs/src/view/*
+backend/src/main/resources/public/*
+backend/src/main/resources/view

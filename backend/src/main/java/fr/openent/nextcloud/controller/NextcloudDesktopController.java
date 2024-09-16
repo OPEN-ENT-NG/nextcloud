@@ -31,6 +31,13 @@ public class NextcloudDesktopController extends ControllerHelper {
         this.serviceFactory = serviceFactory;
     }
 
+    @Get("/desktop")
+    @ApiDoc("Render admin console view")
+    @SecuredAction(WorkflowRight.ADMIN_DESKTOP_VIEW)
+    public void view(HttpServerRequest request) {
+        renderView(request, new JsonObject(), "index.html", null);
+    }
+
     @Get("/desktop/config")
     @ApiDoc("Returns the requested Nextcloud custom Desktop configuration")
     public void getConfig(HttpServerRequest request) {

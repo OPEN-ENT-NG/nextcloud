@@ -19,6 +19,7 @@ echo 'Build Frontend'
 echo '--------------'
 cd frontend
 #./build.sh --no-docker clean init build
+chmod +x build.sh
 ./build.sh installDeps build
 cd ..
 
@@ -27,6 +28,7 @@ echo -e '\n---------------'
 echo 'Build AngularJS'
 echo '---------------'
 cd angularjs
+chmod +x build.sh
 ./build.sh buildNode
 cd ..
 
@@ -64,6 +66,7 @@ echo -e '\n-------------'
 echo 'Build Backend'
 echo '-------------'
 #./build.sh --no-docker clean build
+chmod +x build.sh
 ./build.sh clean build
 
 # Clean up - remove compiled files in front folders
