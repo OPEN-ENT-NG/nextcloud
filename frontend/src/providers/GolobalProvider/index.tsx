@@ -23,8 +23,9 @@ export const GlobalProvider: FC<GlobalProviderProps> = ({ children }) => {
   const [desktopConfigValues, setDesktopConfigValues] = useState<DesktopConfig>(
     initialDesktopConfigValues,
   );
-  const [desktopConfigInputValues, setDesktopConfigInputValues] =
-    useState<DesktopConfig>(initialDesktopConfigValues);
+  const [inputValues, setInputValues] = useState<DesktopConfig>(
+    initialDesktopConfigValues,
+  );
 
   const handleSubmitNewConfig = () => {
     console.log("submit new config");
@@ -54,8 +55,8 @@ export const GlobalProvider: FC<GlobalProviderProps> = ({ children }) => {
     () => ({
       desktopConfigValues,
       setDesktopConfigValues,
-      desktopConfigInputValues,
-      setDesktopConfigInputValues,
+      inputValues,
+      setInputValues,
       handleSubmitNewConfig,
       handleCancelNewConfig,
       handleSyncFolderChange,
@@ -63,7 +64,7 @@ export const GlobalProvider: FC<GlobalProviderProps> = ({ children }) => {
       handleDownloadLimitChange,
       handleExcludedExtensionsChange,
     }),
-    [desktopConfigValues, desktopConfigInputValues],
+    [desktopConfigValues, inputValues],
   );
 
   return (

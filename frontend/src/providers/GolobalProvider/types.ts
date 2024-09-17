@@ -1,19 +1,17 @@
-import { ReactNode } from "react";
+import { ChangeEvent, ReactNode } from "react";
 
 export interface GlobalProviderContextType {
   desktopConfigValues: DesktopConfig;
   setDesktopConfigValues: (values: DesktopConfig) => void;
-  desktopConfigInputValues: DesktopConfig;
-  setDesktopConfigInputValues: (values: DesktopConfig) => void;
+  inputValues: DesktopConfig;
+  setInputValues: (values: DesktopConfig) => void;
   handleSubmitNewConfig: () => void;
   handleCancelNewConfig: () => void;
-  handleSyncFolderChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
-  handleUploadLimitChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
-  handleDownloadLimitChange: (
-    event: React.ChangeEvent<HTMLInputElement>,
-  ) => void;
+  handleSyncFolderChange: (event: ChangeEvent<HTMLInputElement>) => void;
+  handleUploadLimitChange: (event: ChangeEvent<HTMLInputElement>) => void;
+  handleDownloadLimitChange: (event: ChangeEvent<HTMLInputElement>) => void;
   handleExcludedExtensionsChange: (
-    event: React.ChangeEvent<HTMLInputElement>,
+    event: ChangeEvent<HTMLInputElement>,
   ) => void;
 }
 
