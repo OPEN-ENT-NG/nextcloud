@@ -17,25 +17,28 @@ const theme = createTheme({
     },
   },
   typography: {
-    fontFamily: "robotoRegular",
+    fontFamily: "Confortaa",
     fontSize: 16,
     h1: {
-      fontSize: "1.2rem",
-      color: "#3C2386",
+      fontSize: "24px",
+      color: "#2A9CC8",
       fontWeight: "bold",
     },
     h2: {
-      fontWeight: "bold",
-      fontSize: "1.1rem",
-      color: "#000000",
-    },
-    h3: {
-      fontSize: "1rem",
-      color: "#000000",
+      fontWeight: "400",
+      fontSize: "18px",
+      color: "#434343",
+      fontFamily: "Roboto",
     },
     body1: {
-      fontSize: ".8rem",
-      color: "#5F5F5F",
+      fontSize: "16px",
+      color: "#4A4A4A",
+      fontFamily: "Arimo",
+    },
+    body2: {
+      fontSize: "14px",
+      color: "#434343",
+      fontFamily: "Roboto",
     },
   },
   components: {
