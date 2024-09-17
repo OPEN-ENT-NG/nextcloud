@@ -2,7 +2,6 @@ import { createHashRouter } from "react-router-dom";
 
 import Root from "~/app/root";
 import ErrorPage from "~/components/page-error";
-import "~/styles/page/home.scss";
 
 const routes = [
   {

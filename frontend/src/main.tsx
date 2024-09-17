@@ -12,6 +12,7 @@ import { createRoot } from "react-dom/client";
 import { Provider } from "react-redux";
 import { RouterProvider } from "react-router-dom";
 
+import { GlobalProvider } from "./providers/GolobalProvider";
 import { router } from "./routes";
 import { setupStore } from "./store";
 
@@ -50,7 +51,9 @@ root.render(
         }}
       >
         <ThemeProvider>
-          <RouterProvider router={router} />
+          <GlobalProvider>
+            <RouterProvider router={router} />
+          </GlobalProvider>
         </ThemeProvider>
       </OdeClientProvider>
     </Provider>
