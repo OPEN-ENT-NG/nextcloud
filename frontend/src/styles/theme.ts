@@ -38,7 +38,7 @@ const theme = createTheme({
     },
     body2: {
       fontSize: "1.4rem",
-      color: "#434343",
+      color: "#909090",
       fontFamily: "Roboto",
     },
   },
