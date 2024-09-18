@@ -8,7 +8,6 @@ import { GlobalProvider } from "~/providers/GlobalProvider";
 import { App } from "~/routes/app/index.tsx";
 import theme from "~/styles/theme";
 
-
 const queryClient = new QueryClient();
 
 describe("App Test", () => {
