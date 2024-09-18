@@ -38,7 +38,7 @@ export const SyncFolder: FC = () => {
             }}
           />
           <Box sx={columnBoxStyle}>
-            <Typography variant="body1">
+            <Typography variant="body2">
               {t("nextcloud.console.complete.path")}
             </Typography>
             <Typography variant="body1">

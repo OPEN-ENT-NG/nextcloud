@@ -1,4 +1,5 @@
 import {
+  ChangeEvent,
   createContext,
   FC,
   useContext,
@@ -12,7 +13,7 @@ import {
   DesktopConfig,
   GlobalProviderContextType,
 } from "./types";
-import { initialDesktopConfigValues } from "./utils";
+import { initialDesktopConfigValues, processInputValue } from "./utils";
 import { desktopConfigApi } from "~/services/api/desktopConfig.service";
 
 const GlobalProviderContext = createContext<GlobalProviderContextType | null>(
@@ -52,19 +53,35 @@ export const GlobalProvider: FC<GlobalProviderProps> = ({ children }) => {
     console.log("cancel new config");
   };
 
-  const handleSyncFolderChange = (event) => {
+  const handleSyncFolderChange = (event: ChangeEvent<HTMLInputElement>) => {
     setInputValues((prev) => ({
       ...prev,
       syncFolder: event.target.value,
     }));
   };
 
-  const handleUploadLimitChange = () => {
-    console.log("upload limit change");
+  const handleUploadLimitChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const value = event.target.value;
+    const processedValue = processInputValue(value);
+
+    if (processedValue) {
+      setInputValues((prev) => ({
+        ...prev,
+        uploadLimit: parseInt(processedValue),
+      }));
+    }
   };
 
-  const handleDownloadLimitChange = () => {
-    console.log("download limit change");
+  const handleDownloadLimitChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const value = event.target.value;
+    const processedValue = processInputValue(value);
+
+    if (processedValue) {
+      setInputValues((prev) => ({
+        ...prev,
+        downloadLimit: parseInt(processedValue),
+      }));
+    }
   };
 
   const handleExcludedExtensionsChange = () => {
