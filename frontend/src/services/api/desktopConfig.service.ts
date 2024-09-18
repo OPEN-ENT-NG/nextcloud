@@ -1,5 +1,5 @@
 import { emptySplitApi } from "./emptySplitApi.service";
-import { DesktopConfig } from "~/providers/GolobalProvider/types";
+import { DesktopConfig } from "~/providers/GlobalProvider/types";
 
 export const desktopConfigApi = emptySplitApi.injectEndpoints({
   endpoints: (builder) => ({

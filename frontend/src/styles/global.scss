@@ -1,0 +1,10 @@
+body {
+  min-width: inherit;
+  width: auto;
+}
+
+main {
+  &.container-fluid {
+    background-color: transparent !important;
+  }
+}
