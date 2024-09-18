@@ -2,6 +2,7 @@ import {
   ChangeEvent,
   createContext,
   FC,
+  KeyboardEvent,
   useContext,
   useEffect,
   useMemo,
@@ -37,6 +38,7 @@ export const GlobalProvider: FC<GlobalProviderProps> = ({ children }) => {
   const [inputValues, setInputValues] = useState<DesktopConfig>(
     initialDesktopConfigValues,
   );
+  const [inputExtension, setInputExtension] = useState<string>("");
 
   useEffect(() => {
     if (data) {
@@ -84,24 +86,53 @@ export const GlobalProvider: FC<GlobalProviderProps> = ({ children }) => {
     }
   };
 
-  const handleExcludedExtensionsChange = () => {
-    console.log("excluded extensions change");
+  console.log("test3" +inputExtension);
+  const handleExcludedExtensionsChange = (
+    event: ChangeEvent<HTMLInputElement>,
+  ) => {
+    const value = event.target.value;
+    setInputExtension(value);
+    console.log("test1" +value);
+    console.log("test" +inputExtension);
+  };
+
+  const handleAddExcludedExtensions = (
+    event: KeyboardEvent<HTMLDivElement>,
+  ) => {
+    // if (event.key === "Enter") {
+    //   setInputValues((prev) => ({
+    //     ...prev,
+    //     excludedExtensions: [...prev.excludedExtensions, inputExtension],
+    //   }));
+    //   // setInputExtension("");
+    // }
+  }
+
+  const handleRemoveExcludedExtension = (extension: string) => {
+    setInputValues((prev) => ({
+      ...prev,
+      excludedExtensions: prev.excludedExtensions.filter(
+        (excludedExtension) => excludedExtension !== extension,
+      ),
+    }));
   };
 
   const value = useMemo<GlobalProviderContextType>(
     () => ({
       desktopConfigValues,
-      setDesktopConfigValues,
       inputValues,
-      setInputValues,
+      inputExtension,
+      setInputExtension,
       handleSubmitNewConfig,
       handleCancelNewConfig,
       handleSyncFolderChange,
       handleUploadLimitChange,
       handleDownloadLimitChange,
       handleExcludedExtensionsChange,
+      handleAddExcludedExtensions,
+      handleRemoveExcludedExtension,
     }),
-    [desktopConfigValues, inputValues],
+    [desktopConfigValues, inputValues, inputExtension],
   );
 
   return (

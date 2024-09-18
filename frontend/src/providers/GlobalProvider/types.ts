@@ -1,10 +1,10 @@
-import { ChangeEvent, ReactNode } from "react";
+import { ChangeEvent, KeyboardEvent, ReactNode } from "react";
 
 export interface GlobalProviderContextType {
   desktopConfigValues: DesktopConfig;
-  setDesktopConfigValues: (values: DesktopConfig) => void;
   inputValues: DesktopConfig;
-  setInputValues: (values: DesktopConfig) => void;
+  inputExtension: string;
+  setInputExtension: (extension: string) => void;
   handleSubmitNewConfig: () => void;
   handleCancelNewConfig: () => void;
   handleSyncFolderChange: (event: ChangeEvent<HTMLInputElement>) => void;
@@ -13,6 +13,10 @@ export interface GlobalProviderContextType {
   handleExcludedExtensionsChange: (
     event: ChangeEvent<HTMLInputElement>,
   ) => void;
+  handleAddExcludedExtensions: (
+    event: KeyboardEvent<HTMLDivElement>,
+  ) => void;
+  handleRemoveExcludedExtension: (extension: string) => void;
 }
 
 export interface GlobalProviderProps {
