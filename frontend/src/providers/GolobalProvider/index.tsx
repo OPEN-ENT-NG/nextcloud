@@ -1,4 +1,11 @@
-import { createContext, FC, useContext, useMemo, useState } from "react";
+import {
+  createContext,
+  FC,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 
 import {
   GlobalProviderProps,
@@ -6,6 +13,7 @@ import {
   GlobalProviderContextType,
 } from "./types";
 import { initialDesktopConfigValues } from "./utils";
+import { desktopConfigApi } from "~/services/api/desktopConfig.service";
 
 const GlobalProviderContext = createContext<GlobalProviderContextType | null>(
   null,
@@ -20,12 +28,21 @@ export const useGlobalProvider = () => {
 };
 
 export const GlobalProvider: FC<GlobalProviderProps> = ({ children }) => {
+  const { useGetDesktopConfigQuery } = desktopConfigApi;
+  const { data } = useGetDesktopConfigQuery({});
   const [desktopConfigValues, setDesktopConfigValues] = useState<DesktopConfig>(
     initialDesktopConfigValues,
   );
   const [inputValues, setInputValues] = useState<DesktopConfig>(
     initialDesktopConfigValues,
   );
+
+  useEffect(() => {
+    if (data) {
+      setDesktopConfigValues(data);
+      setInputValues(data);
+    }
+  }, [data]);
 
   const handleSubmitNewConfig = () => {
     console.log("submit new config");
@@ -35,8 +52,11 @@ export const GlobalProvider: FC<GlobalProviderProps> = ({ children }) => {
     console.log("cancel new config");
   };
 
-  const handleSyncFolderChange = () => {
-    console.log("sync folder change");
+  const handleSyncFolderChange = (event) => {
+    setInputValues((prev) => ({
+      ...prev,
+      syncFolder: event.target.value,
+    }));
   };
 
   const handleUploadLimitChange = () => {

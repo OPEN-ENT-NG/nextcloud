@@ -20,139 +20,36 @@ const theme = createTheme({
     fontFamily: "Confortaa",
     fontSize: 16,
     h1: {
-      fontSize: "24px",
+      fontSize: "2.5rem",
       color: "#2A9CC8",
       fontWeight: "bold",
+      fontFamily: "Comfortaa",
     },
     h2: {
       fontWeight: "400",
-      fontSize: "18px",
+      fontSize: "1.8rem",
       color: "#434343",
       fontFamily: "Roboto",
     },
     body1: {
-      fontSize: "16px",
+      fontSize: "1.6rem",
       color: "#4A4A4A",
       fontFamily: "Arimo",
     },
     body2: {
-      fontSize: "14px",
+      fontSize: "1.4rem",
       color: "#434343",
       fontFamily: "Roboto",
     },
   },
   components: {
-    MuiButton: {
+    MuiOutlinedInput: {
       styleOverrides: {
         root: {
-          fontFamily: "robotoRegular",
-          textTransform: "none",
-          minWidth: "0",
-          fontWeight: "bold",
-        },
-        contained: {
-          backgroundColor: "#3C2386",
-          color: "#FFFFFF",
-          "&:hover": {
-            backgroundColor: "#2A1960",
-          },
-        },
-        outlined: {
-          backgroundColor: "#FFFFFF",
-          color: "#3C2386",
-          borderColor: "#FFFFFF",
-          boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
-          "&:hover": {
-            backgroundColor: "rgba(0, 0, 0, 0.01)",
-            borderColor: "rgba(0, 0, 0, 0.01)",
-            boxShadow: "0 4px 8px rgba(0, 0, 0, 0.15)",
-          },
-        },
-      },
-    },
-    MuiInput: {
-      styleOverrides: {
-        root: {
-          "&:before": {
-            borderBottomColor: "#3C2386",
-          },
-          "&:hover:not(.Mui-disabled):before": {
-            borderBottomColor: "#3C2386",
-          },
-          "&.Mui-focused:after": {
-            borderBottomColor: "#3C2386",
-          },
-        },
-      },
-    },
-    MuiChip: {
-      styleOverrides: {
-        root: {
-          backgroundColor: "#3C2386",
-          color: "#FFFFFF",
-        },
-        deleteIcon: {
-          color: "#E0E0E0",
-          "&:hover": {
-            color: "#FFFFFF",
-          },
-        },
-      },
-    },
-    MuiTableCell: {
-      styleOverrides: {
-        root: {
-          color: "#000000",
-          fontWeight: "500",
-          textAlign: "center",
-          textWrap: "nowrap",
-          textOverflow: "ellipsis",
-        },
-        head: {
-          backgroundColor: "#EDEDED",
-        },
-      },
-    },
-    MuiTableHead: {
-      styleOverrides: {
-        root: {
-          backgroundColor: "#EDEDED",
-        },
-      },
-    },
-    MuiTableSortLabel: {
-      styleOverrides: {
-        root: {
-          width: "100%",
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          "&:hover": {
-            color: "inherit",
-          },
-          "&.Mui-active": {
-            color: "inherit",
-          },
-          "& .MuiTableSortLabel-icon": {
-            opacity: 0,
-            marginLeft: "4px",
-            transition:
-              "opacity 200ms ease-in-out, transform 200ms ease-in-out",
-          },
-          "&.Mui-active, &:hover": {
-            "& .MuiTableSortLabel-icon": {
-              opacity: 1,
-            },
-          },
-        },
-        icon: {
-          transition: "transform 200ms ease-in-out",
-        },
-        iconDirectionDesc: {
-          transform: "rotate(0deg)",
-        },
-        iconDirectionAsc: {
-          transform: "rotate(180deg)",
+          padding: "12pxs",
+          gap: "1rem",
+          borderRadius: "1.2rem",
+          border: "#B0B0B0",
         },
       },
     },

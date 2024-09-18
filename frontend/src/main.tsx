@@ -54,9 +54,9 @@ root.render(
       >
         <ThemeProvider>
           <ThemeProviderMUI theme={theme}>
-          <GlobalProvider>
-            <RouterProvider router={router} />
-          </GlobalProvider>
+            <GlobalProvider>
+              <RouterProvider router={router} />
+            </GlobalProvider>
           </ThemeProviderMUI>
         </ThemeProvider>
       </OdeClientProvider>
