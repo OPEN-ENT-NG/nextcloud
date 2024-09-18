@@ -10,7 +10,7 @@ import {
   syncFolderInstructionsStyle,
   syncFolderStyle,
 } from "./style";
-import { useGlobalProvider } from "~/providers/GolobalProvider";
+import { useGlobalProvider } from "~/providers/GlobalProvider";
 import { columnBoxStyle, flexStartBoxStyle } from "~/styles/boxStyles";
 
 export const SyncFolder: FC = () => {
