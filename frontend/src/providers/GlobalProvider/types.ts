@@ -13,9 +13,7 @@ export interface GlobalProviderContextType {
   handleExcludedExtensionsChange: (
     event: ChangeEvent<HTMLInputElement>,
   ) => void;
-  handleAddExcludedExtensions: (
-    event: KeyboardEvent<HTMLDivElement>,
-  ) => void;
+  handleAddExcludedExtensions: (event: KeyboardEvent<HTMLDivElement>) => void;
   handleRemoveExcludedExtension: (extension: string) => void;
 }
 

@@ -9,7 +9,6 @@ export const chipStyle = {
 };
 
 export const closeStyle = {
-    color:"black",
-    fontSize:"2.5rem",
-    
+  color: "black",
+  fontSize: "2.5rem",
 };

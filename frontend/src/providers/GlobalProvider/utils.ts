@@ -26,3 +26,16 @@ export const processInputValue = (value: string): string | null => {
 
   return !isNaN(value as any) ? value : null;
 };
+
+export const processFolderPath = (value: string): string => {
+  if (value.startsWith("/")) {
+    value = value.substring(1);
+  }
+
+  const forbiddenChars = /[<>:"\\|?*]/g;
+  value = value.replace(forbiddenChars, "");
+
+  value = value.replace(/\/{2,}/g, "/");
+
+  return value;
+};

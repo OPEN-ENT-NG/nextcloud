@@ -14,7 +14,11 @@ import {
   DesktopConfig,
   GlobalProviderContextType,
 } from "./types";
-import { initialDesktopConfigValues, processInputValue } from "./utils";
+import {
+  initialDesktopConfigValues,
+  processFolderPath,
+  processInputValue,
+} from "./utils";
 import { desktopConfigApi } from "~/services/api/desktopConfig.service";
 
 const GlobalProviderContext = createContext<GlobalProviderContextType | null>(
@@ -30,8 +34,10 @@ export const useGlobalProvider = () => {
 };
 
 export const GlobalProvider: FC<GlobalProviderProps> = ({ children }) => {
-  const { useGetDesktopConfigQuery } = desktopConfigApi;
-  const { data } = useGetDesktopConfigQuery({});
+  const { useGetDesktopConfigQuery, useUpdateDesktopConfigMutation } =
+    desktopConfigApi;
+  const { data } = useGetDesktopConfigQuery(null);
+  const [updateDesktopConfig] = useUpdateDesktopConfigMutation();
   const [desktopConfigValues, setDesktopConfigValues] = useState<DesktopConfig>(
     initialDesktopConfigValues,
   );
@@ -48,17 +54,21 @@ export const GlobalProvider: FC<GlobalProviderProps> = ({ children }) => {
   }, [data]);
 
   const handleSubmitNewConfig = () => {
-    console.log("submit new config");
+    updateDesktopConfig(inputValues);
+    setInputExtension("");
   };
 
   const handleCancelNewConfig = () => {
-    console.log("cancel new config");
+    setInputValues(desktopConfigValues);
+    setInputExtension("");
   };
 
   const handleSyncFolderChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const value = event.target.value;
+    const processedValue = processFolderPath(value);
     setInputValues((prev) => ({
       ...prev,
-      syncFolder: event.target.value,
+      syncFolder: processedValue,
     }));
   };
 
@@ -86,27 +96,23 @@ export const GlobalProvider: FC<GlobalProviderProps> = ({ children }) => {
     }
   };
 
-  console.log("test3" +inputExtension);
   const handleExcludedExtensionsChange = (
     event: ChangeEvent<HTMLInputElement>,
   ) => {
-    const value = event.target.value;
-    setInputExtension(value);
-    console.log("test1" +value);
-    console.log("test" +inputExtension);
+    setInputExtension(event.target.value);
   };
 
   const handleAddExcludedExtensions = (
     event: KeyboardEvent<HTMLDivElement>,
   ) => {
-    // if (event.key === "Enter") {
-    //   setInputValues((prev) => ({
-    //     ...prev,
-    //     excludedExtensions: [...prev.excludedExtensions, inputExtension],
-    //   }));
-    //   // setInputExtension("");
-    // }
-  }
+    if (event.key === "Enter") {
+      setInputValues((prev) => ({
+        ...prev,
+        excludedExtensions: [...prev.excludedExtensions, inputExtension],
+      }));
+      setInputExtension("");
+    }
+  };
 
   const handleRemoveExcludedExtension = (extension: string) => {
     setInputValues((prev) => ({
