@@ -4,7 +4,6 @@ import { render } from "@testing-library/react";
 import { BrowserRouter } from "react-router-dom";
 import { describe, it } from "vitest";
 import { GlobalProvider } from "~/providers/GlobalProvider";
-
 import { App } from "~/routes/app/index.tsx";
 import theme from "~/styles/theme";
 
