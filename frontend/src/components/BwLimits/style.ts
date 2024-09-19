@@ -2,7 +2,7 @@ import { flexStartBoxStyle } from "~/styles/boxStyles";
 
 export const inputStyle = {
   marginTop: "1rem",
-  width: "9rem",
+  width: "10rem",
 };
 
 export const inputTitleStyle = {

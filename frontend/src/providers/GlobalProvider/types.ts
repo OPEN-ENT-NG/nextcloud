@@ -4,6 +4,9 @@ export interface GlobalProviderContextType {
   desktopConfigValues: DesktopConfig;
   inputValues: DesktopConfig;
   inputExtension: string;
+  disabledSave: boolean;
+  showSuccessAlert: boolean;
+  setShowSuccessAlert: (value: boolean) => void;
   setInputExtension: (extension: string) => void;
   handleSubmitNewConfig: () => void;
   handleCancelNewConfig: () => void;

@@ -5,8 +5,9 @@ import { columnBoxStyle } from "~/styles/boxStyles";
 export const excludedContentStyle: SxProps = {
   ...columnBoxStyle,
   margin: "2rem",
+  marginBottom: "1rem",
   gap: "1rem",
-  height: "25rem",
+  maxHeight: "25rem",
   alignContent: "flex-start",
   columnGap: "3rem",
   flexWrap: "wrap",
@@ -24,6 +25,6 @@ export const excludedInputStyle: SxProps = {
     border: "none",
   },
   "& .MuiInputBase-input": {
-    padding: "0.5rem 1rem",
+    padding: "0rem 0rem",
   },
 };

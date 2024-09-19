@@ -14,16 +14,25 @@ export const ExcludedExtensions: FC = () => {
   const {
     inputValues: { excludedExtensions },
     inputExtension,
+    setInputExtension,
     handleExcludedExtensionsChange,
     handleAddExcludedExtensions,
   } = useGlobalProvider();
+
+  const handleFocus = () => {
+    if (inputExtension === "") setInputExtension(".");
+  };
+
+  const handleBlur = () => {
+    if (inputExtension === ".") setInputExtension("");
+  };
 
   return (
     <Box>
       <Typography variant="h2" sx={flexStartBoxStyle}>
         {t("nextcloud.console.excluded.extensions")}
       </Typography>
-      <Box sx={excludedContentStyle}>
+      <Box sx={excludedContentStyle} id="excluded-extensions">
         {[...excludedExtensions]
           .sort((a, b) => a.localeCompare(b)) // Sorts extensions in alphabetical order
           .map((extension, index) => (
@@ -38,6 +47,8 @@ export const ExcludedExtensions: FC = () => {
           value={inputExtension}
           onChange={handleExcludedExtensionsChange}
           onKeyDown={handleAddExcludedExtensions}
+          onFocus={handleFocus}
+          onBlur={handleBlur}
           sx={excludedInputStyle}
           placeholder={"+ " + t("nextcloud.console.add")}
         />
