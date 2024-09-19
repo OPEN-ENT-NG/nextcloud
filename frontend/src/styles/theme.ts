@@ -53,6 +53,44 @@ const theme = createTheme({
         },
       },
     },
+    MuiButton: {
+      variants: [
+        {
+          props: { variant: "contained" },
+          style: {
+            fontSize: "1.6rem",
+            fontFamily: "Arimo",
+            fontWeight: "bold",
+            backgroundColor: "#FF8D2E",
+            color: "white",
+            textTransform: "none",
+            padding: "0.8rem 1.6rem",
+            borderRadius: "0.8rem",
+            "&:hover": {
+              backgroundColor: "#b35d00",
+            },
+          },
+        },
+        {
+          props: { variant: "outlined" },
+          style: {
+            fontSize: "1.6rem",
+            color: "#4A4A4A",
+            fontWeight: "bold",
+            fontFamily: "Arimo",
+            backgroundColor: "#F2F2F2",
+            textTransform: "none",
+            padding: "0.8rem 1.6rem",
+            borderRadius: "0.8rem",
+            border: "none",
+            "&:hover": {
+              backgroundColor: "#E0E0E0",
+              border: "none",
+            },
+          },
+        },
+      ],
+    },
   },
 });
 

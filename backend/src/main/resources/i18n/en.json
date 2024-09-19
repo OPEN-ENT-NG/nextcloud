@@ -30,5 +30,6 @@
   "nextcloud.console.excluded.extensions": "Types de fichiers non autorisés :",
 
   "nextcloud.console.save": "Enregistrer",
-  "nextcloud.console.cancel": "Annuler"
+  "nextcloud.console.cancel": "Annuler",
+  "nextcloud.console.add": "ajout"
 }

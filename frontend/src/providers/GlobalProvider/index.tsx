@@ -2,6 +2,7 @@ import {
   ChangeEvent,
   createContext,
   FC,
+  KeyboardEvent,
   useContext,
   useEffect,
   useMemo,
@@ -13,7 +14,11 @@ import {
   DesktopConfig,
   GlobalProviderContextType,
 } from "./types";
-import { initialDesktopConfigValues, processInputValue } from "./utils";
+import {
+  initialDesktopConfigValues,
+  processFolderPath,
+  processInputValue,
+} from "./utils";
 import { desktopConfigApi } from "~/services/api/desktopConfig.service";
 
 const GlobalProviderContext = createContext<GlobalProviderContextType | null>(
@@ -29,14 +34,17 @@ export const useGlobalProvider = () => {
 };
 
 export const GlobalProvider: FC<GlobalProviderProps> = ({ children }) => {
-  const { useGetDesktopConfigQuery } = desktopConfigApi;
-  const { data } = useGetDesktopConfigQuery({});
+  const { useGetDesktopConfigQuery, useUpdateDesktopConfigMutation } =
+    desktopConfigApi;
+  const { data } = useGetDesktopConfigQuery(null);
+  const [updateDesktopConfig] = useUpdateDesktopConfigMutation();
   const [desktopConfigValues, setDesktopConfigValues] = useState<DesktopConfig>(
     initialDesktopConfigValues,
   );
   const [inputValues, setInputValues] = useState<DesktopConfig>(
     initialDesktopConfigValues,
   );
+  const [inputExtension, setInputExtension] = useState<string>("");
 
   useEffect(() => {
     if (data) {
@@ -46,17 +54,21 @@ export const GlobalProvider: FC<GlobalProviderProps> = ({ children }) => {
   }, [data]);
 
   const handleSubmitNewConfig = () => {
-    console.log("submit new config");
+    updateDesktopConfig(inputValues);
+    setInputExtension("");
   };
 
   const handleCancelNewConfig = () => {
-    console.log("cancel new config");
+    setInputValues(desktopConfigValues);
+    setInputExtension("");
   };
 
   const handleSyncFolderChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const value = event.target.value;
+    const processedValue = processFolderPath(value);
     setInputValues((prev) => ({
       ...prev,
-      syncFolder: event.target.value,
+      syncFolder: processedValue,
     }));
   };
 
@@ -84,24 +96,49 @@ export const GlobalProvider: FC<GlobalProviderProps> = ({ children }) => {
     }
   };
 
-  const handleExcludedExtensionsChange = () => {
-    console.log("excluded extensions change");
+  const handleExcludedExtensionsChange = (
+    event: ChangeEvent<HTMLInputElement>,
+  ) => {
+    setInputExtension(event.target.value);
+  };
+
+  const handleAddExcludedExtensions = (
+    event: KeyboardEvent<HTMLDivElement>,
+  ) => {
+    if (event.key === "Enter") {
+      setInputValues((prev) => ({
+        ...prev,
+        excludedExtensions: [...prev.excludedExtensions, inputExtension],
+      }));
+      setInputExtension("");
+    }
+  };
+
+  const handleRemoveExcludedExtension = (extension: string) => {
+    setInputValues((prev) => ({
+      ...prev,
+      excludedExtensions: prev.excludedExtensions.filter(
+        (excludedExtension) => excludedExtension !== extension,
+      ),
+    }));
   };
 
   const value = useMemo<GlobalProviderContextType>(
     () => ({
       desktopConfigValues,
-      setDesktopConfigValues,
       inputValues,
-      setInputValues,
+      inputExtension,
+      setInputExtension,
       handleSubmitNewConfig,
       handleCancelNewConfig,
       handleSyncFolderChange,
       handleUploadLimitChange,
       handleDownloadLimitChange,
       handleExcludedExtensionsChange,
+      handleAddExcludedExtensions,
+      handleRemoveExcludedExtension,
     }),
-    [desktopConfigValues, inputValues],
+    [desktopConfigValues, inputValues, inputExtension],
   );
 
   return (

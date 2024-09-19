@@ -1,4 +1,8 @@
+import { flexStartBoxStyle } from "~/styles/boxStyles";
+
 export const consoleTitleStyle = {
+  ...flexStartBoxStyle,
+  gap: "1rem",
   marginTop: "5rem",
   marginBottom: "1rem",
 };
