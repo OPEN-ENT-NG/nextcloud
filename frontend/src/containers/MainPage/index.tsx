@@ -9,15 +9,19 @@ import { ExcludedExtensions } from "~/components/ExcludedExtensions";
 import { SyncFolder } from "~/components/SyncFolder";
 import { useGlobalProvider } from "~/providers/GlobalProvider";
 import { columnBoxStyle, flexEndBoxStyle } from "~/styles/boxStyles";
+import { NextcloudConsoleIcon } from "~/components/SVG/NextcloudConsoleIcon";
 
 export const MainPage: FC = () => {
   const { t } = useTranslation("nextcloud");
   const { handleSubmitNewConfig, handleCancelNewConfig } = useGlobalProvider();
   return (
     <>
-      <Typography variant="h1" sx={consoleTitleStyle}>
+      <Box sx={consoleTitleStyle}>
+        <NextcloudConsoleIcon />
+      <Typography variant="h1" >
         {t("nextcloud.console.title")}
       </Typography>
+      </Box>
       <Typography variant="body2">{t("nextcloud.console.subtitle")}</Typography>
       <Box sx={consoleContentStyle}>
         <Box sx={{ ...columnBoxStyle, gap: "2rem" }}>
