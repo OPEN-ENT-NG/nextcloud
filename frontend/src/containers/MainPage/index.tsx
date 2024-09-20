@@ -1,9 +1,10 @@
 import { FC } from "react";
+import "react-toastify/dist/ReactToastify.css";
 
-import { Alert, Box, Button, Snackbar, Typography } from "@mui/material";
+import { Alert, Box, Button, Typography } from "@mui/material";
 import { useTranslation } from "react-i18next";
 
-import { consoleContentStyle, consoleTitleStyle } from "./style";
+import { alertStyle, consoleContentStyle, consoleTitleStyle } from "./style";
 import { BwLimits } from "~/components/BwLimits";
 import { ExcludedExtensions } from "~/components/ExcludedExtensions";
 import { NextcloudConsoleIcon } from "~/components/SVG/NextcloudConsoleIcon";
@@ -12,6 +13,7 @@ import { useGlobalProvider } from "~/providers/GlobalProvider";
 import {
   columnBoxStyle,
   flexEndBoxStyle,
+  spaceBetweenBoxStyle,
 } from "~/styles/boxStyles";
 
 export const MainPage: FC = () => {
@@ -21,25 +23,28 @@ export const MainPage: FC = () => {
     handleCancelNewConfig,
     disabledSave,
     showSuccessAlert,
-    setShowSuccessAlert,
   } = useGlobalProvider();
   return (
     <Box>
-      <Snackbar
-        open={showSuccessAlert}
-        anchorOrigin={{ vertical: "top", horizontal: "right" }}
-        onClose={() => setShowSuccessAlert(false)}
-      >
-        <Alert onClose={() => setShowSuccessAlert(false)} severity="success">
-          This is a success message!
-        </Alert>
-      </Snackbar>
-      <Box sx={consoleTitleStyle}>
-        <NextcloudConsoleIcon />
-        <Typography variant="h1">{t("nextcloud.console.title")}</Typography>
+      <Box sx={spaceBetweenBoxStyle}>
+        <Box sx={columnBoxStyle}>
+          <Box sx={consoleTitleStyle}>
+            <NextcloudConsoleIcon />
+            <Typography variant="h1">{t("nextcloud.console.title")}</Typography>
+          </Box>
+          <Typography variant="body2">
+            {t("nextcloud.console.subtitle")}
+          </Typography>
+        </Box>
+        <Box sx={flexEndBoxStyle}>
+          {showSuccessAlert && (
+            <Alert severity="success" sx={alertStyle}>
+              {t("nextcloud.console.alert.save")}
+            </Alert>
+          )}
+        </Box>
       </Box>
-      <Typography variant="body2">{t("nextcloud.console.subtitle")}</Typography>
-      <Box sx={{...consoleContentStyle}}>
+      <Box sx={{ ...consoleContentStyle }}>
         <Box sx={{ ...columnBoxStyle, gap: "2rem" }}>
           <SyncFolder />
           <BwLimits />
@@ -58,6 +63,6 @@ export const MainPage: FC = () => {
           </Button>
         </Box>
       </Box>
-    </>
+    </Box>
   );
 };

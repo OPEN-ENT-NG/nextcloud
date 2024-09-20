@@ -70,7 +70,7 @@ export const GlobalProvider: FC<GlobalProviderProps> = ({ children }) => {
     setShowSuccessAlert(true);
     setTimeout(() => {
       setShowSuccessAlert(false);
-    }, 7000000);
+    }, 500000);
   };
 
   const handleSubmitNewConfig = () => {
@@ -164,7 +164,13 @@ export const GlobalProvider: FC<GlobalProviderProps> = ({ children }) => {
       handleAddExcludedExtensions,
       handleRemoveExcludedExtension,
     }),
-    [desktopConfigValues, inputValues, inputExtension, disabledSave, showSuccessAlert],
+    [
+      desktopConfigValues,
+      inputValues,
+      inputExtension,
+      disabledSave,
+      showSuccessAlert,
+    ],
   );
 
   return (

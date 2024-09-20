@@ -101,11 +101,24 @@ const theme = createTheme({
     MuiAlert: {
       styleOverrides: {
         root: {
-          borderRadius: "0.8rem", 
-          fontSize: "1.4rem",  
-          padding: "1rem 1.6rem", 
+          borderRadius: "0.8rem",
+          fontSize: "1.4rem",
+          padding: "1rem 1.6rem",
           whiteSpace: "nowrap",
           marginRight: "auto",
+        },
+      },
+    },
+    MuiTooltip: {
+      styleOverrides: {
+        tooltip: {
+          color: "white",
+          fontSize: "1.4rem",
+          padding: "0.8rem 1rem",
+          borderRadius: "0.8rem",
+        },
+        arrow: {
+          color: "#3C2386",
         },
       },
     },
