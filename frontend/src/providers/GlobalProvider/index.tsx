@@ -70,7 +70,7 @@ export const GlobalProvider: FC<GlobalProviderProps> = ({ children }) => {
     setShowSuccessAlert(true);
     setTimeout(() => {
       setShowSuccessAlert(false);
-    }, 500000);
+    }, 5000);
   };
 
   const handleSubmitNewConfig = () => {
