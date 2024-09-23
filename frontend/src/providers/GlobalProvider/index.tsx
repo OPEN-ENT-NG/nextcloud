@@ -45,6 +45,8 @@ export const GlobalProvider: FC<GlobalProviderProps> = ({ children }) => {
     initialDesktopConfigValues,
   );
   const [inputExtension, setInputExtension] = useState<string>("");
+  const [disabledSave, setDisabledSave] = useState<boolean>(true);
+  const [showSuccessAlert, setShowSuccessAlert] = useState<boolean>(false);
 
   useEffect(() => {
     if (data) {
@@ -53,9 +55,28 @@ export const GlobalProvider: FC<GlobalProviderProps> = ({ children }) => {
     }
   }, [data]);
 
+  useEffect(() => {
+    if (
+      JSON.stringify(inputValues) === JSON.stringify(desktopConfigValues) ||
+      !inputValues.syncFolder
+    ) {
+      setDisabledSave(true);
+    } else {
+      setDisabledSave(false);
+    }
+  }, [inputValues, desktopConfigValues]);
+
+  const showSuccessAlertTimeout = () => {
+    setShowSuccessAlert(true);
+    setTimeout(() => {
+      setShowSuccessAlert(false);
+    }, 5000);
+  };
+
   const handleSubmitNewConfig = () => {
     updateDesktopConfig(inputValues);
     setInputExtension("");
+    showSuccessAlertTimeout();
   };
 
   const handleCancelNewConfig = () => {
@@ -99,18 +120,20 @@ export const GlobalProvider: FC<GlobalProviderProps> = ({ children }) => {
   const handleExcludedExtensionsChange = (
     event: ChangeEvent<HTMLInputElement>,
   ) => {
-    setInputExtension(event.target.value);
+    const value = event.target.value;
+    const isValid = /^[.][a-zA-Z0-9]+$/.test(value) || value === ".";
+    if (isValid) setInputExtension(value);
   };
 
   const handleAddExcludedExtensions = (
     event: KeyboardEvent<HTMLDivElement>,
   ) => {
-    if (event.key === "Enter") {
+    if (event.key === "Enter" && inputExtension !== ".") {
       setInputValues((prev) => ({
         ...prev,
         excludedExtensions: [...prev.excludedExtensions, inputExtension],
       }));
-      setInputExtension("");
+      setInputExtension(".");
     }
   };
 
@@ -129,6 +152,9 @@ export const GlobalProvider: FC<GlobalProviderProps> = ({ children }) => {
       inputValues,
       inputExtension,
       setInputExtension,
+      disabledSave,
+      showSuccessAlert,
+      setShowSuccessAlert,
       handleSubmitNewConfig,
       handleCancelNewConfig,
       handleSyncFolderChange,
@@ -138,7 +164,13 @@ export const GlobalProvider: FC<GlobalProviderProps> = ({ children }) => {
       handleAddExcludedExtensions,
       handleRemoveExcludedExtension,
     }),
-    [desktopConfigValues, inputValues, inputExtension],
+    [
+      desktopConfigValues,
+      inputValues,
+      inputExtension,
+      disabledSave,
+      showSuccessAlert,
+    ],
   );
 
   return (

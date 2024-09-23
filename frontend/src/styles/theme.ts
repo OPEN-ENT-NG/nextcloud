@@ -66,8 +66,15 @@ const theme = createTheme({
             textTransform: "none",
             padding: "0.8rem 1.6rem",
             borderRadius: "0.8rem",
+            boxShadow: "0 0 0 0",
             "&:hover": {
               backgroundColor: "#b35d00",
+              boxShadow: "0 0 0 0",
+            },
+            "&.Mui-disabled": {
+              backgroundColor: "#FFCBA0",
+              color: "white",
+              border: "none",
             },
           },
         },
@@ -78,18 +85,42 @@ const theme = createTheme({
             color: "#4A4A4A",
             fontWeight: "bold",
             fontFamily: "Arimo",
-            backgroundColor: "#F2F2F2",
+            backgroundColor: "white",
             textTransform: "none",
             padding: "0.8rem 1.6rem",
             borderRadius: "0.8rem",
             border: "none",
             "&:hover": {
-              backgroundColor: "#E0E0E0",
+              backgroundColor: "#F2F2F2",
               border: "none",
             },
           },
         },
       ],
+    },
+    MuiAlert: {
+      styleOverrides: {
+        root: {
+          borderRadius: "0.8rem",
+          fontSize: "1.4rem",
+          padding: "1rem 1.6rem",
+          whiteSpace: "nowrap",
+          marginRight: "auto",
+        },
+      },
+    },
+    MuiTooltip: {
+      styleOverrides: {
+        tooltip: {
+          color: "white",
+          fontSize: "1.4rem",
+          padding: "0.8rem 1rem",
+          borderRadius: "0.8rem",
+        },
+        arrow: {
+          color: "#3C2386",
+        },
+      },
     },
   },
 });
