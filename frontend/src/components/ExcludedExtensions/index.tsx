@@ -20,7 +20,7 @@ export const ExcludedExtensions: FC = () => {
   } = useGlobalProvider();
 
   const handleFocus = () => {
-    if (inputExtension === "") setInputExtension(".");
+    if (!inputExtension) setInputExtension(".");
   };
 
   const handleBlur = () => {
