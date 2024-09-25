@@ -2,7 +2,7 @@ package fr.openent.nextcloud.controller;
 
 import fr.openent.nextcloud.core.constants.Field;
 import fr.openent.nextcloud.core.constants.WorkflowRight;
-import fr.openent.nextcloud.security.Access;
+import fr.openent.nextcloud.security.AdminDesktop;
 import fr.openent.nextcloud.service.ServiceFactory;
 import fr.openent.nextcloud.model.DesktopConfig;
 import fr.wseduc.rs.ApiDoc;
@@ -33,13 +33,15 @@ public class NextcloudDesktopController extends ControllerHelper {
 
     @Get("/desktop")
     @ApiDoc("Render admin console view")
-    @SecuredAction(WorkflowRight.ADMIN_DESKTOP_VIEW)
+    @SecuredAction(WorkflowRight.ADMIN_DESKTOP)
     public void view(HttpServerRequest request) {
         renderView(request, new JsonObject(), "index.html", null);
     }
 
     @Get("/desktop/config")
     @ApiDoc("Returns the requested Nextcloud custom Desktop configuration")
+    @ResourceFilter(AdminDesktop.class)
+    @SecuredAction(value="", type=ActionType.RESOURCE)
     public void getConfig(HttpServerRequest request) {
         JsonObject query = new JsonObject().put(Field._ID, Field.UNIQUEID);
 
@@ -65,6 +67,8 @@ public class NextcloudDesktopController extends ControllerHelper {
 
     @Put("/desktop/config")
     @ApiDoc("Updates the Nextcloud custom Desktop configuration")
+    @SecuredAction(value="", type=ActionType.RESOURCE)
+    @ResourceFilter(AdminDesktop.class)
     public void putConfig(HttpServerRequest request) {
 
         request.bodyHandler(body -> {
