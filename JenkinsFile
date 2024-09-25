@@ -14,7 +14,7 @@ pipeline {
 
     stage('Frontend Angular') {
       steps {
-        dir('angularJS') {
+        dir('angularjs') {
           sh 'chmod +x build.sh && ./build.sh buildNode'
         }
       }
@@ -29,18 +29,18 @@ pipeline {
           sh 'mkdir -p ./src/main/resources/public/img'
           sh 'mkdir -p ./src/main/resources/public/js'
           sh 'mv ./src/main/resources/*.html ./src/main/resources/view'
-          sh 'cp -R ../angularJS/src/view/* ./src/main/resources/view'
-          sh 'cp -R ../angularJS/src/css/* ./src/main/resources/public'
-          sh 'cp -R ../angularJS/src/dist/* ./src/main/resources/public/js'
-          sh 'cp -R ../angularJS/src/template/* ./src/main/resources/public/template'
-          sh 'cp -R ../angularJS/src/img/* ./src/main/resources/public/img'
-          sh 'cp -R ../frontend/public/* ./src/main/resources/public'
+          sh 'cp -R ../angularjs/src/view/* ./src/main/resources/view'
+          // sh 'cp -R ../angularjs/src/css/* ./src/main/resources/public'
+          sh 'cp -R ../angularjs/src/dist/* ./src/main/resources/public/js'
+          sh 'cp -R ../angularjs/src/template/* ./src/main/resources/public/template'
+          // sh 'cp -R ../angularjs/src/img/* ./src/main/resources/public/img'
+          // sh 'cp -R ../frontend/public/* ./src/main/resources/public'
           sh 'chmod +x build.sh && ./build.sh clean build publish'
           sh 'rm -rf ../frontend/dist'
-          sh 'rm -rf ../angularJS/src/js'
-          sh 'rm -rf ../angularJS/src/view'
-          sh 'rm -rf ../angularJS/src/css'
-          sh 'rm -rf ../angularJS/src/dist'
+          sh 'rm -rf ../angularjs/src/js'
+          sh 'rm -rf ../angularjs/src/view'
+          sh 'rm -rf ../angularjs/src/css'
+          sh 'rm -rf ../angularjs/src/dist'
         }
       }
     }
