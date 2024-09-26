@@ -55,7 +55,7 @@ cp -R ../angularjs/src/view/* ./src/main/resources/view
 # cp -R ../angularjs/src/css/* ./src/main/resources/public
 cp -R ../angularjs/src/dist/* ./src/main/resources/public/js
 cp -R ../angularjs/src/template/* ./src/main/resources/public/template
-cp -R ../angularjs/src/img/* ./src/main/resources/public/img
+# cp -R ../angularjs/src/img/* ./src/main/resources/public/img
 
 # Copy all public files from frontend into Backend
 # cp -R ../frontend/public/* ./src/main/resources/public
