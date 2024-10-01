@@ -47,6 +47,20 @@ nextcloudWebdavAPI=/remote.php/dav/files
 nextcloudQuota=2 GB
 </pre>
 
+## Console Nextcloud (desktop)
+
+The route to retrieve the Nextcloud desktop client configuration (within the intranet) is protected by a workflow permission. To access it from outside, and especially from the client, a connector must be created in the intranet:
+
+- URL: ```https://plateforme.fr/nextcloud/desktop/config```
+- clientId: ```nextcloudDesktopAdmin```
+- scope: ```fr.openent.nextcloud.controller.NextcloudDesktopController|getConfig```
+- secret code: ```<password>```
+
+
+Once the connector is created, you should be able to test with the following curl request:
+```
+curl -u nextcloudDesktopAdmin:\<password> -X GET https://plateforme.fr/nextcloud/desktop/config
+```
 
 ## Usage (workspace module only)
 
