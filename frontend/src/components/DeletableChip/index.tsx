@@ -21,7 +21,14 @@ export const DeletableChip: FC<{ extension: string }> = ({ extension }) => {
   }, [extension]);
 
   return (
-    <Box sx={{ ...flexStartBoxStyle, gap: ".5rem", width: "15rem" }}>
+    <Box
+      sx={{
+        ...flexStartBoxStyle,
+        gap: ".5rem",
+        width: "15rem",
+        marginRight: "2rem",
+      }}
+    >
       <Tooltip title={isEllipsis ? extension : ""} followCursor={true}>
         <Typography variant="body1" sx={chipStyle} ref={textRef}>
           {extension}
