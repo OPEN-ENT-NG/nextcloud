@@ -19,7 +19,7 @@
 
   "nextcloud.console.title": "Console Nextcloud",
   "nextcloud.console.subtitle": "Configurez les paramètres du client Nextcloud",
-  "nextcloud.console.sync.folder": "Dossier synchronisé :",
+  "nextcloud.console.sync.folder": "Dossier synchronisé * :",
   "nextcloud.console.complete.path": "Chemin complet :",
   "nextcloud.console.folder.location.instructions": "Le dossier sera créé à partir du dossier de l’utilisateur (C:) / Utilisateurs / <nom.utilisateur>",
   "nextcloud.console.folder.root.location": "(C:)/Utilisateurs/<nom.utilisateur>/",
