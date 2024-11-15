@@ -83,21 +83,20 @@ public class FileHelper {
             final JsonObject metadata = FileUtils.metadata(upload);
             listMetadata.add(new Attachment(fileIds.get(incrementFile.get()), new Metadata(metadata)));
 
-            upload.streamToFileSystem(finalPath);
             incrementFile.set(incrementFile.get() + 1);
 
-
-            upload.exceptionHandler(err -> {
-                String messageToFormat = "[Nextcloud@%s::uploadMultipleFiles] An exception has occurred during http upload process: %s";
-                PromiseHelper.reject(log, messageToFormat, FileHelper.class.getSimpleName(), err, promise);
-            });
-            upload.endHandler(aVoid -> {
-                if (incrementFile.get() == Integer.parseInt(totalFilesToUpload) && !responseSent.get()) {
-                    responseSent.set(true);
-                    promise.complete(listMetadata);
-                }
-            });
-
+            upload.streamToFileSystem(finalPath)
+                .onSuccess(e-> {
+                    if (incrementFile.get() == Integer.parseInt(totalFilesToUpload) && !responseSent.get()) {
+                        responseSent.set(true);
+                        promise.complete(listMetadata);
+                    }
+                })
+                .onFailure(th -> {
+                    String messageToFormat = "[Nextcloud@%s::uploadMultipleFiles] An exception has occurred during http upload process: %s";
+                    PromiseHelper.reject(log, messageToFormat, FileHelper.class.getSimpleName(), th, promise);
+                });
+            upload.handler(buffer -> log.info(buffer.toJson().toString()));
         });
 
         List<Future<String>> makeFolders = new ArrayList<>();
