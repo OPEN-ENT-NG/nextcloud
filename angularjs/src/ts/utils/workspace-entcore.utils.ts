@@ -40,6 +40,12 @@ export class WorkspaceEntcoreUtils {
         const contentEmptyScreenQuery: string = 'div .toggle-buttons-spacer .emptyscreen';
         Array.from(document.querySelectorAll(contentEmptyScreenQuery))
             .forEach((elem: Element) => (<HTMLElement>elem).style.display =  state ? "flex" : "none");
+
+        const rightMagnetQuery: string = "app-title.twelve div.right-magnet";
+        Array.from(document.querySelectorAll(rightMagnetQuery)).forEach(
+            (elem: Element) =>
+                ((<HTMLElement>elem).style.display = state ? "block" : "none")
+        );
     }
 
     /**
