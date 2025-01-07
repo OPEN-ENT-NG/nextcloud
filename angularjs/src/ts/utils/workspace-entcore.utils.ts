@@ -33,7 +33,7 @@ export class WorkspaceEntcoreUtils {
      * @param state boolean determine display default or none
      */
     static toggleWorkspaceContentDisplay(state: boolean): void {
-        const searchImportViewQuery: string = 'section .margin-four > h3, section .margin-four > nav';
+        const searchImportViewQuery: string = 'section .margin-four > h3, section .margin-four > nav > div.row';
         Array.from(document.querySelectorAll(searchImportViewQuery))
             .forEach((elem: Element) => (<HTMLElement>elem).style.display =  state ? "block" : "none");
 
