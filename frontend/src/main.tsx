@@ -1,7 +1,7 @@
 import React from "react";
 
 import "~/i18n";
-import { OdeClientProvider, ThemeProvider } from "@edifice-ui/react";
+import { EdificeClientProvider, EdificeThemeProvider } from "@edifice.io/react";
 import { ThemeProvider as ThemeProviderMUI } from "@mui/material";
 import {
   QueryCache,
@@ -47,19 +47,19 @@ const queryClient = new QueryClient({
 root.render(
   <QueryClientProvider client={queryClient}>
     <Provider store={store}>
-      <OdeClientProvider
+      <EdificeClientProvider
         params={{
           app: "nextcloud",
         }}
       >
-        <ThemeProvider>
+        <EdificeThemeProvider>
           <ThemeProviderMUI theme={theme}>
             <GlobalProvider>
               <RouterProvider router={router} />
             </GlobalProvider>
           </ThemeProviderMUI>
-        </ThemeProvider>
-      </OdeClientProvider>
+        </EdificeThemeProvider>
+      </EdificeClientProvider>
     </Provider>
     <ReactQueryDevtools initialIsOpen={false} />
   </QueryClientProvider>,
