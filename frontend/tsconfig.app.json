@@ -1,0 +1,36 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "target": "ES2020",
+    "useDefineForClassFields": true,
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "skipLibCheck": true,
+
+    /* Bundler mode */
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "jsx": "react-jsx",
+
+    /* Linting */
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "paths": {
+      "~/*": ["./src/*"],
+      "@cgi-learning-hub/ui": ["node_modules/@cgi-learning-hub/ui"],
+      "@cgi-learning-hub/theme": ["node_modules/@cgi-learning-hub/theme"],
+      "@cgi-learning-hub/icons": ["node_modules/@cgi-learning-hub/icons"],
+      "@images/*": ["node_modules/@edifice.io/bootstrap/dist/images/*"]
+    },
+
+    "types": ["vitest/globals", "@testing-library/jest-dom"]
+  },
+  "include": ["src"],
+  "exclude": ["old"],
+  "references": [{ "path": "./tsconfig.node.json" }]
+}

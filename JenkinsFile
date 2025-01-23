@@ -52,5 +52,10 @@ pipeline {
         }
       }
     }
+    post {
+      cleanup {
+        sh 'cd backend && docker-compose down && cd ../frontend && docker-compose down'
+      }
+    }
   }
 }

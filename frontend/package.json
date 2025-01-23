@@ -94,6 +94,7 @@
     "happy-dom": "12.9.1",
     "husky": "8.0.3",
     "lint-staged": "14.0.1",
+    "nx": "19.6.0",
     "prettier": "3.0.3",
     "typescript": "5.2.2",
     "vite": "4.4.11",
@@ -103,8 +104,9 @@
     "sass": "1.69.5",
     "i18next-browser-languagedetector": "7.2.1"
   },
-  "packageManager": "pnpm@8.6.6",
+  "packageManager": "pnpm@9.15.0",
   "engines": {
-    "node": "16 || 18"
-  }
+    "node": "20"
+  },
+  "nx": {}
 }

@@ -1,6 +1,5 @@
 import React from "react";
 
-import "~/i18n";
 import { EdificeClientProvider, EdificeThemeProvider } from "@edifice.io/react";
 import { ThemeProvider as ThemeProviderMUI } from "@mui/material";
 import {
@@ -12,7 +11,9 @@ import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { createRoot } from "react-dom/client";
 import { Provider } from "react-redux";
 import { RouterProvider } from "react-router-dom";
+import "~/i18n";
 
+import "@edifice.io/bootstrap/dist/index.css";
 import { GlobalProvider } from "./providers/GlobalProvider";
 import { router } from "./routes";
 import { setupStore } from "./store";

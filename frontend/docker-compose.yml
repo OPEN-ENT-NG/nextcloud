@@ -1,10 +1,12 @@
 version: "3"
 services:
   node:
-    image: "opendigitaleducation/node:18-alpine-pnpm"
+    image: "opendigitaleducation/node:20-alpine-pnpm"
     user: "node"
     container_name: node_app
     working_dir: /home/node/app
+    environment:
+      - TIPTAP_PRO_TOKEN
     tty: true
     stdin_open: true
     ports:

@@ -38,3 +38,7 @@ pnpm-lock.yaml
 
 # Turborepo
 .turbo
+
+.nx
+
+.husky
