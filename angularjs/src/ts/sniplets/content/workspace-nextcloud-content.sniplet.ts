@@ -1,18 +1,18 @@
-import {angular, Behaviours, idiom as lang, model, Me, template, workspace} from "entcore";
-import {NEXTCLOUD_APP} from "../../nextcloud.behaviours";
-import {Subscription} from "rxjs";
-import {Draggable, SyncDocument} from "../../models";
-import {safeApply} from "../../utils/safe-apply.utils";
-import {INextcloudService, nextcloudService} from "../../services";
-import {ToolbarSnipletViewModel} from "./workspace-nextcloud-toolbar.sniplet";
-import {AxiosError, AxiosResponse} from "axios";
-import {UploadFileSnipletViewModel} from "./workspace-nextcloud-upload-file.sniplet";
-import {RootsConst} from "../../core/constants/roots.const";
-import {ViewMode} from "../../core/enums/view-mode";
+import { AxiosError, AxiosResponse } from "axios";
+import { angular, Behaviours, idiom as lang, Me, model, template, workspace } from "entcore";
+import { Subscription } from "rxjs";
+import { RootsConst } from "../../core/constants/roots.const";
+import { ViewMode } from "../../core/enums/view-mode";
+import { Draggable, SyncDocument } from "../../models";
+import { NEXTCLOUD_APP } from "../../nextcloud.behaviours";
+import { INextcloudService, nextcloudService } from "../../services";
+import { NextcloudPreference, Preference } from "../../shared/services";
+import { safeApply } from "../../utils/safe-apply.utils";
+import { ToolbarSnipletViewModel } from "./workspace-nextcloud-toolbar.sniplet";
+import { UploadFileSnipletViewModel } from "./workspace-nextcloud-upload-file.sniplet";
+import { NextcloudViewIcons } from "./workspace-nextcloud-view-icons.sniplet";
+import { NextcloudViewList } from "./workspace-nextcloud-view-list.sniplet";
 import models = workspace.v2.models;
-import {NextcloudViewList} from "./workspace-nextcloud-view-list.sniplet";
-import {NextcloudViewIcons} from "./workspace-nextcloud-view-icons.sniplet";
-import {NextcloudPreference, Preference} from "../../shared/services";
 
 
 declare let window: any;
@@ -32,6 +32,7 @@ interface IViewModel {
     getFile(document: SyncDocument): string;
 
     nextcloudUrl: string;
+    isNextcloudUrlHidden: boolean;
     draggable: Draggable;
     lockDropzone: boolean;
     parentDocument: SyncDocument;
@@ -57,6 +58,7 @@ class ViewModel implements IViewModel {
     subscriptions: Subscription = new Subscription();
 
     nextcloudUrl: string;
+    isNextcloudUrlHidden: boolean;
 
     draggable: Draggable;
     lockDropzone: boolean;
@@ -80,6 +82,15 @@ class ViewModel implements IViewModel {
         this.nextcloudUrl = null;
         this.selectedDocuments = new Array<SyncDocument>();
         this.nextcloudPreference = new Preference();
+        // fetch nextcloud url hidden state in order to hide or show the nextcloud url
+        this.isNextcloudUrlHidden = false;
+        nextcloudService.getIsNextcloudUrlHidden().then(isHidden => {
+            this.isNextcloudUrlHidden = isHidden;
+        }).catch((err: AxiosError) => {
+            const message: string = "Error while attempting to fetch nextcloud url hidden state";
+            console.error(message + err.message);
+            this.isNextcloudUrlHidden = false;
+        });
         // on init we first sync its main folder content
         Promise.all([this.initDocumentsContent(nextcloudService, scope),
             nextcloudService.getNextcloudUrl(), this.nextcloudPreference.init()])

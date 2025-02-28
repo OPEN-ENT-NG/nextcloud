@@ -10,6 +10,7 @@ public class NextcloudConfig {
     private final String ocsEndpoint;
     private final String webdavEndpoint;
     private final String quota;
+    private final Boolean isNextcloudUrlHidden;
 
     public NextcloudConfig(JsonObject config) {
         this.host = config.getString(Field.NEXTCLOUDHOST, null);
@@ -18,6 +19,7 @@ public class NextcloudConfig {
         this.ocsEndpoint = config.getJsonObject(Field.ENDPOINT, new JsonObject()).getString(Field.OCS_ENDPOINT_API, null);
         this.webdavEndpoint = config.getJsonObject(Field.ENDPOINT, new JsonObject()).getString(Field.WEBDAV_ENDPOINT_API, null);
         this.quota = config.getString(Field.QUOTA, "2 GB");
+        this.isNextcloudUrlHidden = config.getBoolean(Field.KEBAB_IS_NEXTCLOUD_URL_HIDDEN, false);
     }
 
     public String host() {
@@ -33,4 +35,6 @@ public class NextcloudConfig {
     public String webdavEndpoint() { return this.webdavEndpoint; }
 
     public String quota() { return this.quota; }
+
+    public Boolean isNextcloudUrlHidden() { return this.isNextcloudUrlHidden; }
 }

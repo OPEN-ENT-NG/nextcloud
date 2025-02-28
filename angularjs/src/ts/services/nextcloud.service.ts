@@ -1,11 +1,12 @@
-import {ng, workspace} from 'entcore'
-import http, {AxiosResponse} from 'axios';
-import {IDocumentResponse, SyncDocument} from "../models";
+import http, { AxiosResponse } from 'axios';
+import { ng, workspace } from 'entcore';
+import { IDocumentResponse, SyncDocument } from "../models";
 import models = workspace.v2.models;
 
 export interface INextcloudService {
     openNextcloudLink(document: SyncDocument, nextcloudUrl: string): void;
     getNextcloudUrl(): Promise<string>;
+    getIsNextcloudUrlHidden(): Promise<boolean>;
     listDocument(userid: string, path?: string): Promise<Array<SyncDocument>>;
     uploadDocuments(userid: string, files: Array<File>): Promise<AxiosResponse>;
     moveDocument(userid: string, path: string, destPath: string): Promise<AxiosResponse>;
@@ -28,6 +29,10 @@ export const nextcloudService: INextcloudService = {
 
     getNextcloudUrl: async (): Promise<string> => {
         return http.get(`/nextcloud/config/url`).then((res: AxiosResponse) => res.data.url);
+    },
+
+    getIsNextcloudUrlHidden: async (): Promise<boolean> => {
+        return http.get(`/nextcloud/config/isNextcloudUrlHidden`).then((res: AxiosResponse) => res.data.isNextcloudUrlHidden);
     },
 
     createFolder: async(userid: string, folderPath: String): Promise<AxiosResponse> => {

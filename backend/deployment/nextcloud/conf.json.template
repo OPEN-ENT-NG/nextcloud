@@ -25,6 +25,7 @@
             "ocs-api": "${nextcloudOCSAPI}",
             "webdav-api": "${nextcloudWebdavAPI}"
         },
-        "quota": "${nextcloudQuota}"
+        "quota": "${nextcloudQuota}",
+        "is-nextcloud-url-hidden": ${isNextcloudUrlHidden}
       }
     }

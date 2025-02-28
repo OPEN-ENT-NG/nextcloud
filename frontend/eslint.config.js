@@ -1,77 +1,49 @@
 import js from "@eslint/js";
+import importPlugin from "eslint-plugin-import";
+import reactPlugin from "eslint-plugin-react";
 import reactHooks from "eslint-plugin-react-hooks";
 import reactRefresh from "eslint-plugin-react-refresh";
 import globals from "globals";
 import tseslint from "typescript-eslint";
 
-export default tseslint.config(
+export default [
+  { ignores: ["dist", "node_modules", "coverage", "prettier.config.cjs", "scripts"] },
+  js.configs.recommended,
+  ...tseslint.configs.recommended,
   {
-    ignores: [
-      ".eslintrc.cjs",
-      "dist",
-      "node_modules",
-      "prettier.config.cjs",
-      "public",
-      "scripts",
-      "vite.config.ts",
-      "old",
-    ],
-  },
-  {
-    extends: [
-      js.configs.recommended,
-      tseslint.configs.recommended,
-      reactHooks.configs.recommended,
-      jsxA11y.configs.recommended,
-      importPlugin.configs.typescript,
-    ],
     files: ["**/*.{ts,tsx}"],
     languageOptions: {
-      ecmaversion: "latest",
-      globals: globals.browser,
-      parser: "@typescript-eslint/parser",
+      ecmaVersion: 2020,
+      sourceType: "module",
+      parser: tseslint.parser,
+      globals: {
+        ...globals.browser,
+      },
       parserOptions: {
         ecmaFeatures: {
-          jsx: false,
+          jsx: true,
         },
-        sourceType: "module",
-        project: ["./tsconfig.json"],
-        tsconfigRootDir: __dirname,
+        projectService: true,
+        tsconfigRootDir: ".",
       },
     },
     plugins: {
-      react,
       "react-hooks": reactHooks,
       "react-refresh": reactRefresh,
-      "jsx-a11y": jsxA11y,
+      react: reactPlugin,
       import: importPlugin,
     },
     rules: {
       ...reactHooks.configs.recommended.rules,
+      "react-refresh/only-export-components": [
+        "off",
+        { allowConstantExport: true },
+      ],
+      "@typescript-eslint/no-unused-vars": ["error"],
       "@typescript-eslint/no-explicit-any": "off",
       "@typescript-eslint/no-non-null-assertion": "off",
       "@typescript-eslint/ban-ts-comment": "off",
       "@typescript-eslint/ban-types": "off",
-      "react-hooks/exhaustive-deps": "off",
-      "import/order": [
-        "error",
-        {
-          groups: ["builtin", "external", "internal"],
-          pathGroups: [
-            {
-              pattern: "react",
-              group: "external",
-              position: "before",
-            },
-          ],
-          pathGroupsExcludedImportTypes: ["react"],
-          "newlines-between": "always",
-          alphabetize: {
-            order: "asc",
-            caseInsensitive: true,
-          },
-        },
-      ],
     },
     settings: {
       react: {
@@ -79,4 +51,4 @@ export default tseslint.config(
       },
     },
   },
-);
+];
