@@ -9,17 +9,17 @@ import {
   useState,
 } from "react";
 
+import { desktopConfigApi } from "~/services/api/desktopConfig.service";
 import {
-  GlobalProviderProps,
   DesktopConfig,
   GlobalProviderContextType,
+  GlobalProviderProps,
 } from "./types";
 import {
   initialDesktopConfigValues,
   processFolderPath,
   processInputValue,
 } from "./utils";
-import { desktopConfigApi } from "~/services/api/desktopConfig.service";
 
 const GlobalProviderContext = createContext<GlobalProviderContextType | null>(
   null,
