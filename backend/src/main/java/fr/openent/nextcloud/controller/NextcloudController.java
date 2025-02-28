@@ -43,4 +43,12 @@ public class NextcloudController extends ControllerHelper {
     public void getNextcloudUrl(HttpServerRequest request) {
         Renders.renderJson(request, new JsonObject().put(Field.URL, nextcloudConfigMapByHost.get(Renders.getHost(request)).host()));
     }
+
+    @Get("/config/isNextcloudUrlHidden")
+    @ApiDoc("Fetch Nextcloud url hidden status")
+    @SecuredAction(value = "", type = ActionType.RESOURCE)
+    @ResourceFilter(Access.class)
+    public void getIsNextcloudUrlHidden(HttpServerRequest request) {
+        Renders.renderJson(request, new JsonObject().put(Field.CAMEL_IS_NEXTCLOUD_URL_HIDDEN, nextcloudConfigMapByHost.get(Renders.getHost(request)).isNextcloudUrlHidden()));
+    }
 }

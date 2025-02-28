@@ -1,7 +1,7 @@
 <div id="nextcloud-content" class="sniplet nextcloud nextcloud-content">
     <div class="row">
         <!-- url connect -->
-        <div ng-if="vm.nextcloudUrl" class="cell">
+        <div ng-if="vm.nextcloudUrl && !vm.isNextcloudUrlHidden" class="cell">
             <i18n>nextcloud.url.connect</i18n> &#58; <a target="_blank" ng-href="[[vm.nextcloudUrl]]">[[vm.nextcloudUrl]]</a>
         </div>
 
