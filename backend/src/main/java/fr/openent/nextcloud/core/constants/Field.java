@@ -98,7 +98,7 @@ public class Field {
     public static final String OCS_API_REQUEST = "OCS-APIRequest";
     public static final String JSON = "json";
     public static final String FORMAT = "format";
-    public static final String IS_NEXTCLOUD_URL_HIDDEN = "is_nextcloud_url_hidden";
+    public static final String KEBAB_IS_NEXTCLOUD_URL_HIDDEN = "is-nextcloud-url-hidden";
     public static final String CAMEL_IS_NEXTCLOUD_URL_HIDDEN = "isNextcloudUrlHidden";
 
     // ProxyConf
