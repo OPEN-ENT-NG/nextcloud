@@ -26,6 +26,6 @@
             "webdav-api": "${nextcloudWebdavAPI}"
         },
         "quota": "${nextcloudQuota}",
-        "is_nextcloud_url_hidden": "${isNextcloudUrlHidden}"
+        "is_nextcloud_url_hidden": ${isNextcloudUrlHidden}
       }
     }
