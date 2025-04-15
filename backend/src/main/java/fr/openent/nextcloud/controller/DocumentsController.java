@@ -1,5 +1,6 @@
 package fr.openent.nextcloud.controller;
 
+import fr.openent.nextcloud.Nextcloud;
 import fr.openent.nextcloud.core.constants.Field;
 import fr.openent.nextcloud.helper.FileHelper;
 import fr.openent.nextcloud.helper.StringHelper;
@@ -15,9 +16,13 @@ import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.json.JsonObject;
 import org.entcore.common.controller.ControllerHelper;
+import org.entcore.common.events.EventHelper;
+import org.entcore.common.events.EventStore;
+import org.entcore.common.events.EventStoreFactory;
 import org.entcore.common.http.filter.ResourceFilter;
 import org.entcore.common.storage.Storage;
 import org.entcore.common.user.UserUtils;
+import org.entcore.common.utils.StringUtils;
 
 import java.util.List;
 
@@ -27,11 +32,16 @@ public class DocumentsController extends ControllerHelper {
     private final DocumentsService documentsService;
     private final UserService userService;
     private final Storage storage;
+    private final EventHelper eventHelper;
+    public static final String RESOURCE_DOC = "document";
+    public static final String RESOURCE_FOLDER = "folder";
 
     public DocumentsController(ServiceFactory serviceFactory) {
         this.documentsService = serviceFactory.documentsService();
         this.userService = serviceFactory.userService();
         this.storage = serviceFactory.storage();
+        final EventStore eventStore = EventStoreFactory.getFactory().getEventStore(Nextcloud.class.getSimpleName());
+        this.eventHelper = new EventHelper(eventStore);
     }
 
     @Get("/files/user/:userid")
@@ -39,11 +49,14 @@ public class DocumentsController extends ControllerHelper {
     @SecuredAction(value = "", type = ActionType.RESOURCE)
     @ResourceFilter(OwnerFilter.class)
     public void listFiles(HttpServerRequest request) {
-        String path = request.getParam(Field.PATH);
+        final String path = request.getParam(Field.PATH);
         UserUtils.getUserInfos(eb, request, user ->
                 userService.getUserSession(user.getUserId())
                         .compose(userSession -> documentsService.listFiles(Renders.getHost(request), userSession, path))
-                        .onSuccess(files -> renderJson(request, new JsonObject().put(Field.DATA, files)))
+                        .onSuccess(files -> {
+                            renderJson(request, new JsonObject().put(Field.DATA, files));
+                            if (StringUtils.isEmpty(path)) eventHelper.onAccess(request);
+                        })
                         .onFailure(err -> renderError(request)));
     }
 
@@ -171,7 +184,10 @@ public class DocumentsController extends ControllerHelper {
                             return FileHelper.uploadMultipleFiles(Field.FILECOUNT, request, storage, vertx)
                                     .compose(files -> documentsService.uploadFiles(Renders.getHost(request), userSession, files, path));
                         })
-                        .onSuccess(res -> renderJson(request, res))
+                        .onSuccess(res -> {
+                            renderJson(request, res);
+                            eventHelper.onCreateResource(request, RESOURCE_DOC);
+                        })
                         .onFailure(err -> renderError(request, new JsonObject().put(Field.ERROR, err.getMessage()))));
 
     }
@@ -221,7 +237,10 @@ public class DocumentsController extends ControllerHelper {
             UserUtils.getUserInfos(eb, request, user ->
                     userService.getUserSession(user.getUserId())
                             .compose(userSession -> documentsService.moveDocumentsFromWorkspaceToNC(Renders.getHost(request), userSession, user, listFiles, parentId))
-                            .onSuccess(res -> renderJson(request, res))
+                            .onSuccess(res -> {
+                                renderJson(request, res);
+                                eventHelper.onCreateResource(request, RESOURCE_DOC);
+                            })
                             .onFailure(err -> renderError(request, new JsonObject().put(Field.ERROR, err.getMessage()))));
         else
             badRequest(request);
@@ -254,7 +273,10 @@ public class DocumentsController extends ControllerHelper {
             UserUtils.getUserInfos(eb, request, user ->
                     userService.getUserSession(user.getUserId())
                             .compose(userSession -> documentsService.createFolderNextcloud(Renders.getHost(request), userSession, path))
-                            .onSuccess(res -> renderJson(request, res))
+                            .onSuccess(res -> {
+                                renderJson(request, res);
+                                eventHelper.onCreateResource(request, RESOURCE_FOLDER);
+                            })
                             .onFailure(err -> renderError(request, new JsonObject().put(Field.ERROR, err.getMessage()))));
         else
             badRequest(request);
