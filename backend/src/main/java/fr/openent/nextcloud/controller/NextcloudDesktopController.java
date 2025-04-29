@@ -61,12 +61,7 @@ public class NextcloudDesktopController extends ControllerHelper {
                 Renders.renderJson(request, new JsonObject().put("error", "Invalid configuration"), 500);
                 return;
             }
-            JsonObject result = new JsonObject()
-                .put(Field.DOWNLOADLIMIT, config.getInteger(Field.DOWNLOADLIMIT))
-                .put(Field.UPLOADLIMIT, config.getInteger(Field.UPLOADLIMIT))
-                .put(Field.SYNCFOLDER, config.getString(Field.SYNCFOLDER))
-                .put(Field.EXCLUDEDEXTENSIONS, config.getJsonArray(Field.EXCLUDEDEXTENSIONS));
-            Renders.renderJson(request, result);
+            Renders.renderJson(request, config);
         }));
     }
 
