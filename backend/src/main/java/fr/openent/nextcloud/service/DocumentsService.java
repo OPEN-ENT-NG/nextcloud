@@ -79,6 +79,14 @@ public interface DocumentsService {
     Future<JsonObject> moveDocument(String host, UserNextcloud.TokenProvider userSession, String path, String destPath);
 
     /**
+     * method that list files in trash
+     * 
+     * @param host        host
+     * @param userSession User Session {@link UserNextcloud.TokenProvider}
+     */
+    Future<JsonArray> listTrash(String host, UserNextcloud.TokenProvider userSession);
+
+    /**
      * method that delete trash
      * @param host host
      * @param   userSession     User Session {@link UserNextcloud.TokenProvider}
@@ -94,6 +102,26 @@ public interface DocumentsService {
          * @param paths         list of paths / documents to delete
          */
     Future<JsonObject> deleteDocuments(String host, UserNextcloud.TokenProvider userSession, List<String> paths);
+
+    /**
+     * delete documents from trashbin
+     * 
+     * @param host        host
+     * @param userSession User Session {@link UserNextcloud.TokenProvider}
+     * @param paths       list of paths / documents to delete from trashbin
+     * @return
+     */
+    Future<JsonObject> deleteDocumentsFromTrashbin(String host, UserNextcloud.TokenProvider userSession, List<String> paths);
+
+    /**
+     * Restore documents from trash
+     * 
+     * @param host        host
+     * @param userSession User Session {@link UserNextcloud.TokenProvider}
+     * @param paths       list of paths / documents to restore
+     * @return
+     */
+    Future<Void> restoreDocuments(String host, UserNextcloud.TokenProvider userSession, List<String> paths);
 
     /**
      * upload file

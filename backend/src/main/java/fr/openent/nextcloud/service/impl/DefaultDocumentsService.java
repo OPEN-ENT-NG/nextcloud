@@ -3,13 +3,13 @@ import fr.openent.nextcloud.config.NextcloudConfig;
 import fr.openent.nextcloud.core.constants.Field;
 
 import fr.openent.nextcloud.core.enums.WorkspaceEventBusActions;
-import fr.openent.nextcloud.core.enums.NextcloudHttpMethod;
 import fr.openent.nextcloud.core.enums.XmlnsAttr;
 import fr.openent.nextcloud.helper.*;
 import fr.openent.nextcloud.model.Document;
 import fr.openent.nextcloud.model.NextcloudFolder;
 import fr.openent.nextcloud.model.UserNextcloud;
 import fr.openent.nextcloud.model.XmlnsOptions;
+import fr.openent.nextcloud.model.UserNextcloud.TokenProvider;
 import fr.openent.nextcloud.service.DocumentsService;
 import fr.openent.nextcloud.service.ServiceFactory;
 
@@ -32,6 +32,7 @@ import org.entcore.common.storage.Storage;
 import org.entcore.common.user.UserInfos;
 
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -307,6 +308,232 @@ public class DefaultDocumentsService implements DocumentsService {
                 .basicAuthentication(userSession.userId(), userSession.token())
                 .send(responseAsync -> onDeleteDocumentHandler(responseAsync, promise));
         return promise.future();
+    }
+
+    @Override
+    public Future<JsonObject> deleteDocumentsFromTrashbin(String host, TokenProvider userSession, List<String> paths) {
+        Promise<JsonObject> promise = Promise.promise();
+
+        Future<Void> current = Future.succeededFuture();
+
+        for (String path : paths) {
+            current = current
+                    .compose(v -> this.deleteDocumentsFromTrashbin(host, userSession, path));
+        }
+        current
+                .onSuccess(res -> promise.complete(new JsonObject().put(Field.STATUS, Field.OK)))
+                .onFailure(err -> {
+                    String messageToFormat = "[Nextcloud@%s::deleteDocumentsFromTrashbin] An error has occurred during deleting document(s) from trashbin: %s";
+                    PromiseHelper.reject(log, messageToFormat, this.getClass().getSimpleName(), err, promise);
+                });
+        return promise.future();
+    }
+
+    private Future<Void> deleteDocumentsFromTrashbin(String host, TokenProvider userSession, String path) {
+        Promise<Void> promise = Promise.promise();
+        final NextcloudConfig nextcloudConfig = this.nextcloudConfigMapByHost.get(host);
+        String url = nextcloudConfig.host() + nextcloudConfig.webdavEndpoint().replace(Field.FILES, "") + Field.TRASHBIN
+                + "/" + userSession.userId() + "/" + path;
+        this.client.deleteAbs(url)
+                .basicAuthentication(userSession.userId(), userSession.token())
+                .send(responseAsync -> onDeleteDocumentHandler(responseAsync, promise));
+        return promise.future();
+    }
+
+    /**
+     * Restore documents from trash
+     * 
+     * @param host        host
+     * @param userSession User Session {@link UserNextcloud.TokenProvider}
+     * @param paths       list of paths / documents to restore
+     * @return
+     */
+    @Override
+    public Future<Void> restoreDocuments(String host, UserNextcloud.TokenProvider userSession, List<String> paths) {
+        Promise<Void> promise = Promise.promise();
+
+        final NextcloudConfig nextcloudConfig = this.nextcloudConfigMapByHost.get(host);
+
+        if (host == null || nextcloudConfig == null || userSession == null
+                || userSession.userId() == null || userSession.token() == null) {
+            String messageToFormat = "[Nextcloud@%s::restoreDocuments] Invalid input parameters.";
+            PromiseHelper.reject(log, messageToFormat, this.getClass().getSimpleName(),
+                    new Exception("Invalid input parameters."), promise);
+            return promise.future();
+        }
+
+        if (paths == null || paths.isEmpty()) {
+            String messageToFormat = "[Nextcloud@%s::restoreDocuments] No paths provided to restore.";
+            PromiseHelper.reject(log, messageToFormat, this.getClass().getSimpleName(),
+                    new Exception("No paths provided to restore."), promise);
+            return promise.future();
+        }
+
+        String baseUrl = nextcloudConfig.host();
+        String userId = userSession.userId();
+        String authToken = userSession.token();
+
+        List<Future<Void>> operations = new ArrayList<>();
+
+        for (String trashPath : paths) {
+            String filename = trashPath.substring(trashPath.lastIndexOf("/") + 1);
+            String sourceUrl = baseUrl + "remote.php/dav/trashbin/" + userId + trashPath;
+            String destinationUrl = baseUrl + "remote.php/dav/trashbin/" + userId + "/restore/" + filename;
+
+            Promise<Void> operationPromise = Promise.promise();
+
+            this.client.requestAbs(HttpMethod.MOVE, sourceUrl)
+                    .putHeader("Destination", destinationUrl)
+                    .basicAuthentication(userId, authToken)
+                    .send(ar -> {
+                        if (ar.failed()) {
+                            String messageToFormat = "[Nextcloud@%s::restoreDocuments] Failed to restore document from: %s -> %s";
+                            log.error(messageToFormat, this.getClass().getSimpleName(), sourceUrl, destinationUrl,
+                                    ar.cause());
+                            operationPromise.fail(ar.cause());
+                        } else {
+                            HttpResponse<Buffer> response = ar.result();
+                            if (response.statusCode() >= 200 && response.statusCode() < 300) {
+                                log.debug("[Nextcloud@{}::restoreDocuments] Successfully restored from trash: {}",
+                                        this.getClass().getSimpleName(), trashPath);
+                                operationPromise.complete();
+                            } else {
+                                String error = String.format("Restore failed (%d): %s", response.statusCode(),
+                                        response.statusMessage());
+                                log.error("[Nextcloud@{}::restoreDocuments] {}", this.getClass().getSimpleName(),
+                                        error);
+                                operationPromise.fail(error);
+                            }
+                        }
+                    });
+
+            operations.add(operationPromise.future());
+        }
+
+        Future.all(operations)
+                .onSuccess(v -> promise.complete())
+                .onFailure(err -> {
+                    String messageToFormat = "[Nextcloud@%s::restoreDocuments] One or more restore operations failed";
+                    PromiseHelper.reject(log, messageToFormat, this.getClass().getSimpleName(), err, promise);
+                });
+
+        return promise.future();
+    }
+
+
+    /**
+     * List files in the Nextcloud trash
+     *
+     * @param host        host
+     * @param userSession User Session {@link UserNextcloud.TokenProvider}
+     * @return Future with a JsonArray of trash entries
+     */
+    @Override
+    public Future<JsonArray> listTrash(String host, UserNextcloud.TokenProvider userSession) {
+        Promise<JsonArray> promise = Promise.promise();
+        final NextcloudConfig nextcloudConfig = this.nextcloudConfigMapByHost.get(host);
+
+        if (host == null
+                || nextcloudConfig == null
+                || userSession == null
+                || userSession.userId() == null
+                || userSession.token() == null) {
+            String messageToFormat = "[Nextcloud@%s::listTrash] Invalid input parameters.";
+            PromiseHelper.reject(log, messageToFormat, this.getClass().getSimpleName(),
+                    new Exception("Invalid input parameters."), promise);
+            return promise.future();
+        }
+
+        String url = nextcloudConfig.host() + "remote.php/dav/" + Field.TRASHBIN + "/" +
+                userSession.userId() + "/" + Field.TRASH;
+
+        this.client
+                .requestAbs(HttpMethod.PROPFIND, url)
+                .basicAuthentication(userSession.userId(), userSession.token())
+                .send(responseAsync -> {
+                    if (responseAsync.failed()) {
+                        String messageToFormat = "[Nextcloud@%s::listTrash] An error has occurred during PROPFIND : %s";
+                        PromiseHelper.reject(log, messageToFormat, this.getClass().getSimpleName(), responseAsync,
+                                promise);
+                        return;
+                    }
+
+                    HttpResponse<Buffer> response = responseAsync.result();
+                    if (response.statusCode() != 207) {
+                        String messageToFormat = "[Nextcloud@%s::listTrash] Response status is not 207 Multi-Status : %s : %s";
+                        HttpResponseHelper.reject(log, messageToFormat, this.getClass().getSimpleName(), response,
+                                promise);
+                        return;
+                    }
+
+                    try {
+                        JsonObject xml = XMLHelper.toJsonObject(response.bodyAsString());
+                        JsonArray entries = getResultMultiStatus(xml);
+                        JsonArray result = parseTrashEntries(entries);
+                        promise.complete(result);
+                    } catch (Exception e) {
+                        String messageToFormat = "[Nextcloud@%s::listTrash] Failed to parse response : %s";
+                        PromiseHelper.reject(log, messageToFormat, this.getClass().getSimpleName(), e, promise);
+                    }
+                });
+
+        return promise.future();
+    }
+
+    /**
+     * Parse trash entries from Nextcloud PROPFIND response
+     *
+     * @param entries JsonArray of entries
+     * @return JsonArray of parsed trash documents
+     */
+    private JsonArray parseTrashEntries(JsonArray entries) {
+        JsonArray result = new JsonArray();
+
+        for (int i = 0; i < entries.size(); i++) {
+            try {
+                JsonObject entry = entries.getJsonObject(i);
+                JsonObject propstat = entry.getJsonObject(Field.D_PROPSTAT);
+                if (propstat == null)
+                    continue;
+
+                JsonObject prop = propstat.getJsonObject(Field.D_PROP);
+                if (prop == null)
+                    continue;
+
+                String href = entry.getString(Field.D_HREF);
+                if (href == null || href.endsWith("/trash/"))
+                    continue;
+
+                if (href.endsWith("/")) {
+                    href = href.substring(0, href.length() - 1);
+                }
+
+                String name = href.substring(href.lastIndexOf("/") + 1).replaceFirst("\\.d\\d+$", "");
+
+                boolean isFolder = prop.containsKey(Field.D_RESOURCETYPE)
+                        && prop.getValue(Field.D_RESOURCETYPE) instanceof JsonObject
+                        && prop.getJsonObject(Field.D_RESOURCETYPE).containsKey(Field.D_COLLECTION);
+
+                JsonObject doc = new JsonObject()
+                        .put(Field.PATH, href)
+                        .put(Field.DISPLAYNAME, name)
+                        .put(Field.ISFOLDER, isFolder)
+                        .put(Field.OC_OWNER_DISPLAY_NAME, prop.getString(Field.OC_OWNER_DISPLAY_NAME, ""))
+                        .put(Field.SIZE, prop.getLong(Field.D_GETCONTENTLENGTH, 0L))
+                        .put(Field.D_GETLASTMODIFIED, prop.getString(Field.D_GETLASTMODIFIED, ""))
+                        .put(Field.D_GETETAG, prop.getString(Field.D_GETETAG, ""))
+                        .put(Field.D_GETCONTENTTYPE, prop.getString(Field.D_GETCONTENTTYPE, ""))
+                        .put(Field.FILEID, prop.getString(Field.FILEID, ""));
+
+                result.add(doc);
+            } catch (Exception e) {
+                String messageToFormat = "[Nextcloud@%s::parseTrashEntries] Error while parsing trash entry : %s";
+                log.error(String.format(messageToFormat, this.getClass().getSimpleName(),
+                        entries.getJsonObject(i).encode()), e);
+            }
+        }
+
+        return result;
     }
 
     /**

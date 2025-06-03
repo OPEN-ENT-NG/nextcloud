@@ -118,6 +118,7 @@ public class Field {
     public static final String D_GETETAG = "d:getetag";
     public static final String D_GETCONTENTTYPE = "d:getcontenttype";
     public static final String D_RESOURCETYPE = "d:resourcetype";
+    public static final String D_COLLECTION = "d:collection";
     public static final String OC_FILEID = "oc:fileid";
     public static final String OC_PERMISSIONS = "oc:permissions";
     public static final String OC_SIZE = "oc:size";
