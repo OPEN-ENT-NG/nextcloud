@@ -158,6 +158,57 @@ public class DocumentsController extends ControllerHelper {
         }
     }
 
+    @Delete("/files/user/:userid/trash/delete-documents")
+    @ApiDoc("Delete documents from trash")
+    @SecuredAction(value = "", type = ActionType.RESOURCE)
+    @ResourceFilter(OwnerFilter.class)
+    public void deleteDocumentsFromTrashbin(HttpServerRequest request) {
+        List<String> paths = request.params().getAll(Field.PATH);
+        if ((paths != null && !paths.isEmpty())) {
+            UserUtils.getUserInfos(eb, request, user -> userService.getUserSession(user.getUserId())
+                    .compose(userSession -> documentsService.deleteDocumentsFromTrashbin(Renders.getHost(request),
+                            userSession, paths))
+                    .onSuccess(res -> renderJson(request, res))
+                    .onFailure(err -> renderError(request, new JsonObject().put(Field.MESSAGE, err.getMessage()))));
+        } else {
+            badRequest(request);
+        }
+    }
+
+    @Put("/files/user/:userid/restore")
+    @ApiDoc("Restore documents from trash")
+    @SecuredAction(value = "", type = ActionType.RESOURCE)
+    @ResourceFilter(OwnerFilter.class)
+    public void restoreDocuments(HttpServerRequest request) {
+        List<String> paths = request.params().getAll(Field.PATH);
+        if ((paths != null && !paths.isEmpty())) {
+            UserUtils.getUserInfos(
+                    eb,
+                    request,
+                    user -> userService
+                            .getUserSession(user.getUserId())
+                            .compose(userSession -> documentsService.restoreDocuments(Renders.getHost(request),
+                                    userSession,
+                                    paths))
+                            .onSuccess(res -> renderJson(request, new JsonObject().put(Field.STATUS, Field.OK)))
+                            .onFailure(err -> renderError(request,
+                                    new JsonObject().put(Field.MESSAGE, err.getMessage()))));
+        } else {
+            badRequest(request);
+        }
+    }
+
+    @Get("/files/user/:userid/trash")
+    @ApiDoc("API to list trash files")
+    @SecuredAction(value = "", type = ActionType.RESOURCE)
+    @ResourceFilter(OwnerFilter.class)
+    public void listTrash(HttpServerRequest request) {
+        UserUtils.getUserInfos(eb, request, user -> userService.getUserSession(user.getUserId())
+                .compose(userSession -> documentsService.listTrash(Renders.getHost(request), userSession))
+                .onSuccess(res -> renderJson(request, res))
+                .onFailure(err -> renderError(request, new JsonObject().put(Field.MESSAGE, err.getMessage()))));
+    }
+
     @Delete("/files/user/:userid/trash/delete")
     @ApiDoc("delete trash API")
     @SecuredAction(value = "", type = ActionType.RESOURCE)
