@@ -52,7 +52,7 @@
   },
   "resolutions": {
     "graceful-fs": "^4.2.11",
-    "yargs-parser": "21.1.1"
+    "yargs-parser": "^20.2.9"
   },
   "packageManager": "yarn@1.22.19",
   "engines": {
