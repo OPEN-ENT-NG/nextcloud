@@ -105,7 +105,7 @@ public class DocumentServiceTest {
 
         Mockito.doNothing().when(httpRequest).sendBuffer(Mockito.any(), Mockito.any());
         Mockito.doNothing().when(this.storage).removeFile(Mockito.anyString(), Mockito.any());
-        this.documentService.uploadFile(host, userSession, new Attachment("id", new Metadata(new JsonObject().put(Field.FILENAMELOWER, "filename"))), null);
+        this.documentService.uploadFile(host, userSession, new Attachment("id", new Metadata(new JsonObject().put(Field.FILENAMELOWER, "filename"))), null, Boolean.TRUE);
 
         async.awaitSuccess(10000);
     }

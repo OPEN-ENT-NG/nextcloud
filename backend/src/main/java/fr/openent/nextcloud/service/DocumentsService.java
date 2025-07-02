@@ -126,11 +126,12 @@ public interface DocumentsService {
     /**
      * upload file
      *  @param host host
-     *  @param user         User session token
-     *  @param file         Data about the file to upload
-     *  @param path         Path where files will be uploaded on the nextcloud
+     *  @param user              User session token
+     *  @param file              Data about the file to upload
+     *  @param path              Path where files will be uploaded on the nextcloud
+     *  @param deleteFromStorage Delete file from local storage
      */
-    Future<JsonObject> uploadFile(String host, UserNextcloud.TokenProvider user, Attachment file, String path);
+    Future<JsonObject> uploadFile(String host, UserNextcloud.TokenProvider user, Attachment file, String path,  Boolean deleteFromStorage);
 
     /**
      * upload files
