@@ -589,7 +589,7 @@ public class DefaultDocumentsService implements DocumentsService {
                 if (res != null) {
                     stateUploadedFiles.add(res);
                 }
-                return this.uploadFile(host, userSession, file, path);
+                return this.uploadFile(host, userSession, file, path, Boolean.TRUE);
             });
         }
         current
@@ -989,12 +989,13 @@ public class DefaultDocumentsService implements DocumentsService {
     /**
      * upload file
      *  @param host host
-     *  @param user         User session token
-     *  @param file         Data about the file to upload
-     *  @param path         Path where files will be uploaded on the nextcloud
+     *  @param user              User session token
+     *  @param file              Data about the file to upload
+     *  @param path              Path where files will be uploaded on the nextcloud
+     *  @param deleteFromStorage Delete file from local storage after upload
      */
     @Override
-    public Future<JsonObject> uploadFile(String host, UserNextcloud.TokenProvider user, Attachment file, String path) {
+    public Future<JsonObject> uploadFile(String host, UserNextcloud.TokenProvider user, Attachment file, String path, Boolean deleteFromStorage) {
         //Final path on the nextcloud server
         String finalPath = (path != null ? path + "/" : "" ) + file.metadata().filename();
         Promise<JsonObject> promise = Promise.promise();
@@ -1016,7 +1017,8 @@ public class DefaultDocumentsService implements DocumentsService {
                                                 .put(Field.STATUSCODE, responseAsync.result().statusCode()));
                                     }
                                 }));
-                    storage.removeFile(file.id(), e -> {});
+                    if (Boolean.TRUE.equals(deleteFromStorage))
+                        storage.removeFile(file.id(), e -> {});
                 })
                 .onFailure(err -> {
                     promise.complete(new JsonObject().put(Field.ERROR, err));
