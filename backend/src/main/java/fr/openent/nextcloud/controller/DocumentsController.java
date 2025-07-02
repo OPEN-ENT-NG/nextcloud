@@ -2,7 +2,9 @@ package fr.openent.nextcloud.controller;
 
 import fr.openent.nextcloud.Nextcloud;
 import fr.openent.nextcloud.core.constants.Field;
+import fr.openent.nextcloud.helper.Attachment;
 import fr.openent.nextcloud.helper.FileHelper;
+import fr.openent.nextcloud.helper.Metadata;
 import fr.openent.nextcloud.helper.StringHelper;
 import fr.openent.nextcloud.security.OwnerFilter;
 import fr.openent.nextcloud.service.DocumentsService;
@@ -12,6 +14,8 @@ import fr.wseduc.rs.*;
 import fr.wseduc.security.ActionType;
 import fr.wseduc.security.SecuredAction;
 import fr.wseduc.webutils.http.Renders;
+import io.vertx.core.eventbus.EventBus;
+import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.json.JsonObject;
@@ -35,6 +39,7 @@ public class DocumentsController extends ControllerHelper {
     private final EventHelper eventHelper;
     public static final String RESOURCE_DOC = "document";
     public static final String RESOURCE_FOLDER = "folder";
+    private final EventBus eventBus;
 
     public DocumentsController(ServiceFactory serviceFactory) {
         this.documentsService = serviceFactory.documentsService();
@@ -42,6 +47,9 @@ public class DocumentsController extends ControllerHelper {
         this.storage = serviceFactory.storage();
         final EventStore eventStore = EventStoreFactory.getFactory().getEventStore(Nextcloud.class.getSimpleName());
         this.eventHelper = new EventHelper(eventStore);
+        this.eventBus = serviceFactory.eventBus();
+
+        initializeEventBusConsumers();
     }
 
     @Get("/files/user/:userid")
@@ -333,4 +341,39 @@ public class DocumentsController extends ControllerHelper {
             badRequest(request);
     }
 
+    private void initializeEventBusConsumers() {
+        MessageConsumer<JsonObject> nextcloudRackEventConsumer = eventBus.consumer("nextcloud.rack.upload");
+
+        nextcloudRackEventConsumer.handler(message -> {
+            JsonObject body = message.body();
+
+            String fileId = body.getString("fileId");
+            JsonObject metadata = body.getJsonObject("metadata");
+            String recipientUserId = body.getString("recipientId");
+
+            Attachment attachment = new Attachment(fileId, new Metadata(metadata));
+
+            userService.getUserSession(recipientUserId)
+                    .compose(userSession -> documentsService.listFiles("localhost:8090", userSession, "CASIER")
+                            .compose(files -> {
+                                if (files.isEmpty()) {
+                                    // Folder does not exist, create it
+                                    return documentsService.createFolderNextcloud("localhost:8090", userSession,
+                                            "CASIER");
+                                } else {
+                                    return io.vertx.core.Future.succeededFuture(new io.vertx.core.json.JsonObject());
+                                }
+                            })
+                            .compose(result -> documentsService.uploadFile(
+                                    "localhost:8090", userSession, attachment, "CASIER")))
+                    .onSuccess(result -> {
+                        message.reply(new JsonObject()
+                                .put(Field.STATUS, Field.OK)
+                                .put(Field.MESSAGE, "Upload succeeded"));
+                    })
+                    .onFailure(err -> {
+                        message.fail(500, "Upload failed: " + err.getMessage());
+                    });
+        });
+    }
 }
