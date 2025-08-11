@@ -6,7 +6,7 @@ Online document space management service for ENT synchronized on different devic
 
 - Licence : [AGPL v3](http://www.gnu.org/licenses/agpl.txt) - Copyright Région Normandie, CGI
 - Financer : Région Normandie, CGI
-- Developer : CGI
+- Developer : CGI, Edifice
 - Description : Online document space management service for ENT synchronized on different devices using Nextcloud service.
 
 ## Configuration
