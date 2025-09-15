@@ -7,6 +7,7 @@ import fr.openent.nextcloud.controller.UserController;
 import fr.openent.nextcloud.controller.NextcloudDesktopController;
 import fr.openent.nextcloud.service.ServiceFactory;
 import fr.wseduc.mongodb.MongoDb;
+import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.client.WebClient;
@@ -27,7 +28,14 @@ public class Nextcloud extends BaseServer {
 
 	@Override
 	public void start(Promise<Void> startPromise) throws Exception {
-		super.start(startPromise);
+    final Promise<Void> promise = Promise.promise();
+    super.start(promise);
+    promise.future()
+      .compose(e -> this.initNextcloud())
+      .onComplete(startPromise);
+  }
+
+  public Future<Void> initNextcloud() {
 		final Map<String, NextcloudConfig> nextcloudConfigMapByHost = new HashMap<>();
 		if (config.containsKey("nextcloud-providers")) {
 			final JsonObject nexcloudProviders = config.getJsonObject("nextcloud-providers", new JsonObject());
@@ -40,20 +48,19 @@ public class Nextcloud extends BaseServer {
 			nextcloudConfigMapByHost.put(host, nextcloudConfig);
 		}
 
+		return StorageFactory.build(vertx, config)
+      .compose(storageFactory -> {
+        final Storage storage = storageFactory.getStorage();
 
+        ServiceFactory serviceFactory = new ServiceFactory(vertx, storage, Neo4j.getInstance(), Sql.getInstance(),
+          MongoDb.getInstance(), initWebClient(), nextcloudConfigMapByHost);
 
-		Storage storage = new StorageFactory(vertx, config).getStorage();
-
-		ServiceFactory serviceFactory = new ServiceFactory(vertx, storage, Neo4j.getInstance(), Sql.getInstance(),
-				MongoDb.getInstance(), initWebClient(), nextcloudConfigMapByHost);
-
-		addController(new NextcloudController(serviceFactory));
-		addController(new UserController(serviceFactory));
-		addController(new DocumentsController(serviceFactory));
-		addController(new NextcloudDesktopController(serviceFactory));
-
-        startPromise.tryComplete();
-		startPromise.tryFail("[NextCloud@NextCloud::start] Fail to start NextCloud");
+        addController(new NextcloudController(serviceFactory));
+        addController(new UserController(serviceFactory));
+        addController(new DocumentsController(serviceFactory));
+        addController(new NextcloudDesktopController(serviceFactory));
+        return Future.succeededFuture();
+      });
 	}
 
 	private WebClient initWebClient() {
