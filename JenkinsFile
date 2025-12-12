@@ -43,7 +43,7 @@ pipeline {
           sh 'cp -R ../angularjs/src/template/* ./src/main/resources/public/template'
           // sh 'cp -R ../angularjs/src/img/* ./src/main/resources/public/img'
           // sh 'cp -R ../frontend/public/* ./src/main/resources/public'
-          sh 'chmod +x build.sh && ./build.sh clean build publish'
+          sh 'chmod +x build.sh && ./build.sh init clean build publish'
           sh 'rm -rf ../frontend/dist'
           sh 'rm -rf ../angularjs/src/js'
           sh 'rm -rf ../angularjs/src/view'
