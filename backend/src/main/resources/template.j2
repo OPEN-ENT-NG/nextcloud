@@ -1,0 +1,36 @@
+{
+  "name": "fr.openent~nextcloud",
+  "config": {
+    "main" : "fr.openent.nextcloud.Nextcloud",
+    "port" : 8060,
+    "app-name" : "Nextcloud",
+  	"app-address" : "/nextcloud",
+  	"app-icon" : "Nextcloud-large",
+  	"sql": true,
+  	"db-schema" : "nextcloud",
+    "host": "https://{{ host }}",
+    "ssl" : true,
+    {% if overrideTheme %} "override-theme": {{ override2d }}, {% endif %}
+    "auto-redeploy": false,
+    "userbook-host": "https://{{ host }}",
+    "integration-mode": "{{ integration_mode|default('HTTP') }}",
+    "app-registry.port" : 8012,
+    "mode" : "prod",
+    {% if (nextcloudHost is defined) %}
+      "quota": "{{ nextcloudQuota | default('2 GB') }}",
+      "is-nextcloud-url-hidden": {{ nexcloudHideUrl | default('false') }},
+      "admin-credential" : {
+        "username": "{{ nextcloudUsername }}",
+        "password": "{{ nextcloudPassword }}"
+      },
+      "nextcloud-host": "{{ nextcloudHost }}",
+      "endpoint" : {
+        "ocs-api": "{{ nextcloudOCSAPI | default('/ocs/v1.php') }}",
+        "webdav-api": "{{ nextcloudWebdavAPI | default('/remote.php/dav/files') }}"
+      },
+    {% else %}
+      "nextcloud-providers": {{ nextcloudProviders }},
+    {% endif %}
+    "entcore.port" : 8009
+  }
+}
