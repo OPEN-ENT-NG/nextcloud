@@ -154,6 +154,7 @@ public class Field {
     public static final String UPLOADLIMIT = "uploadLimit";
     public static final String SYNCFOLDER = "syncFolder";
     public static final String EXCLUDEDEXTENSIONS = "excludedExtensions";
+    public static final String STAT_COLLECTION = "nextcloud_stat";
 
     private Field() {
         throw new IllegalStateException("Utility class");
