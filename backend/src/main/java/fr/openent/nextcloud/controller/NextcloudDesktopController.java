@@ -7,6 +7,7 @@ import fr.openent.nextcloud.service.ServiceFactory;
 import fr.openent.nextcloud.model.DesktopConfig;
 import fr.wseduc.rs.ApiDoc;
 import fr.wseduc.rs.Get;
+import fr.wseduc.rs.Post;
 import fr.wseduc.rs.Put;
 import fr.wseduc.mongodb.MongoDb;
 import fr.wseduc.security.ActionType;
@@ -95,6 +96,40 @@ public class NextcloudDesktopController extends ControllerHelper {
                 }
 
                 Renders.renderJson(request, new JsonObject().put("message", "Configuration saved"));
+            }));
+        });
+    }
+
+    @Post("/desktop/stat")
+    @ApiDoc("Add stat from desktop client")
+    @SecuredAction(value="", type=ActionType.RESOURCE)
+    @ResourceFilter(AdminDesktop.class)
+    public void postStat(HttpServerRequest request) {
+        request.bodyHandler(body -> {
+            JsonObject stat;
+            try {
+                stat = body.toJsonObject();
+            } catch (Exception e) {
+                Renders.renderJson(request, new JsonObject().put("error", "Invalid JSON format"), 400);
+                return;
+            }
+
+            if (!stat.containsKey("category") || !stat.containsKey("user") ) {
+                Renders.renderJson(request, new JsonObject().put("error", "Invalid configuration"), 400);
+                return;
+            }
+
+            JsonObject query = stat;
+            query.put("created", MongoDb.now());
+
+            // true is for upsert, false is for multi
+            serviceFactory.mongoDb().insert(Field.STAT_COLLECTION, query, MongoDbResult.validResultHandler(event -> {
+                if (event.isLeft()) {
+                    Renders.renderError(request, new JsonObject().put("error", "Failed to save stat"));
+                    return;
+                }
+
+                Renders.renderJson(request, new JsonObject().put("message", "Stat saved"));
             }));
         });
     }
