@@ -4,7 +4,6 @@ import fr.openent.nextcloud.core.constants.Field;
 import fr.openent.nextcloud.core.constants.WorkflowRight;
 import fr.openent.nextcloud.security.AdminDesktop;
 import fr.openent.nextcloud.service.ServiceFactory;
-import fr.openent.nextcloud.model.DesktopConfig;
 import fr.wseduc.rs.ApiDoc;
 import fr.wseduc.rs.Get;
 import fr.wseduc.rs.Post;
@@ -17,12 +16,8 @@ import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.JsonArray;
 import org.entcore.common.controller.ControllerHelper;
-import org.entcore.common.events.EventStore;
-import org.entcore.common.events.EventStoreFactory;
 import org.entcore.common.http.filter.ResourceFilter;
 import org.entcore.common.mongodb.MongoDbResult;
-
-import java.util.Map;
 
 public class NextcloudDesktopController extends ControllerHelper {
 
@@ -87,6 +82,7 @@ public class NextcloudDesktopController extends ControllerHelper {
             }
 
             JsonObject query = new JsonObject().put(Field._ID, Field.UNIQUEID);
+            config.remove(Field._ID);
             JsonObject update = new JsonObject().put("$set", config);
             // true is for upsert, false is for multi
             serviceFactory.mongoDb().update(Field.CONFIG, query, update, true, false, MongoDbResult.validResultHandler(event -> {
