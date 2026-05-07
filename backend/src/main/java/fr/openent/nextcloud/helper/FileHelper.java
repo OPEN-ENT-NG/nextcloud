@@ -49,6 +49,7 @@ public class FileHelper {
      * @return list of {@link Attachment} (and all your files will be uploaded)
      * (process will continue in background to stream all these files in your storage)
      */
+    @Deprecated
     public static Future<List<Attachment>> uploadMultipleFiles(String headerCount, HttpServerRequest request, Storage storage,
                                                                Vertx vertx) {
         request.response().setChunked(true);
@@ -116,6 +117,7 @@ public class FileHelper {
         return promise.future();
     }
 
+    @Deprecated
     private static Future<String> makeFolder(Storage storage, Vertx vertx, List<String> fileIds, int i) {
         Promise<String> promise = Promise.promise();
         String path = " ";
@@ -137,6 +139,7 @@ public class FileHelper {
         return promise.future();
     }
 
+    @Deprecated
     private static void mkdirsIfNotExists(FileSystem fileSystem, String path, final Handler<AsyncResult<Void>> handler) {
         final String dir = org.entcore.common.utils.FileUtils.getParentPath(path);
         fileSystem.exists(dir, event -> {
@@ -152,6 +155,7 @@ public class FileHelper {
         });
     }
 
+    @Deprecated
     private static String getFilePath(String file, final String bucket) throws FileNotFoundException {
         if (isNotEmpty(file)) {
             final int startIdx = file.lastIndexOf(File.separatorChar) + 1;

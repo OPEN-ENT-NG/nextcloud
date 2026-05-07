@@ -5,7 +5,9 @@ import fr.openent.nextcloud.model.UserNextcloud;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.client.HttpResponse;
@@ -143,6 +145,7 @@ public interface DocumentsService {
      */
     Future<JsonArray> uploadFiles(String host, UserNextcloud.TokenProvider userSession, List<Attachment> files, String path);
 
+    Future<JsonArray> uploadStreamedMultipleFiles(String headerCount, HttpServerRequest request, UserNextcloud.TokenProvider user, Vertx vertx);
 
     /**
      * Copy all the files listed in the filesPath from nextcloud to local.
