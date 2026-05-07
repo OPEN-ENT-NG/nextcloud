@@ -3,7 +3,6 @@ package fr.openent.nextcloud.controller;
 import fr.openent.nextcloud.Nextcloud;
 import fr.openent.nextcloud.core.constants.Field;
 import fr.openent.nextcloud.helper.Attachment;
-import fr.openent.nextcloud.helper.FileHelper;
 import fr.openent.nextcloud.helper.Metadata;
 import fr.openent.nextcloud.helper.StringHelper;
 import fr.openent.nextcloud.security.OwnerFilter;
@@ -234,13 +233,11 @@ public class DocumentsController extends ControllerHelper {
     @ResourceFilter(OwnerFilter.class)
     public void uploadDocuments(HttpServerRequest request) {
         request.pause();
-        String path = request.getParam(Field.PATH);
         UserUtils.getUserInfos(eb, request, user ->
                 userService.getUserSession(user.getUserId())
                         .compose(userSession -> {
                             request.resume();
-                            return FileHelper.uploadMultipleFiles(Field.FILECOUNT, request, storage, vertx)
-                                    .compose(files -> documentsService.uploadFiles(Renders.getHost(request), userSession, files, path));
+                            return documentsService.uploadStreamedMultipleFiles(Field.FILECOUNT, request, userSession, vertx);
                         })
                         .onSuccess(res -> {
                             renderJson(request, res);

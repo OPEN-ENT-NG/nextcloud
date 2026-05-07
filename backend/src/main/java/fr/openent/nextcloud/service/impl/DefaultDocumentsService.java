@@ -13,13 +13,13 @@ import fr.openent.nextcloud.model.UserNextcloud.TokenProvider;
 import fr.openent.nextcloud.service.DocumentsService;
 import fr.openent.nextcloud.service.ServiceFactory;
 
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
-import io.vertx.core.Promise;
+import fr.wseduc.webutils.http.Renders;
+import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.EventBus;
+import io.vertx.core.file.OpenOptions;
 import io.vertx.core.http.HttpMethod;
+import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
@@ -30,16 +30,20 @@ import io.vertx.ext.web.codec.BodyCodec;
 import org.entcore.common.bus.WorkspaceHelper;
 import org.entcore.common.storage.Storage;
 import org.entcore.common.user.UserInfos;
+import org.entcore.common.utils.FileUtils;
 
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 public class DefaultDocumentsService implements DocumentsService {
-    private final Logger log = LoggerFactory.getLogger(DefaultDocumentsService.class);
+    private static final Logger log = LoggerFactory.getLogger(DefaultDocumentsService.class);
     private final WebClient client;
     private final Map<String, NextcloudConfig> nextcloudConfigMapByHost;
     private final Storage storage;
@@ -571,6 +575,109 @@ public class DefaultDocumentsService implements DocumentsService {
         }
     }
 
+    @Override
+    public Future<JsonArray> uploadStreamedMultipleFiles(String headerCount, HttpServerRequest request, UserNextcloud.TokenProvider user, Vertx vertx) {
+        final String host = Renders.getHost(request);
+        String path = request.getParam(Field.PATH);
+        request.response().setChunked(true);
+        request.setExpectMultipart(true);
+
+        Promise<JsonArray> promise = Promise.promise();
+        JsonArray listMetadata = new JsonArray();
+
+        String totalFilesToUpload = request.getHeader(headerCount);
+        AtomicBoolean responseSent = new AtomicBoolean(false);
+
+        if (totalFilesToUpload == null || totalFilesToUpload.isEmpty() || Integer.parseInt(totalFilesToUpload) == 0) {
+            promise.complete(new JsonArray());
+            return promise.future();
+        }
+
+        AtomicInteger incrementFile = new AtomicInteger(0);
+
+        request.exceptionHandler(event -> {
+            String msg = "[Nextcloud@uploadStreamedMultipleFiles] HTTP request error: %s";
+            PromiseHelper.reject(log, msg, this.getClass().getSimpleName(), event.getCause(), promise);
+        });
+
+        request.uploadHandler(upload -> {
+            upload.pause();
+            final JsonObject metadata = FileUtils.metadata(upload);
+            final Attachment attachment = new Attachment(UUID.randomUUID().toString(), new Metadata(metadata));
+            listMetadata.add(attachment.toJson());
+
+            try {
+                Path tmpFile = Files.createTempFile("nextcloud-", attachment.id());
+                upload.handler(buffer -> {
+                    try {
+                        Files.write(tmpFile, buffer.getBytes(), StandardOpenOption.APPEND);
+                    } catch (IOException e) {
+                        String msg = "[Nextcloud@uploadStreamedMultipleFiles] Failed writing to tmp file: %s";
+                        try { Files.deleteIfExists(tmpFile); } catch (IOException ignored) {}
+                        PromiseHelper.reject(log, msg, this.getClass().getSimpleName(), e.getCause(), promise);
+                    }
+                });
+
+                upload.endHandler(v -> {
+                    uploadStreamedFile(host, user, attachment, path, tmpFile, vertx)
+                            .onSuccess(res -> {
+                                try { Files.deleteIfExists(tmpFile); } catch (IOException ignored) {}
+                                if (incrementFile.incrementAndGet() == Integer.parseInt(totalFilesToUpload) && !responseSent.get()) {
+                                    responseSent.set(true);
+                                    promise.complete(listMetadata);
+                                }
+                            })
+                            .onFailure(th -> {
+                                try { Files.deleteIfExists(tmpFile); } catch (IOException ignored) {}
+                                String msg = "[Nextcloud@uploadStreamedMultipleFiles] Upload error: %s";
+                                PromiseHelper.reject(log, msg, this.getClass().getSimpleName(), th, promise);
+                            });
+                });
+
+                upload.resume();
+            } catch (IOException e) {
+                PromiseHelper.reject(log, "[Nextcloud@uploadStreamedMultipleFiles] Failed creating tmp file", this.getClass().getSimpleName(), e, promise);
+            }
+        });
+
+        return promise.future();
+    }
+
+    private Future<JsonObject> uploadStreamedFile(String host, UserNextcloud.TokenProvider user, Attachment file, String path, Path tmpFile, Vertx vertx) {
+        Promise<JsonObject> promise = Promise.promise();
+        String finalPath = (path != null ? path + "/" : "") + file.metadata().filename();
+
+        this.getUniqueFileName(host, user, finalPath, 0)
+                .onSuccess(filePath -> {
+                    final NextcloudConfig nextcloudConfig = this.nextcloudConfigMapByHost.get(host);
+
+                    vertx.fileSystem().open(tmpFile.toString(), new OpenOptions())
+                            .onSuccess(asyncFile -> {
+                                client.putAbs(nextcloudConfig.host() + nextcloudConfig.webdavEndpoint() + "/" +
+                                                user.userId() + "/" + StringHelper.encodeUrlForNc(filePath))
+                                        .basicAuthentication(user.userId(), user.token())
+                                        .as(BodyCodec.jsonObject())
+                                        .sendStream(asyncFile, ar -> {
+                                            try { Files.deleteIfExists(tmpFile); } catch (IOException ignored) {}
+                                            if (ar.failed()) {
+                                                String messageToFormat = "[Nextcloud@%s::uploadStreamedFile] Upload failed: %s";
+                                                PromiseHelper.reject(log, messageToFormat, this.getClass().getSimpleName(), ar.cause(), promise);
+                                            } else {
+                                                promise.complete(new JsonObject()
+                                                        .put(Field.NAME, file.metadata().filename())
+                                                        .put(Field.STATUSCODE, ar.result().statusCode()));
+                                            }
+                                        });
+                            })
+                            .onFailure(err -> {
+                                PromiseHelper.reject(log, "[Nextcloud@uploadStreamedFile] Failed ro read tmp file", this.getClass().getSimpleName(), err, promise);
+                            });
+                })
+                .onFailure(err -> promise.complete(new JsonObject().put(Field.ERROR, err)));
+
+        return promise.future();
+    }
+
     /**
      * Upload multiple files to the nextcloud
      * @param host host
@@ -580,6 +687,7 @@ public class DefaultDocumentsService implements DocumentsService {
      * @return                 Future JsonArray with data on the uploaded files
      */
     @Override
+    @Deprecated
     public Future<JsonArray> uploadFiles(String host, UserNextcloud.TokenProvider userSession, List<Attachment> files, String path) {
         Promise<JsonArray> promise = Promise.promise();
         Future<JsonObject> current = Future.succeededFuture();
