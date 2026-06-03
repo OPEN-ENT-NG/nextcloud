@@ -44,10 +44,10 @@
     ]
   },
   "dependencies": {
-    "@edifice.io/react": "%packageVersion%",
-    "@edifice.io/client": "%packageVersion%",
-    "@edifice.io/bootstrap": "%packageVersion%",
-    "@edifice.io/utilities": "%packageVersion%",
+    "@edifice.io/react": "develop",
+    "@edifice.io/client": "develop",
+    "@edifice.io/bootstrap": "develop",
+    "@edifice.io/utilities": "develop",
     "@react-spring/web": "9.7.3",
     "@tanstack/react-query": "4.36.1",
     "@mui/material": "5.15.0",
