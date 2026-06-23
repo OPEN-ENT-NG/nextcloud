@@ -59,8 +59,7 @@ pipeline {
     }
     stage('Build image') {
       steps {
-        sh 'edifice download $CLI_VERSION'
-        sh './edifice image --archs=linux/amd64 --rebuild=false'
+        sh './edifice image --archs=linux/amd64 --force --rebuild=false'       
       }
     }
   }
