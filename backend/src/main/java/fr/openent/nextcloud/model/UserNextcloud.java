@@ -154,4 +154,34 @@ public class UserNextcloud {
                     && this.token == null;
         }
     }
+
+    public static class OAuthToken {
+        private final String accessToken;
+        private final String refreshToken;
+        private final Long expiresIn;
+        private final String nextcloudUserId;
+
+        public OAuthToken(JsonObject payload) {
+            this.accessToken = payload.getString(Field.ACCESS_TOKEN);
+            this.refreshToken = payload.getString(Field.REFRESH_TOKEN);
+            this.expiresIn = payload.getLong(Field.EXPIRES_IN);
+            this.nextcloudUserId = payload.getString(Field.USER_ID);
+        }
+
+        public String accessToken() {
+            return accessToken;
+        }
+
+        public String refreshToken() {
+            return refreshToken;
+        }
+
+        public Long expiresIn() {
+            return expiresIn;
+        }
+
+        public String nextcloudUserId() {
+            return nextcloudUserId;
+        }
+    }
 }
