@@ -101,6 +101,26 @@ public class Field {
     public static final String KEBAB_IS_NEXTCLOUD_URL_HIDDEN = "is-nextcloud-url-hidden";
     public static final String CAMEL_IS_NEXTCLOUD_URL_HIDDEN = "isNextcloudUrlHidden";
 
+    // OAuth2 config
+    public static final String OAUTH_CLIENT = "oauth-client";
+    public static final String KEBAB_CLIENT_ID = "client-id";
+    public static final String KEBAB_CLIENT_SECRET = "client-secret";
+    public static final String KEBAB_OAUTH_REDIRECT_URI = "oauth-redirect-uri";
+
+    // OAuth2 wire params
+    public static final String OAUTH_CLIENT_ID = "client_id";
+    public static final String RESPONSE_TYPE = "response_type";
+    public static final String GRANT_TYPE = "grant_type";
+    public static final String AUTHORIZATION_CODE = "authorization_code";
+    public static final String CODE = "code";
+    public static final String STATE = "state";
+    public static final String REDIRECT_URI = "redirect_uri";
+    public static final String ACCESS_TOKEN = "access_token";
+    public static final String REFRESH_TOKEN = "refresh_token";
+    public static final String EXPIRES_IN = "expires_in";
+    public static final String TOKEN_EXPIRES_AT = "token_expires_at";
+    public static final String CONNECTED = "connected";
+
     // ProxyConf
     public static final String HTTP_CLIENT_PROXY_HOST = "httpclient.proxyHost";
     public static final String HTTP_CLIENT_PROXY_PORT = "httpclient.proxyPort";

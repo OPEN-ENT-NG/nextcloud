@@ -14,6 +14,7 @@ import fr.openent.nextcloud.service.TokenProviderService;
 import fr.openent.nextcloud.service.UserService;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
+import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -37,6 +38,7 @@ public class DefaultUserService implements UserService {
     private final Map<String, NextcloudConfig> nextcloudConfigMapByHost;
 
     private static final String USER_ENDPOINT = "/cloud/users";
+    private static final String OAUTH_TOKEN_ENDPOINT = "/apps/oauth2/api/v1/token";
 
     public DefaultUserService(ServiceFactory serviceFactory) {
         this.client = serviceFactory.webClient();
@@ -285,6 +287,89 @@ public class DefaultUserService implements UserService {
                 promise.complete(response.body());
             }
         }
+    }
+
+    @Override
+    public Future<UserNextcloud.OAuthToken> exchangeAuthorizationCode(final String host, String code) {
+        Promise<UserNextcloud.OAuthToken> promise = Promise.promise();
+        final NextcloudConfig nextcloudConfig = this.nextcloudConfigMapByHost.get(host);
+        MultiMap form = MultiMap.caseInsensitiveMultiMap()
+                .add(Field.GRANT_TYPE, Field.AUTHORIZATION_CODE)
+                .add(Field.CODE, code)
+                .add(Field.REDIRECT_URI, nextcloudConfig.oauthRedirectUri());
+        this.client.postAbs(nextcloudConfig.host() + OAUTH_TOKEN_ENDPOINT)
+                .basicAuthentication(nextcloudConfig.oauthClientId(), nextcloudConfig.oauthClientSecret())
+                .as(BodyCodec.jsonObject())
+                .sendForm(form, responseAsync -> proceedTokenExchange(responseAsync, promise));
+        return promise.future();
+    }
+
+    /**
+     * Proceed async event after HTTP POST on the OAuth2 token endpoint has been sent
+     *
+     * @param   responseAsync   HttpResponse of JsonObject {@link AsyncResult}
+     * @param   promise         Promise that could be completed or fail sending {@link UserNextcloud.OAuthToken}
+     */
+    private void proceedTokenExchange(AsyncResult<HttpResponse<JsonObject>> responseAsync, Promise<UserNextcloud.OAuthToken> promise) {
+        if (responseAsync.failed()) {
+            String messageToFormat = "[Nextcloud@%s::exchangeAuthorizationCode] An error has occurred during fetching endpoint : %s";
+            PromiseHelper.reject(log, messageToFormat, this.getClass().getSimpleName(), responseAsync, promise);
+        } else {
+            HttpResponse<JsonObject> response = responseAsync.result();
+            if (response.statusCode() != 200) {
+                String messageToFormat = "[Nextcloud@%s::exchangeAuthorizationCode] Response status is not a HTTP 200 : %s : %s";
+                HttpResponseHelper.reject(log, messageToFormat, this.getClass().getSimpleName(), response, promise);
+            } else {
+                promise.complete(new UserNextcloud.OAuthToken(response.body()));
+            }
+        }
+    }
+
+    @Override
+    public Future<Void> persistOauthTokens(String userId, UserNextcloud.OAuthToken token) {
+        Promise<Void> promise = Promise.promise();
+        String query = "INSERT INTO " + Nextcloud.DB_SCHEMA + ".user (user_id, username, access_token, refresh_token, token_expires_at, last_modified) " +
+                " VALUES (?, ?, ?, ?, now() + (? || ' seconds')::interval, now()) " +
+                " ON CONFLICT (user_id) " +
+                " DO UPDATE SET username = ?, access_token = ?, refresh_token = ?, token_expires_at = now() + (? || ' seconds')::interval, last_modified = now()";
+
+        JsonArray param = new JsonArray()
+                .add(userId)
+                .add(token.nextcloudUserId())
+                .add(token.accessToken())
+                .add(token.refreshToken())
+                .add(token.expiresIn())
+                .add(token.nextcloudUserId())
+                .add(token.accessToken())
+                .add(token.refreshToken())
+                .add(token.expiresIn());
+
+        Sql.getInstance().prepared(query, param, SqlResult.validUniqueResultHandler(event -> {
+            if (event.isLeft()) {
+                String messageToFormat = "[Nextcloud@%s::persistOauthTokens] An error has occurred during token persistence : %s";
+                PromiseHelper.reject(log, messageToFormat, this.getClass().getSimpleName(), event, promise);
+            } else {
+                promise.complete();
+            }
+        }));
+        return promise.future();
+    }
+
+    @Override
+    public Future<Boolean> getOauthStatus(String userId) {
+        Promise<Boolean> promise = Promise.promise();
+        String query = "SELECT access_token FROM " + Nextcloud.DB_SCHEMA + ".user WHERE user_id = ?";
+        JsonArray param = new JsonArray().add(userId);
+        Sql.getInstance().prepared(query, param, SqlResult.validUniqueResultHandler(event -> {
+            if (event.isLeft()) {
+                String messageToFormat = "[Nextcloud@%s::getOauthStatus] An error has occurred during oauth2 status check : %s";
+                PromiseHelper.reject(log, messageToFormat, this.getClass().getSimpleName(), event, promise);
+            } else {
+                JsonObject row = event.right().getValue();
+                promise.complete(row != null && row.getString(Field.ACCESS_TOKEN, null) != null);
+            }
+        }));
+        return promise.future();
     }
 
     /**
