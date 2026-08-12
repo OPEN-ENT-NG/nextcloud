@@ -11,6 +11,9 @@ public class NextcloudConfig {
     private final String webdavEndpoint;
     private final String quota;
     private final Boolean isNextcloudUrlHidden;
+    private final String oauthClientId;
+    private final String oauthClientSecret;
+    private final String oauthRedirectUri;
 
     public NextcloudConfig(JsonObject config) {
         this.host = config.getString(Field.NEXTCLOUDHOST, null);
@@ -20,6 +23,9 @@ public class NextcloudConfig {
         this.webdavEndpoint = config.getJsonObject(Field.ENDPOINT, new JsonObject()).getString(Field.WEBDAV_ENDPOINT_API, null);
         this.quota = config.getString(Field.QUOTA, "2 GB");
         this.isNextcloudUrlHidden = config.getBoolean(Field.KEBAB_IS_NEXTCLOUD_URL_HIDDEN, false);
+        this.oauthClientId = config.getJsonObject(Field.OAUTH_CLIENT, new JsonObject()).getString(Field.KEBAB_CLIENT_ID, null);
+        this.oauthClientSecret = config.getJsonObject(Field.OAUTH_CLIENT, new JsonObject()).getString(Field.KEBAB_CLIENT_SECRET, null);
+        this.oauthRedirectUri = config.getJsonObject(Field.OAUTH_CLIENT, new JsonObject()).getString(Field.KEBAB_OAUTH_REDIRECT_URI, null);
     }
 
     public String host() {
@@ -37,4 +43,10 @@ public class NextcloudConfig {
     public String quota() { return this.quota; }
 
     public Boolean isNextcloudUrlHidden() { return this.isNextcloudUrlHidden; }
+
+    public String oauthClientId() { return this.oauthClientId; }
+
+    public String oauthClientSecret() { return this.oauthClientSecret; }
+
+    public String oauthRedirectUri() { return this.oauthRedirectUri; }
 }
