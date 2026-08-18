@@ -24,6 +24,7 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
+import io.vertx.ext.web.client.HttpRequest;
 import io.vertx.ext.web.client.HttpResponse;
 import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.codec.BodyCodec;
@@ -79,11 +80,18 @@ public class DefaultDocumentsService implements DocumentsService {
     @Override
     public void parameterizedListFiles(String host, UserNextcloud.TokenProvider userSession, String path, Handler<AsyncResult<HttpResponse<String>>> handler) {
         final NextcloudConfig nextcloudConfig = this.nextcloudConfigMapByHost.get(host);
-        this.client.requestAbs(HttpMethod.PROPFIND, nextcloudConfig.host() +
-                nextcloudConfig.webdavEndpoint() + "/" + userSession.userId() + (path != null ? "/" + StringHelper.encodeUrlForNc(path) : "" ))
-                .basicAuthentication(userSession.userId(), userSession.token())
+        HttpRequest<Buffer> request = this.client.requestAbs(HttpMethod.PROPFIND, nextcloudConfig.host() +
+                nextcloudConfig.webdavEndpoint() + "/" + userSession.userId() + (path != null ? "/" + StringHelper.encodeUrlForNc(path) : "" ));
+
+        authenticate(request, userSession)
                 .as(BodyCodec.string(StandardCharsets.UTF_8.toString()))
                 .sendBuffer(Buffer.buffer(getListFilesPropsBody()), handler);
+    }
+
+    private <T> HttpRequest<T> authenticate(HttpRequest<T> request, UserNextcloud.TokenProvider session) {
+        return session.hasOAuthAccessToken()
+                ? request.bearerTokenAuthentication(session.accessToken())
+                : request.basicAuthentication(session.userId(), session.token());
     }
 
     /**

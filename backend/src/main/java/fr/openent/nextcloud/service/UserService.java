@@ -36,10 +36,11 @@ public interface UserService {
     /**
      * Get User Session Token Provider
      *
+     * @param host      host
      * @param   userId  User identifier (ENT part)
      * @return  Future Instance of User Session Token Provider from Nextcloud {@link UserNextcloud.TokenProvider}
      */
-    Future<UserNextcloud.TokenProvider> getUserSession(String userId);
+    Future<UserNextcloud.TokenProvider> getUserSession(String host, String userId);
 
     /**
      * Exchange an OAuth2 authorization code for an access/refresh token pair.

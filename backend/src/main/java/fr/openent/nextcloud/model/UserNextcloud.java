@@ -114,6 +114,7 @@ public class UserNextcloud {
         private String userId;
         private String userName;
         private String token;
+        private String accessToken;
 
         public String userId() {
             return userId;
@@ -125,6 +126,10 @@ public class UserNextcloud {
 
         public String token() {
             return token;
+        }
+
+        public String accessToken() {
+            return accessToken;
         }
 
         public TokenProvider setUserId(String userId) {
@@ -142,6 +147,11 @@ public class UserNextcloud {
             return this;
         }
 
+        public TokenProvider setAccessToken(String accessToken) {
+            this.accessToken = accessToken;
+            return this;
+        }
+
         public JsonObject toJSON() {
             return new JsonObject()
                     .put(Field.LOGINNAME, this.userName)
@@ -151,7 +161,12 @@ public class UserNextcloud {
         public boolean isEmpty() {
             return this.userId == null
                     && this.userName == null
-                    && this.token == null;
+                    && this.token == null
+                    && this.accessToken == null;
+        }
+
+        public boolean hasOAuthAccessToken() {
+            return this.accessToken != null && !this.accessToken.isEmpty();
         }
     }
 

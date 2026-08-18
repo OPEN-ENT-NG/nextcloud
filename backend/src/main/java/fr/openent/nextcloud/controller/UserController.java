@@ -67,7 +67,7 @@ public class UserController extends ControllerHelper {
                 .onFailure(err -> renderError(request));
     }
 
-    @Get("user/oauth2/client")
+    @Get("user/oauth2/init")
     @ApiDoc("Init oauth2 login flow")
     @SecuredAction(value = "", type = ActionType.AUTHENTICATED)
     public void initOauth2LoginFlow(HttpServerRequest request) {
@@ -79,16 +79,25 @@ public class UserController extends ControllerHelper {
             final NextcloudConfig nextcloudConfig = this.nextcloudConfigMapByHost.get(Renders.getHost(request));
             final String state = UUID.randomUUID().toString();
             CookieHelper.getInstance().setSigned(OAUTH_STATE_COOKIE, state, OAUTH_STATE_TTL_SECONDS, request);
-            final String authorizeUrl = nextcloudConfig.host() + OAUTH_AUTHORIZE_ENDPOINT
+            final String host = nextcloudConfig.host().endsWith("/")
+                    ? nextcloudConfig.host().substring(0, nextcloudConfig.host().length() - 1)
+                    : nextcloudConfig.host();
+
+            final String encodedOauthClientId = urlEncode( nextcloudConfig.oauthClientId());
+            final String encodedOauthState = urlEncode(state);
+            final String encodedRedirectUri = urlEncode(nextcloudConfig.oauthRedirectUri());
+
+            System.out.println(encodedRedirectUri);
+            final String authorizeUrl = host + OAUTH_AUTHORIZE_ENDPOINT
                     + "?" + Field.RESPONSE_TYPE + "=" + Field.CODE
-                    + "&" + Field.OAUTH_CLIENT_ID + "=" + urlEncode(nextcloudConfig.oauthClientId())
-                    + "&" + Field.STATE + "=" + urlEncode(state)
-                    + "&" + Field.REDIRECT_URI + "=" + urlEncode(nextcloudConfig.oauthRedirectUri());
+                    + "&" + Field.OAUTH_CLIENT_ID + "=" + encodedOauthClientId
+                    + "&" + Field.STATE + "=" + encodedOauthState
+                    + "&" + Field.REDIRECT_URI + "=" + encodedRedirectUri;
             request.response().putHeader("Location", authorizeUrl).setStatusCode(302).end();
         });
     }
 
-    @Get("user/oauth2/callback")
+    @Get("user/oauth2/client")
     @ApiDoc("OAuth2 callback : exchange authorization code for a token and notify the opener")
     @SecuredAction(value = "", type = ActionType.AUTHENTICATED)
     public void oauth2Callback(HttpServerRequest request) {

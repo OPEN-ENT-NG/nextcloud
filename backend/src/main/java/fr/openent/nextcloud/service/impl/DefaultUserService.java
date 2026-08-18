@@ -74,7 +74,7 @@ public class DefaultUserService implements UserService {
     private Future<Void> resolveUserSession(final String host, UserNextcloud.RequestBody userBody, UserNextcloud userNextcloud) {
         Promise<Void> promise = Promise.promise();
         if (userNextcloud.id() != null) {
-            this.getUserSession(userBody.userId())
+            this.getUserSession(host, userBody.userId())
                     .compose(userSession -> this.checkSessionValidity(host, userSession))
                     .onSuccess(userSession -> {
                         if (userSession.isEmpty()) {
@@ -215,9 +215,10 @@ public class DefaultUserService implements UserService {
     }
 
     @Override
-    public Future<UserNextcloud.TokenProvider> getUserSession(String userId) {
+    public Future<UserNextcloud.TokenProvider> getUserSession(String host, String userId) {
         Promise<UserNextcloud.TokenProvider> promise = Promise.promise();
-        String query = "SELECT * FROM " + Nextcloud.DB_SCHEMA + ".user WHERE user_id = ?";
+        String query = "SELECT *, (token_expires_at IS NOT NULL AND token_expires_at <= now()) AS token_expired " +
+                "FROM " + Nextcloud.DB_SCHEMA + ".user WHERE user_id = ?";
         JsonArray param = new JsonArray().add(userId);
         Sql.getInstance().prepared(query, param, SqlResult.validUniqueResultHandler(event -> {
             if (event.isLeft()) {
@@ -225,11 +226,21 @@ public class DefaultUserService implements UserService {
                 PromiseHelper.reject(log, messageToFormat, this.getClass().getSimpleName(), event, promise);
             } else {
                 JsonObject userSession = event.right().getValue();
+                String refreshToken = userSession.getString(Field.REFRESH_TOKEN, null);
+                boolean tokenExpired = userSession.getBoolean(Field.TOKEN_EXPIRED, false);
                 UserNextcloud.TokenProvider tokenProvider = new UserNextcloud.TokenProvider()
                         .setUserId(userSession.getString(Field.USER_ID, null))
                         .setUserName(userSession.getString(Field.USERNAME, null))
-                        .setToken(userSession.getString(Field.PASSWORD, null));
-                promise.complete(tokenProvider);
+                        .setToken(userSession.getString(Field.PASSWORD, null))
+                        .setAccessToken(userSession.getString(Field.ACCESS_TOKEN, null));
+                if (tokenExpired && refreshToken != null) {
+                    refreshAccessToken(host, refreshToken)
+                            .compose(newToken -> persistOauthTokens(userId, newToken).map(v -> newToken))
+                            .onSuccess(newToken -> promise.complete(tokenProvider.setAccessToken(newToken.accessToken())))
+                            .onFailure(promise::fail);
+                } else {
+                    promise.complete(tokenProvider);
+                }
             }
         }));
         return promise.future();
@@ -291,13 +302,39 @@ public class DefaultUserService implements UserService {
 
     @Override
     public Future<UserNextcloud.OAuthToken> exchangeAuthorizationCode(final String host, String code) {
-        Promise<UserNextcloud.OAuthToken> promise = Promise.promise();
-        final NextcloudConfig nextcloudConfig = this.nextcloudConfigMapByHost.get(host);
         MultiMap form = MultiMap.caseInsensitiveMultiMap()
                 .add(Field.GRANT_TYPE, Field.AUTHORIZATION_CODE)
                 .add(Field.CODE, code)
-                .add(Field.REDIRECT_URI, nextcloudConfig.oauthRedirectUri());
-        this.client.postAbs(nextcloudConfig.host() + OAUTH_TOKEN_ENDPOINT)
+                .add(Field.REDIRECT_URI, this.nextcloudConfigMapByHost.get(host).oauthRedirectUri());
+        return postTokenEndpoint(host, form);
+    }
+
+    /**
+     * Exchange a stored refresh token for a new access/refresh token pair.
+     *
+     * @param host          host
+     * @param refreshToken  refresh token stored for the ENT user
+     * @return  Future Instance of the refreshed OAuth2 token {@link UserNextcloud.OAuthToken}
+     */
+    private Future<UserNextcloud.OAuthToken> refreshAccessToken(final String host, String refreshToken) {
+        MultiMap form = MultiMap.caseInsensitiveMultiMap()
+                .add(Field.GRANT_TYPE, Field.REFRESH_TOKEN)
+                .add(Field.REFRESH_TOKEN, refreshToken);
+        return postTokenEndpoint(host, form);
+    }
+
+    /**
+     * POST the given form to Nextcloud's OAuth2 token endpoint (authorization_code and
+     * refresh_token grants share this same endpoint and response shape).
+     *
+     * @param host  host
+     * @param form  form body, expected to already carry grant_type and its related params
+     * @return  Future Instance of the resulting OAuth2 token {@link UserNextcloud.OAuthToken}
+     */
+    private Future<UserNextcloud.OAuthToken> postTokenEndpoint(final String host, MultiMap form) {
+        Promise<UserNextcloud.OAuthToken> promise = Promise.promise();
+        final NextcloudConfig nextcloudConfig = this.nextcloudConfigMapByHost.get(host);
+        this.client.postAbs(stripTrailingSlash(nextcloudConfig.host()) + OAUTH_TOKEN_ENDPOINT)
                 .basicAuthentication(nextcloudConfig.oauthClientId(), nextcloudConfig.oauthClientSecret())
                 .as(BodyCodec.jsonObject())
                 .sendForm(form, responseAsync -> proceedTokenExchange(responseAsync, promise));
@@ -312,12 +349,12 @@ public class DefaultUserService implements UserService {
      */
     private void proceedTokenExchange(AsyncResult<HttpResponse<JsonObject>> responseAsync, Promise<UserNextcloud.OAuthToken> promise) {
         if (responseAsync.failed()) {
-            String messageToFormat = "[Nextcloud@%s::exchangeAuthorizationCode] An error has occurred during fetching endpoint : %s";
+            String messageToFormat = "[Nextcloud@%s::postTokenEndpoint] An error has occurred during fetching endpoint : %s";
             PromiseHelper.reject(log, messageToFormat, this.getClass().getSimpleName(), responseAsync, promise);
         } else {
             HttpResponse<JsonObject> response = responseAsync.result();
             if (response.statusCode() != 200) {
-                String messageToFormat = "[Nextcloud@%s::exchangeAuthorizationCode] Response status is not a HTTP 200 : %s : %s";
+                String messageToFormat = "[Nextcloud@%s::postTokenEndpoint] Response status is not a HTTP 200 : %s : %s";
                 HttpResponseHelper.reject(log, messageToFormat, this.getClass().getSimpleName(), response, promise);
             } else {
                 promise.complete(new UserNextcloud.OAuthToken(response.body()));
@@ -370,6 +407,10 @@ public class DefaultUserService implements UserService {
             }
         }));
         return promise.future();
+    }
+
+    private static String stripTrailingSlash(String url) {
+        return url != null && url.endsWith("/") ? url.substring(0, url.length() - 1) : url;
     }
 
     /**
