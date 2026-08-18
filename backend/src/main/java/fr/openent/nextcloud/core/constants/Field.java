@@ -119,6 +119,7 @@ public class Field {
     public static final String REFRESH_TOKEN = "refresh_token";
     public static final String EXPIRES_IN = "expires_in";
     public static final String TOKEN_EXPIRES_AT = "token_expires_at";
+    public static final String TOKEN_EXPIRED = "token_expired";
     public static final String CONNECTED = "connected";
 
     // ProxyConf

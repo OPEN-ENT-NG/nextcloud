@@ -57,7 +57,7 @@ public class DocumentsController extends ControllerHelper {
     public void listFiles(HttpServerRequest request) {
         final String path = request.getParam(Field.PATH);
         UserUtils.getUserInfos(eb, request, user ->
-                userService.getUserSession(user.getUserId())
+                userService.getUserSession(Renders.getHost(request), user.getUserId())
                         .compose(userSession -> documentsService.listFiles(Renders.getHost(request), userSession, path))
                         .onSuccess(files -> {
                             renderJson(request, new JsonObject().put(Field.DATA, files));
@@ -76,7 +76,7 @@ public class DocumentsController extends ControllerHelper {
         String contentType = request.getParam(Field.CONTENTTYPE);
         boolean isFolder = Boolean.parseBoolean(request.getParam(Field.ISFOLDER));
         UserUtils.getUserInfos(eb, request, user ->
-                userService.getUserSession(user.getUserId())
+                userService.getUserSession(Renders.getHost(request), user.getUserId())
                         .compose(userSession -> {
                             if (isFolder) {
                                 return documentsService.getFolder(Renders.getHost(request), userSession, path);
@@ -109,7 +109,7 @@ public class DocumentsController extends ControllerHelper {
         List<String> files = request.params().getAll(Field.FILE);
         if ((path != null && !path.isEmpty()) && (files != null && !files.isEmpty())) {
             UserUtils.getUserInfos(eb, request, user ->
-                    userService.getUserSession(user.getUserId())
+                    userService.getUserSession(Renders.getHost(request), user.getUserId())
                             .compose(userSession -> documentsService.getFiles(Renders.getHost(request), userSession, path, files))
                             .onSuccess(fileResponse -> {
                                 HttpServerResponse resp = request.response();
@@ -134,7 +134,7 @@ public class DocumentsController extends ControllerHelper {
         String destPath = request.getParam(Field.DESTPATH);
         if ((path != null && !path.isEmpty()) && (destPath != null && !destPath.isEmpty())) {
             UserUtils.getUserInfos(eb, request, user ->
-                    userService.getUserSession(user.getUserId())
+                    userService.getUserSession(Renders.getHost(request), user.getUserId())
                             .compose(userSession -> {
                                         return documentsService.moveDocument(Renders.getHost(request), userSession, path, destPath);
                                     }
@@ -155,7 +155,7 @@ public class DocumentsController extends ControllerHelper {
         List<String> paths = request.params().getAll(Field.PATH);
         if ((paths != null && !paths.isEmpty())) {
             UserUtils.getUserInfos(eb, request, user ->
-                    userService.getUserSession(user.getUserId())
+                    userService.getUserSession(Renders.getHost(request), user.getUserId())
                             .compose(userSession -> documentsService.deleteDocuments(Renders.getHost(request), userSession, paths))
                             .onSuccess(res -> renderJson(request, res))
                             .onFailure(err -> renderError(request, new JsonObject().put(Field.MESSAGE, err.getMessage()))));
@@ -171,7 +171,7 @@ public class DocumentsController extends ControllerHelper {
     public void deleteDocumentsFromTrashbin(HttpServerRequest request) {
         List<String> paths = request.params().getAll(Field.PATH);
         if ((paths != null && !paths.isEmpty())) {
-            UserUtils.getUserInfos(eb, request, user -> userService.getUserSession(user.getUserId())
+            UserUtils.getUserInfos(eb, request, user -> userService.getUserSession(Renders.getHost(request), user.getUserId())
                     .compose(userSession -> documentsService.deleteDocumentsFromTrashbin(Renders.getHost(request),
                             userSession, paths))
                     .onSuccess(res -> renderJson(request, res))
@@ -192,7 +192,7 @@ public class DocumentsController extends ControllerHelper {
                     eb,
                     request,
                     user -> userService
-                            .getUserSession(user.getUserId())
+                            .getUserSession(Renders.getHost(request), user.getUserId())
                             .compose(userSession -> documentsService.restoreDocuments(Renders.getHost(request),
                                     userSession,
                                     paths))
@@ -209,7 +209,7 @@ public class DocumentsController extends ControllerHelper {
     @SecuredAction(value = "", type = ActionType.RESOURCE)
     @ResourceFilter(OwnerFilter.class)
     public void listTrash(HttpServerRequest request) {
-        UserUtils.getUserInfos(eb, request, user -> userService.getUserSession(user.getUserId())
+        UserUtils.getUserInfos(eb, request, user -> userService.getUserSession(Renders.getHost(request), user.getUserId())
                 .compose(userSession -> documentsService.listTrash(Renders.getHost(request), userSession))
                 .onSuccess(res -> renderJson(request, res))
                 .onFailure(err -> renderError(request, new JsonObject().put(Field.MESSAGE, err.getMessage()))));
@@ -221,7 +221,7 @@ public class DocumentsController extends ControllerHelper {
     @ResourceFilter(OwnerFilter.class)
     public void deleteTrash(HttpServerRequest request) {
         UserUtils.getUserInfos(eb, request, user ->
-                userService.getUserSession(user.getUserId())
+                userService.getUserSession(Renders.getHost(request), user.getUserId())
                         .compose(userSession -> documentsService.deleteTrash(Renders.getHost(request), userSession))
                         .onSuccess(res -> renderJson(request, new JsonObject().put(Field.STATUS, Field.OK)))
                         .onFailure(err -> renderError(request, new JsonObject().put(Field.MESSAGE, err.getMessage()))));
@@ -234,7 +234,7 @@ public class DocumentsController extends ControllerHelper {
     public void uploadDocuments(HttpServerRequest request) {
         request.pause();
         UserUtils.getUserInfos(eb, request, user ->
-                userService.getUserSession(user.getUserId())
+                userService.getUserSession(Renders.getHost(request), user.getUserId())
                         .compose(userSession -> {
                             request.resume();
                             return documentsService.uploadStreamedMultipleFiles(Field.FILECOUNT, request, userSession, vertx);
@@ -256,7 +256,7 @@ public class DocumentsController extends ControllerHelper {
         String parentId = request.params().get(Field.PARENTID);
         if (Boolean.FALSE.equals(listFiles.isEmpty()))
             UserUtils.getUserInfos(eb, request, user ->
-                userService.getUserSession(user.getUserId())
+                userService.getUserSession(Renders.getHost(request), user.getUserId())
                         .compose(userSession -> documentsService.moveDocumentToWorkspace(Renders.getHost(request), userSession, user, listFiles, parentId))
                         .onSuccess(res -> renderJson(request, new JsonObject().put(Field.DATA, res)))
                         .onFailure(err -> renderError(request, new JsonObject().put(Field.ERROR, err.getMessage()))));
@@ -273,7 +273,7 @@ public class DocumentsController extends ControllerHelper {
         String parentId = request.params().get(Field.PARENTID);
         if (!listFiles.isEmpty())
             UserUtils.getUserInfos(eb, request, user ->
-                userService.getUserSession(user.getUserId())
+                userService.getUserSession(Renders.getHost(request), user.getUserId())
                         .compose(userSession -> documentsService.copyDocumentToWorkspace(Renders.getHost(request), userSession, user, listFiles, parentId))
                         .onSuccess(res -> renderJson(request, new JsonObject().put(Field.DATA, res)))
                         .onFailure(err -> renderError(request, new JsonObject().put(Field.ERROR, err.getMessage()))));
@@ -290,7 +290,7 @@ public class DocumentsController extends ControllerHelper {
         String parentId = request.params().get(Field.PARENTNAME);
         if (!listFiles.isEmpty())
             UserUtils.getUserInfos(eb, request, user ->
-                    userService.getUserSession(user.getUserId())
+                    userService.getUserSession(Renders.getHost(request), user.getUserId())
                             .compose(userSession -> documentsService.moveDocumentsFromWorkspaceToNC(Renders.getHost(request), userSession, user, listFiles, parentId))
                             .onSuccess(res -> {
                                 renderJson(request, res);
@@ -310,7 +310,7 @@ public class DocumentsController extends ControllerHelper {
         String parentId = request.params().get(Field.PARENTNAME);
         if (!listFiles.isEmpty())
             UserUtils.getUserInfos(eb, request, user ->
-                    userService.getUserSession(user.getUserId())
+                    userService.getUserSession(Renders.getHost(request), user.getUserId())
                             .compose(userSession -> documentsService.copyDocumentsFromWorkspaceToNC(Renders.getHost(request), userSession, user, listFiles, parentId))
                             .onSuccess(res -> renderJson(request, res))
                             .onFailure(err -> renderError(request, new JsonObject().put(Field.ERROR, err.getMessage()))));
@@ -326,7 +326,7 @@ public class DocumentsController extends ControllerHelper {
         String path = request.params().get(Field.PATH);
         if (!path.isEmpty())
             UserUtils.getUserInfos(eb, request, user ->
-                    userService.getUserSession(user.getUserId())
+                    userService.getUserSession(Renders.getHost(request), user.getUserId())
                             .compose(userSession -> documentsService.createFolderNextcloud(Renders.getHost(request), userSession, path))
                             .onSuccess(res -> {
                                 renderJson(request, res);
@@ -350,7 +350,7 @@ public class DocumentsController extends ControllerHelper {
 
             Attachment attachment = new Attachment(fileId, new Metadata(metadata));
 
-            userService.getUserSession(recipientUserId)
+            userService.getUserSession(host, recipientUserId)
                     .compose(userSession -> documentsService.listFiles(
                             host, userSession, "CASIER")
                             .compose(files -> {
