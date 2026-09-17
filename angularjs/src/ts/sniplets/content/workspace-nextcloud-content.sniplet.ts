@@ -1,4 +1,4 @@
-import { AxiosError, AxiosResponse } from "axios";
+import { HttpError, HttpResponse } from "entcore-toolkit";
 import { angular, Behaviours, idiom as lang, Me, model, template, workspace } from "entcore";
 import { Subscription } from "rxjs";
 import { RootsConst } from "../../core/constants/roots.const";
@@ -86,7 +86,7 @@ class ViewModel implements IViewModel {
         this.isNextcloudUrlHidden = false;
         nextcloudService.getIsNextcloudUrlHidden().then(isHidden => {
             this.isNextcloudUrlHidden = isHidden;
-        }).catch((err: AxiosError) => {
+        }).catch((err: HttpError) => {
             const message: string = "Error while attempting to fetch nextcloud url hidden state";
             console.error(message + err.message);
             this.isNextcloudUrlHidden = false;
@@ -100,7 +100,7 @@ class ViewModel implements IViewModel {
                 this.isLoaded = true;
                 safeApply(scope);
             })
-            .catch((err: AxiosError) => {
+            .catch((err: HttpError) => {
                 const message: string = "Error while attempting to init or fetch nextcloud url: ";
                 console.error(message + err.message);
                 this.isLoaded = true;
@@ -149,7 +149,7 @@ class ViewModel implements IViewModel {
                 }
                 safeApply(scope);
             })
-            .catch((err: AxiosError) => {
+            .catch((err: HttpError) => {
                 const message: string = "Error while attempting to fetch documents children from content";
                 console.error(message + err.message);
                 return [];
@@ -245,7 +245,7 @@ class ViewModel implements IViewModel {
                         this.updateFolderDocument(selectedFolderFromNextcloudTree);
                         this.safeApply();
                     })
-                    .catch((err: AxiosError) => {
+                    .catch((err: HttpError) => {
                         const message: string = "Error while attempting to move nextcloud document to workspace " +
                             "or update nextcloud list";
                         console.error(message + err.message);
@@ -256,8 +256,8 @@ class ViewModel implements IViewModel {
         }
     }
 
-    private async moveAllDocuments(document: SyncDocument, target: SyncDocument): Promise<AxiosResponse[]> {
-        const promises: Array<Promise<AxiosResponse>> = [];
+    private async moveAllDocuments(document: SyncDocument, target: SyncDocument): Promise<HttpResponse[]> {
+        const promises: Array<Promise<HttpResponse>> = [];
         this.selectedDocuments.push(document);
         const selectedSet: Set<SyncDocument> = new Set(this.selectedDocuments);
         selectedSet.forEach((doc: SyncDocument) => {
@@ -265,7 +265,7 @@ class ViewModel implements IViewModel {
                 promises.push(this.nextcloudService.moveDocument(model.me.userId, doc.path, (target.path != null ? target.path : "") + encodeURI(doc.name)));
             }
         });
-        return await Promise.all<AxiosResponse>(promises);
+        return await Promise.all<HttpResponse>(promises);
     }
 
     private updateDocList(selectedFolderFromNextcloudTree: SyncDocument): void {
@@ -279,7 +279,7 @@ class ViewModel implements IViewModel {
                 this.updateFolderDocument(selectedFolderFromNextcloudTree);
                 this.safeApply();
             })
-            .catch((err: AxiosError) => {
+            .catch((err: HttpError) => {
                 const message: string = "Error while updating documents list";
                 console.error(message + err.message);
             })
@@ -288,7 +288,7 @@ class ViewModel implements IViewModel {
     private processMoveToNextcloud(document: SyncDocument, target: SyncDocument, selectedFolderFromNextcloudTree: SyncDocument): void {
             this.moveAllDocuments(document, target)
             .then(() => this.updateDocList(selectedFolderFromNextcloudTree))
-            .catch((err: AxiosError) => {
+            .catch((err: HttpError) => {
                 this.updateDocList(selectedFolderFromNextcloudTree);
                 const message: string = "Error while attempting to move nextcloud document to workspace " +
                     "or update nextcloud list";
