@@ -1,28 +1,33 @@
-import axios from 'axios';
-import MockAdapter from 'axios-mock-adapter';
+jest.mock('entcore-toolkit', () => Object.assign({}, (jest as any).requireActual('entcore-toolkit'), {
+    http: {get: jest.fn(), post: jest.fn(), put: jest.fn(), delete: jest.fn(), postFile: jest.fn(), putFile: jest.fn()},
+}));
+
+import {http} from 'entcore-toolkit';
 import {nextcloudUserService} from "../nextcloud-user.service";
 import {IUserResponse} from "../../models/nextcloud-user.model";
+import {mockHttpResponse} from "../../../../test-utils/httpMock";
 
 describe('NextcloudUserService', () => {
+
+    beforeEach(() => {
+        (http.get as jest.Mock).mockReset();
+    });
+
     it('Test resolveUser method', done => {
-        const mock = new MockAdapter(axios);
         const data = {response: true};
-        const userId = "userId"
-        const body = {userid: "userId"};
+        const userId = "userId";
 
-        mock.onGet(`/nextcloud/user/userId/provide/token`).reply(200, data);
-
+        (http.get as jest.Mock).mockResolvedValueOnce(mockHttpResponse(data, {url: `/nextcloud/user/userId/provide/token`}));
 
         nextcloudUserService.resolveUser(userId).then(response => {
             expect(response.data).toEqual(data);
             expect(response.status).toEqual(200);
-            expect(response.config.url).toEqual(`/nextcloud/user/userId/provide/token`);
+            expect((response.config as any).url).toEqual(`/nextcloud/user/userId/provide/token`);
             done();
         });
     });
 
     it('Test getUserInfo method', done => {
-        const mock = new MockAdapter(axios);
         const data: IUserResponse = {
             displayname: 0,
             email: "email",
@@ -43,10 +48,9 @@ describe('NextcloudUserService', () => {
             itemsPerPage: "itemsperpage",
             phone: "phone",
             quota: quota,
-        }
+        };
 
-        mock.onGet(`/nextcloud/user/userId`).reply(200, data);
-
+        (http.get as jest.Mock).mockResolvedValueOnce(mockHttpResponse(data));
 
         nextcloudUserService.getUserInfo(userId).then(response => {
             expect(response).toEqual(result);

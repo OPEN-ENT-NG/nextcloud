@@ -1,6 +1,6 @@
 import {SyncDocument} from "../models";
 import {Document, FolderTreeProps, model, workspace} from "entcore";
-import {AxiosError} from "axios";
+import {HttpError} from "entcore-toolkit";
 import {nextcloudService, nextcloudUserService} from "../services";
 import {NextcloudDocumentsUtils} from "../utils/nextcloud-documents.utils";
 import rights from "../rights";
@@ -103,7 +103,7 @@ export class MediaLibraryService implements IVirtualMediaLibraryScope {
 
     async initFolderTree(): Promise<void> {
         let syncDocuments: Array<SyncDocument> = await nextcloudService.listDocument(model.me.userId, null)
-            .catch((err: AxiosError) => {
+            .catch((err: HttpError) => {
                 const message: string = "Error while attempting to fetch documents children ";
                 console.error(message + err.message);
                 return [];
@@ -124,7 +124,7 @@ export class MediaLibraryService implements IVirtualMediaLibraryScope {
 
     async openFolder(folder: models.Element): Promise<void> {
         let syncDocuments: Array<SyncDocument> = await nextcloudService.listDocument(model.me.userId, (<any>folder).path ? (<any>folder).path : null)
-            .catch((err: AxiosError) => {
+            .catch((err: HttpError) => {
                 const message: string = "Error while attempting to fetch documents children ";
                 console.error(message + err.message);
                 return [];

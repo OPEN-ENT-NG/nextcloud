@@ -1,6 +1,6 @@
 import {idiom as lang, model, notify} from "entcore";
 import {safeApply} from "../../utils/safe-apply.utils";
-import {AxiosError} from "axios";
+import {HttpError} from "entcore-toolkit";
 import {SyncDocument} from "../../models";
 import {Quota} from "../../models/nextcloud-user.model";
 
@@ -71,7 +71,7 @@ export class UploadFileSnipletViewModel implements IViewModel {
                     .filter((syncDocument: SyncDocument) => syncDocument.name != model.me.userId);
                 safeApply(this.scope);
             })
-            .catch((err: AxiosError) => {
+            .catch((err: HttpError) => {
                 const message: string = "Error while uploading files to nextcloud: ";
                 console.error(`${message}${err.message}: ${this.vm.toolbar.getErrorMessage(err)}`);
                 if (err.message.includes("413") || err.message.includes("507")) {
