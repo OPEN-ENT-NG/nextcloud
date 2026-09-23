@@ -1,4 +1,4 @@
-import http, { AxiosResponse } from 'axios';
+import { http, HttpResponse } from 'entcore-toolkit';
 import { ng, workspace } from 'entcore';
 import { IDocumentResponse, SyncDocument } from "../models";
 import models = workspace.v2.models;
@@ -8,16 +8,16 @@ export interface INextcloudService {
     getNextcloudUrl(): Promise<string>;
     getIsNextcloudUrlHidden(): Promise<boolean>;
     listDocument(userid: string, path?: string): Promise<Array<SyncDocument>>;
-    uploadDocuments(userid: string, files: Array<File>): Promise<AxiosResponse>;
-    moveDocument(userid: string, path: string, destPath: string): Promise<AxiosResponse>;
-    moveDocumentNextcloudToWorkspace(userid: string, paths: Array<string>, parentId?: string): Promise<AxiosResponse>;
-    moveDocumentWorkspaceToCloud(userid: string, ids: Array<string>, cloudDocumentName?: string): Promise<AxiosResponse>;
+    uploadDocuments(userid: string, files: Array<File>): Promise<HttpResponse>;
+    moveDocument(userid: string, path: string, destPath: string): Promise<HttpResponse>;
+    moveDocumentNextcloudToWorkspace(userid: string, paths: Array<string>, parentId?: string): Promise<HttpResponse>;
+    moveDocumentWorkspaceToCloud(userid: string, ids: Array<string>, cloudDocumentName?: string): Promise<HttpResponse>;
     copyDocumentToWorkspace(userid: string, paths: Array<string>, parentId?: string): Promise<Array<models.Element>>;
-    deleteDocuments(userid: string, path: Array<string>): Promise<AxiosResponse>;
-    deleteTrash(userid: string): Promise<AxiosResponse>;
+    deleteDocuments(userid: string, path: Array<string>): Promise<HttpResponse>;
+    deleteTrash(userid: string): Promise<HttpResponse>;
     getFile(userid: string, fileName: string, path: string, contentType: string, isFolder?: boolean): string;
     getFiles(userid: string, path: string, files: Array<string>): string;
-    createFolder(userid: string, folderPath: String): Promise<AxiosResponse>;
+    createFolder(userid: string, folderPath: String): Promise<HttpResponse>;
 }
 
 export const nextcloudService: INextcloudService = {
@@ -28,25 +28,25 @@ export const nextcloudService: INextcloudService = {
     },
 
     getNextcloudUrl: async (): Promise<string> => {
-        return http.get(`/nextcloud/config/url`).then((res: AxiosResponse) => res.data.url);
+        return http.get(`/nextcloud/config/url`).then((res: HttpResponse) => res.data.url);
     },
 
     getIsNextcloudUrlHidden: async (): Promise<boolean> => {
-        return http.get(`/nextcloud/config/isNextcloudUrlHidden`).then((res: AxiosResponse) => res.data.isNextcloudUrlHidden);
+        return http.get(`/nextcloud/config/isNextcloudUrlHidden`).then((res: HttpResponse) => res.data.isNextcloudUrlHidden);
     },
 
-    createFolder: async(userid: string, folderPath: String): Promise<AxiosResponse> => {
+    createFolder: async(userid: string, folderPath: String): Promise<HttpResponse> => {
         const urlParam: string = folderPath ? `?path=${folderPath}` : '';
-        return http.post(`/nextcloud/files/user/${userid}/create/folder${urlParam}`);
+        return http.post(`/nextcloud/files/user/${userid}/create/folder${urlParam}`, {});
     },
 
     listDocument: async (userid: string, path?: string): Promise<Array<SyncDocument>> => {
         const urlParam: string = path ? `?path=${path}` : '';
         return http.get(`/nextcloud/files/user/${userid}${urlParam}`)
-            .then((res: AxiosResponse) => res.data.data.map((document: IDocumentResponse) => new SyncDocument().build(document)));
+            .then((res: HttpResponse) => res.data.data.map((document: IDocumentResponse) => new SyncDocument().build(document)));
     },
 
-    uploadDocuments(userid: string, files: Array<File>, path?: string): Promise<AxiosResponse> {
+    uploadDocuments(userid: string, files: Array<File>, path?: string): Promise<HttpResponse> {
         const urlParam: string = path ? `?path=${path}` : '';
         const formData: FormData = new FormData();
         const headers = {'headers': {'Content-type': 'multipart/form-data', 'File-Count': files.length}};
@@ -56,22 +56,22 @@ export const nextcloudService: INextcloudService = {
         return http.put(`/nextcloud/files/user/${userid}/upload${urlParam}`, formData, headers);
     },
 
-    moveDocument: (userid: string, path: string, destPath: string): Promise<AxiosResponse> => {
+    moveDocument: (userid: string, path: string, destPath: string): Promise<HttpResponse> => {
         const urlParam: string = `?path=${path}&destPath=${destPath}`;
         return http.put(`/nextcloud/files/user/${userid}/move${urlParam}`);
     },
 
-    moveDocumentNextcloudToWorkspace: (userid: string, paths: Array<string>, parentId?: string): Promise<AxiosResponse> => {
+    moveDocumentNextcloudToWorkspace: (userid: string, paths: Array<string>, parentId?: string): Promise<HttpResponse> => {
         let urlParams: URLSearchParams = new URLSearchParams();
         paths.forEach((path: string) => urlParams.append('path', path));
         const parentIdParam: string = parentId ? `&parentId=${parentId}` : '';
         return http.put(`/nextcloud/files/user/${userid}/move/workspace?${urlParams}${parentIdParam}`)
-            .then((res: AxiosResponse) => res.data.data
+            .then((res: HttpResponse) => res.data.data
                 .filter(document => document._id)
                 .map((document) => new models.Element(document)));
     },
 
-    moveDocumentWorkspaceToCloud: (userid: string, ids: Array<string>, cloudDocumentName?: string): Promise<AxiosResponse> => {
+    moveDocumentWorkspaceToCloud: (userid: string, ids: Array<string>, cloudDocumentName?: string): Promise<HttpResponse> => {
         let urlParams: URLSearchParams = new URLSearchParams();
         ids.forEach((path: string) => urlParams.append('id', path));
         const parentDocumentNameParam: string = cloudDocumentName ? `&parentName=${cloudDocumentName}` : '';
@@ -83,12 +83,12 @@ export const nextcloudService: INextcloudService = {
         paths.forEach((path: string) => urlParams.append('path', path));
         const parentIdParam: string = parentId ? `&parentId=${parentId}` : '';
         return http.put(`/nextcloud/files/user/${userid}/copy/workspace?${urlParams}${parentIdParam}`)
-            .then((res: AxiosResponse) => res.data.data
+            .then((res: HttpResponse) => res.data.data
                 .filter(document => document._id)
                 .map((document) => new models.Element(document)));
     },
 
-    deleteDocuments(userid: string, paths: Array<string>): Promise<AxiosResponse> {
+    deleteDocuments(userid: string, paths: Array<string>): Promise<HttpResponse> {
         let urlParams: URLSearchParams = new URLSearchParams();
         paths.forEach((path: string) => {
             urlParams.append('path', path);
@@ -96,7 +96,7 @@ export const nextcloudService: INextcloudService = {
         return http.delete(`/nextcloud/files/user/${userid}/delete?${urlParams}`);
     },
 
-    deleteTrash(userid: string): Promise<AxiosResponse> {
+    deleteTrash(userid: string): Promise<HttpResponse> {
         return http.delete(`/nextcloud/files/user/${userid}/trash/delete`);
     },
 

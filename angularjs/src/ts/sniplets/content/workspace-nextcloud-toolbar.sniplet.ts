@@ -1,6 +1,6 @@
 import {SyncDocument} from "../../models";
 import {model, toasts} from "entcore";
-import {AxiosError} from "axios";
+import {HttpError} from "entcore-toolkit";
 import {safeApply} from "../../utils/safe-apply.utils";
 import {ToolbarShareSnipletViewModel} from "./workspace-nextcloud-toolbar-share.sniplet";
 import {nextcloudService} from "../../services";
@@ -111,7 +111,7 @@ export class ToolbarSnipletViewModel implements IViewModel {
                     this.vm.selectedDocuments = [];
                     safeApply(this.scope);
                 })
-                .catch((err: AxiosError) => {
+                .catch((err: HttpError) => {
                     const message: string = "Error while attempting to rename document from content";
                     console.error(`${message}${err.message}: ${this.getErrorMessage(err)}`);
                     this.toggleRenameView(false);
@@ -121,7 +121,7 @@ export class ToolbarSnipletViewModel implements IViewModel {
         }
     }
 
-    getErrorMessage(err: AxiosError): string {
+    getErrorMessage(err: HttpError): string {
         if (err && err.response && err.response.data.message) {
             return err.response.data.message;
         } else {
@@ -154,7 +154,7 @@ export class ToolbarSnipletViewModel implements IViewModel {
                 this.vm.updateTree();
                 safeApply(this.scope);
             })
-            .catch((err: AxiosError) => {
+            .catch((err: HttpError) => {
                 const message: string = "Error while attempting to delete documents from content";
                 console.error(`${message}${err.message}: ${this.getErrorMessage(err)}`);
                 this.toggleDeleteView(false);

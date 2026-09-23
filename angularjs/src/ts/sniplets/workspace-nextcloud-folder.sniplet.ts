@@ -6,7 +6,7 @@ import {NEXTCLOUD_APP} from "../nextcloud.behaviours";
 import models = workspace.v2.models;
 import {WorkspaceEntcoreUtils} from "../utils/workspace-entcore.utils";
 import {INextcloudService, nextcloudService} from "../services";
-import {AxiosError, AxiosResponse} from "axios";
+import {HttpError, HttpResponse} from "entcore-toolkit";
 import {Draggable, SyncDocument} from "../models";
 import {INextcloudUserService, nextcloudUserService} from "../services";
 import {UserNextcloud} from "../models/nextcloud-user.model";
@@ -84,7 +84,7 @@ class ViewModel implements IViewModel {
                 this.initDraggable();
                 safeApply(this.scope);
             })
-            .catch((err: AxiosError) => {
+            .catch((err: HttpError) => {
                 const message: string = "Error while attempting to fetch user info";
                 console.error(message + err.message);
             });
@@ -181,7 +181,7 @@ class ViewModel implements IViewModel {
                     let documentToUpdate: Set<string> = new Set(selectedDocuments.filter((file: Document) => file.selected).map((file: Document) => file._id));
                     documentToUpdate.add(document._id);
                     nextcloudService.moveDocumentWorkspaceToCloud(model.me.userId, Array.from(documentToUpdate), syncedDocument.path)
-                        .then((_: AxiosResponse) => {
+                        .then((_: HttpResponse) => {
                             WorkspaceEntcoreUtils.updateWorkspaceDocuments(
                                     WorkspaceEntcoreUtils.workspaceScope()['openedFolder']['folder']);
                             Behaviours.applicationsBehaviours[NEXTCLOUD_APP].nextcloudService.sendOpenFolderDocument(angular.element(event.target).scope().folder);
@@ -189,7 +189,7 @@ class ViewModel implements IViewModel {
                             angular.element(event.target).scope().folder.classList.remove("selected");
                             }
                         )
-                        .catch((err: AxiosError) => {
+                        .catch((err: HttpError) => {
                             const message: string = "Error while attempting to fetch documents children ";
                             console.error(message + err.message);
                         });
@@ -208,7 +208,7 @@ class ViewModel implements IViewModel {
 
     async openDocument(document: any): Promise<void> {
         let syncDocuments: Array<SyncDocument> = await nextcloudService.listDocument(model.me.userId, document.path ? document.path : null)
-            .catch((err: AxiosError) => {
+            .catch((err: HttpError) => {
                 const message: string = "Error while attempting to fetch documents children ";
                 console.error(message + err.message);
                 return [];
