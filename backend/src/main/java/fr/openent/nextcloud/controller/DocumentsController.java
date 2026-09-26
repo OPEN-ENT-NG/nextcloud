@@ -271,10 +271,14 @@ public class DocumentsController extends ControllerHelper {
     public void copyToWorkspace(HttpServerRequest request) {
         List<String> listFiles = request.params().getAll(Field.PATH);
         String parentId = request.params().get(Field.PARENTID);
+        // Defaults keep the historical behaviour: documents land in the user's own documents.
+        String application = request.params().contains(Field.APPLICATION)
+                ? request.params().get(Field.APPLICATION) : Field.APP;
+        boolean protectedContent = Boolean.parseBoolean(request.params().get(Field.PROTECTED));
         if (!listFiles.isEmpty())
             UserUtils.getUserInfos(eb, request, user ->
                 userService.getUserSession(Renders.getHost(request), user.getUserId())
-                        .compose(userSession -> documentsService.copyDocumentToWorkspace(Renders.getHost(request), userSession, user, listFiles, parentId))
+                        .compose(userSession -> documentsService.copyDocumentToWorkspace(Renders.getHost(request), userSession, user, listFiles, parentId, application, protectedContent))
                         .onSuccess(res -> renderJson(request, new JsonObject().put(Field.DATA, res)))
                         .onFailure(err -> renderError(request, new JsonObject().put(Field.ERROR, err.getMessage()))));
         else

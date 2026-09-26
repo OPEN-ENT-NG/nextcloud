@@ -740,9 +740,12 @@ public class DefaultDocumentsService implements DocumentsService {
      * @param parentId      Identifier of the parent in the workspace (if you want to create the new folder under specific one)
      * @param user          User infos
      * @param userSession   Session infos
+     * @param application       Application the documents are added from
+     * @param protectedContent  Whether the documents go to the documents added from applications
      * @return              Infos about the copy
      */
-    Future<JsonObject> folderCopy(String host, JsonArray fileInfo, String file, String parentId, UserInfos user, UserNextcloud.TokenProvider userSession) {
+    Future<JsonObject> folderCopy(String host, JsonArray fileInfo, String file, String parentId, UserInfos user,
+                                  UserNextcloud.TokenProvider userSession, String application, boolean protectedContent) {
         Promise<JsonObject> promise = Promise.promise();
         JsonObject folderData = new JsonObject();
         NextcloudFolder ncFolder = new NextcloudFolder(fileInfo);
@@ -762,7 +765,8 @@ public class DefaultDocumentsService implements DocumentsService {
                 .compose(folderInfos -> {
                     ncFolder.setWorkspaceId(folderInfos.getString(Field.UNDERSCORE_ID));
                     folderData.put(Field.DATA, folderInfos);
-                    return copyDocumentToWorkspace(host, userSession, user, ncFolder.getFolderItemPath(), ncFolder.getWorkspaceId());
+                    return copyDocumentToWorkspace(host, userSession, user, ncFolder.getFolderItemPath(),
+                            ncFolder.getWorkspaceId(), application, protectedContent);
                 })
                 .onSuccess(resultFolderMove -> promise.complete(folderData.getJsonObject(Field.DATA)
                         .put(Field.NAME, ncFolder.getName())
@@ -790,7 +794,7 @@ public class DefaultDocumentsService implements DocumentsService {
         Promise<JsonObject> promise = Promise.promise();
         JsonObject result = new JsonObject();
 
-        folderCopy(host, fileInfo, file, parentId, user, userSession)
+        folderCopy(host, fileInfo, file, parentId, user, userSession, Field.APP, false)
                 .compose(folderCopyInfos -> {
                     result.put(Field.RESULT, folderCopyInfos);
                     return deleteDocument(host, userSession, file);
@@ -811,18 +815,23 @@ public class DefaultDocumentsService implements DocumentsService {
      * @param user              User infos
      * @param filesPath         Path of all the files to move
      * @param parentId          Identifier of the previous folder if moving in a folder
+     * @param application       Application the documents are added from
+     * @param protectedContent  Whether the documents go to the documents added from applications
      * @return                  Future list of JsonObject with infos about every file copied
      */
     public Future<List<JsonObject>> copyDocumentToWorkspace(String host, UserNextcloud.TokenProvider userSession,
                                                       UserInfos user,
                                                       List<String> filesPath,
-                                                      String parentId) {
+                                                      String parentId,
+                                                      String application,
+                                                      boolean protectedContent) {
         Promise<List<JsonObject>> promise = Promise.promise();
         Future<JsonObject> current = Future.succeededFuture();
         Map<String, Future<JsonObject>> result = new HashMap<>();
         for (String file : filesPath) {
             current = current.compose(v -> {
-                Future<JsonObject> future = copyToWorkspace(host, userSession, user, file.startsWith("/") ? file.substring(1) : file, parentId);
+                Future<JsonObject> future = copyToWorkspace(host, userSession, user,
+                        file.startsWith("/") ? file.substring(1) : file, parentId, application, protectedContent);
                 Promise<JsonObject> succeedPromise = Promise.promise();
                 future.onComplete(r -> {
                     result.put(file, future);
@@ -895,7 +904,9 @@ public class DefaultDocumentsService implements DocumentsService {
     private Future<JsonObject> copyToWorkspace(String host, UserNextcloud.TokenProvider userSession,
                                                UserInfos user,
                                                String file,
-                                               String parentId) {
+                                               String parentId,
+                                               String application,
+                                               boolean protectedContent) {
         Promise<JsonObject> promiseResult = Promise.promise();
         //The listFiles function here is called to gather data on one specific file.
         String decodedPath = StringHelper.decodeUrlForNc(file).replace(Field.ASCIISPACE, Field.PLUS_SIGN);
@@ -910,7 +921,7 @@ public class DefaultDocumentsService implements DocumentsService {
                             return;
                         }
                         if (Boolean.FALSE.equals(fileInfo.getJsonObject(0).getBoolean(Field.ISFOLDER))) {
-                            storeFileWorkspace(host, userSession, user, file, parentId).onComplete(fileInfos -> {
+                            storeFileWorkspace(host, userSession, user, file, parentId, application, protectedContent).onComplete(fileInfos -> {
                                 if (fileInfos.succeeded()) {
                                     promiseResult.complete(fileInfos.result());
                                 }
@@ -919,7 +930,7 @@ public class DefaultDocumentsService implements DocumentsService {
                                 }
                             });
                         } else {
-                            folderCopy(host, fileInfo, file, parentId, user, userSession)
+                            folderCopy(host, fileInfo, file, parentId, user, userSession, application, protectedContent)
                                     .onSuccess(promiseResult::complete)
                                     .onFailure(err -> {
                                         String messageToFormat = "[Nextcloud@%s::copyToWorkspace] Error while handling folder copy : %s";
@@ -1007,7 +1018,7 @@ public class DefaultDocumentsService implements DocumentsService {
     private Future<JsonObject> retrieveAndDeleteFile(String host, UserNextcloud.TokenProvider userSession, UserInfos user, String filePath, String parentId) {
         Promise<JsonObject> promise = Promise.promise();
         Map<String, JsonObject> result = new HashMap<>();
-        storeFileWorkspace(host, userSession, user, filePath, parentId)
+        storeFileWorkspace(host, userSession, user, filePath, parentId, Field.APP, false)
                 .compose(res -> {
                     result.put(Field.RESULT, res);
                     return deleteDocument(host, userSession, filePath);
@@ -1030,7 +1041,9 @@ public class DefaultDocumentsService implements DocumentsService {
      * @param parentId          Identifier of the previous folder if moving in a folder
      * @return                  Future with the status of the action
      */
-    private Future<JsonObject> storeFileWorkspace(String host, UserNextcloud.TokenProvider userSession, UserInfos user, String filePath, String parentId) {
+    private Future<JsonObject> storeFileWorkspace(String host, UserNextcloud.TokenProvider userSession, UserInfos user,
+                                                  String filePath, String parentId, String application,
+                                                  boolean protectedContent) {
         Promise<JsonObject> promise = Promise.promise();
         String[] splitPath = filePath.split("/");
         String fileName = splitPath[splitPath.length - 1];
@@ -1041,7 +1054,8 @@ public class DefaultDocumentsService implements DocumentsService {
                 )
                 .compose(writeInfo -> {
                     writeInfo.put(Field.PARENTID, parentId);
-                    return FileHelper.addFileReference(writeInfo, user, StringHelper.decodeUrlForNc(fileName), workspaceHelper);
+                    return FileHelper.addFileReference(writeInfo, user, StringHelper.decodeUrlForNc(fileName),
+                            workspaceHelper, application, protectedContent);
                 })
                 .compose(resDoc -> {
                     fileInfos[0] = resDoc;
