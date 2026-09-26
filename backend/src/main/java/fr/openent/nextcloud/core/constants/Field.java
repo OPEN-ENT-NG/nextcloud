@@ -38,6 +38,8 @@ public class Field {
     public static final String QUOTA = "quota";
     public static final String FREE = "free";
     public static final String APP = "nextcloud";
+    public static final String APPLICATION = "application";
+    public static final String PROTECTED = "protected";
     public static final String RELATIVE = "relative";
     public static final String TOTAL = "total";
     public static final String GROUPID = "groupId";
