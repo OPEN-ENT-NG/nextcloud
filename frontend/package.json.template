@@ -1,6 +1,6 @@
 {
   "name": "App",
-  "version": "2.4.3-%branch%.%generateVersion%",
+  "version": "2.4.0-%branch%.%generateVersion%",
   "description": "ENT App starting pack module.",
   "homepage": "https://github.com/CGI-OPEN-ENT-NG/module-starting-pack-react#readme",
   "bugs": {
