@@ -38,6 +38,8 @@ public class Field {
     public static final String QUOTA = "quota";
     public static final String FREE = "free";
     public static final String APP = "nextcloud";
+    public static final String APPLICATION = "application";
+    public static final String PROTECTED = "protected";
     public static final String RELATIVE = "relative";
     public static final String TOTAL = "total";
     public static final String GROUPID = "groupId";
@@ -100,6 +102,27 @@ public class Field {
     public static final String FORMAT = "format";
     public static final String KEBAB_IS_NEXTCLOUD_URL_HIDDEN = "is-nextcloud-url-hidden";
     public static final String CAMEL_IS_NEXTCLOUD_URL_HIDDEN = "isNextcloudUrlHidden";
+
+    // OAuth2 config
+    public static final String OAUTH_CLIENT = "oauth-client";
+    public static final String KEBAB_CLIENT_ID = "client-id";
+    public static final String KEBAB_CLIENT_SECRET = "client-secret";
+    public static final String KEBAB_OAUTH_REDIRECT_URI = "oauth-redirect-uri";
+
+    // OAuth2 wire params
+    public static final String OAUTH_CLIENT_ID = "client_id";
+    public static final String RESPONSE_TYPE = "response_type";
+    public static final String GRANT_TYPE = "grant_type";
+    public static final String AUTHORIZATION_CODE = "authorization_code";
+    public static final String CODE = "code";
+    public static final String STATE = "state";
+    public static final String REDIRECT_URI = "redirect_uri";
+    public static final String ACCESS_TOKEN = "access_token";
+    public static final String REFRESH_TOKEN = "refresh_token";
+    public static final String EXPIRES_IN = "expires_in";
+    public static final String TOKEN_EXPIRES_AT = "token_expires_at";
+    public static final String TOKEN_EXPIRED = "token_expired";
+    public static final String CONNECTED = "connected";
 
     // ProxyConf
     public static final String HTTP_CLIENT_PROXY_HOST = "httpclient.proxyHost";
