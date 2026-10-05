@@ -1,6 +1,6 @@
 {
   "name": "App",
-  "version": "2.4.3-%branch%.%generateVersion%",
+  "version": "2.4.0-%branch%.%generateVersion%",
   "description": "ENT App starting pack module.",
   "homepage": "https://github.com/CGI-OPEN-ENT-NG/module-starting-pack-react#readme",
   "bugs": {
@@ -44,10 +44,10 @@
     ]
   },
   "dependencies": {
-    "@edifice.io/react": "%packageVersion%",
-    "@edifice.io/client": "%packageVersion%",
-    "@edifice.io/bootstrap": "%packageVersion%",
-    "@edifice.io/utilities": "%packageVersion%",
+    "@edifice.io/react": "develop-b2school",
+    "@edifice.io/client": "develop-b2school",
+    "@edifice.io/bootstrap": "develop-b2school",
+    "@edifice.io/utilities": "develop-b2school",
     "@react-spring/web": "9.7.3",
     "@tanstack/react-query": "4.36.1",
     "@mui/material": "5.15.0",
