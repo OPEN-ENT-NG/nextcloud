@@ -154,9 +154,13 @@ public interface DocumentsService {
      * @param user              User infos
      * @param filesPath         Path of all the files to move
      * @param parentId          Identifier of the previous folder if moving in a folder
+     * @param application       Application the documents are added from
+     * @param protectedContent  Whether the documents go to the documents added from applications
      * @return                  Future list of JsonObject with infos about every file copied
      */
-    Future<List<JsonObject>> copyDocumentToWorkspace(String host, UserNextcloud.TokenProvider userSession, UserInfos user, List<String> filesPath, String parentId);
+    Future<List<JsonObject>> copyDocumentToWorkspace(String host, UserNextcloud.TokenProvider userSession, UserInfos user,
+                                                     List<String> filesPath, String parentId, String application,
+                                                     boolean protectedContent);
 
     /**
      * Move all the files listed in the filesPath from nextcloud to local.

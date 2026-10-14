@@ -24,6 +24,7 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
+import io.vertx.ext.web.client.HttpRequest;
 import io.vertx.ext.web.client.HttpResponse;
 import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.codec.BodyCodec;
@@ -79,11 +80,18 @@ public class DefaultDocumentsService implements DocumentsService {
     @Override
     public void parameterizedListFiles(String host, UserNextcloud.TokenProvider userSession, String path, Handler<AsyncResult<HttpResponse<String>>> handler) {
         final NextcloudConfig nextcloudConfig = this.nextcloudConfigMapByHost.get(host);
-        this.client.requestAbs(HttpMethod.PROPFIND, nextcloudConfig.host() +
-                nextcloudConfig.webdavEndpoint() + "/" + userSession.userId() + (path != null ? "/" + StringHelper.encodeUrlForNc(path) : "" ))
-                .basicAuthentication(userSession.userId(), userSession.token())
+        HttpRequest<Buffer> request = this.client.requestAbs(HttpMethod.PROPFIND, nextcloudConfig.host() +
+                nextcloudConfig.webdavEndpoint() + "/" + userSession.userId() + (path != null ? "/" + StringHelper.encodeUrlForNc(path) : "" ));
+
+        authenticate(request, userSession)
                 .as(BodyCodec.string(StandardCharsets.UTF_8.toString()))
                 .sendBuffer(Buffer.buffer(getListFilesPropsBody()), handler);
+    }
+
+    private <T> HttpRequest<T> authenticate(HttpRequest<T> request, UserNextcloud.TokenProvider session) {
+        return session.hasOAuthAccessToken()
+                ? request.bearerTokenAuthentication(session.accessToken())
+                : request.basicAuthentication(session.userId(), session.token());
     }
 
     /**
@@ -137,9 +145,8 @@ public class DefaultDocumentsService implements DocumentsService {
     private Future<JsonObject> createFolder(String host, UserNextcloud.TokenProvider userSession, String path) {
         Promise<JsonObject> promise = Promise.promise();
         final NextcloudConfig nextcloudConfig = this.nextcloudConfigMapByHost.get(host);
-        this.client.requestAbs(HttpMethod.MKCOL, nextcloudConfig.host() + nextcloudConfig.webdavEndpoint() + "/" +
-                userSession.userId() + (path != null ? "/" + path : "" ))
-                .basicAuthentication(userSession.userId(), userSession.token())
+        authenticate(this.client.requestAbs(HttpMethod.MKCOL, nextcloudConfig.host() + nextcloudConfig.webdavEndpoint() + "/" +
+                userSession.userId() + (path != null ? "/" + path : "" )), userSession)
                 .send(responseAsync -> {
                     if (responseAsync.result().statusCode() != 201) {
                         String messageToFormat = "[Nextcloud@%s::createFolder] Response status is not a HTTP 201 : %s : %s";
@@ -184,9 +191,8 @@ public class DefaultDocumentsService implements DocumentsService {
     public Future<HttpResponse<Buffer>> getFile(String host, UserNextcloud.TokenProvider userSession, String path) {
         Promise<HttpResponse<Buffer>> promise = Promise.promise();
         final NextcloudConfig nextcloudConfig = this.nextcloudConfigMapByHost.get(host);
-        this.client.getAbs(nextcloudConfig.host() + nextcloudConfig.webdavEndpoint() + "/" +
-                        userSession.userId() + (path != null ? "/" + path : "" ))
-                .basicAuthentication(userSession.userId(), userSession.token())
+        authenticate(this.client.getAbs(nextcloudConfig.host() + nextcloudConfig.webdavEndpoint() + "/" +
+                        userSession.userId() + (path != null ? "/" + path : "" )), userSession)
                 .send(responseAsync -> proceedGetDocument(responseAsync, promise));
         return promise.future();
     }
@@ -216,8 +222,7 @@ public class DefaultDocumentsService implements DocumentsService {
     public Future<HttpResponse<Buffer>> getFiles(String host, UserNextcloud.TokenProvider userSession, String path, List<String> files) {
         Promise<HttpResponse<Buffer>> promise = Promise.promise();
         final NextcloudConfig nextcloudConfig = this.nextcloudConfigMapByHost.get(host);
-        this.client.getAbs(nextcloudConfig.host() + DOWNLOAD_ENDPOINT)
-                .basicAuthentication(userSession.userId(), userSession.token())
+        authenticate(this.client.getAbs(nextcloudConfig.host() + DOWNLOAD_ENDPOINT), userSession)
                 .addQueryParam(Field.DIR, path)
                 .addQueryParam(Field.FILES, new JsonArray(files).toString())
                 .send(responseAsync -> proceedGetDocument(responseAsync, promise));
@@ -228,8 +233,7 @@ public class DefaultDocumentsService implements DocumentsService {
     public Future<HttpResponse<Buffer>> getFolder(String host, UserNextcloud.TokenProvider userSession, String path) {
         Promise<HttpResponse<Buffer>> promise = Promise.promise();
         final NextcloudConfig nextcloudConfig = this.nextcloudConfigMapByHost.get(host);
-        this.client.getAbs(nextcloudConfig.host() + DOWNLOAD_ENDPOINT)
-                .basicAuthentication(userSession.userId(), userSession.token())
+        authenticate(this.client.getAbs(nextcloudConfig.host() + DOWNLOAD_ENDPOINT), userSession)
                 .addQueryParam(Field.DIR, path)
                 .send(responseAsync -> proceedGetDocument(responseAsync, promise));
         return promise.future();
@@ -245,8 +249,7 @@ public class DefaultDocumentsService implements DocumentsService {
                             if (fileInfo.isEmpty()) {
                                 final NextcloudConfig nextcloudConfig = this.nextcloudConfigMapByHost.get(host);
                                 String endpoint = nextcloudConfig.host() + nextcloudConfig.webdavEndpoint() + "/" + userSession.userId();
-                                this.client.requestAbs(HttpMethod.MOVE, endpoint + "/" + StringHelper.encodeUrlForNc(path))
-                                        .basicAuthentication(userSession.userId(), userSession.token())
+                                authenticate(this.client.requestAbs(HttpMethod.MOVE, endpoint + "/" + StringHelper.encodeUrlForNc(path)), userSession)
                                         .putHeader(Field.DESTINATION, endpoint + "/" + StringHelper.encodeUrlForNc(destPath))
                                         .send(responseAsync -> this.onMoveDocumentHandler(responseAsync, promise));
 
@@ -308,8 +311,7 @@ public class DefaultDocumentsService implements DocumentsService {
     private Future<Void> deleteDocument(String host, UserNextcloud.TokenProvider userSession, String path) {
         Promise<Void> promise = Promise.promise();
         final NextcloudConfig nextcloudConfig = this.nextcloudConfigMapByHost.get(host);
-        this.client.deleteAbs(nextcloudConfig.host() + nextcloudConfig.webdavEndpoint() + "/" + userSession.userId() + "/" + path)
-                .basicAuthentication(userSession.userId(), userSession.token())
+        authenticate(this.client.deleteAbs(nextcloudConfig.host() + nextcloudConfig.webdavEndpoint() + "/" + userSession.userId() + "/" + path), userSession)
                 .send(responseAsync -> onDeleteDocumentHandler(responseAsync, promise));
         return promise.future();
     }
@@ -338,8 +340,7 @@ public class DefaultDocumentsService implements DocumentsService {
         final NextcloudConfig nextcloudConfig = this.nextcloudConfigMapByHost.get(host);
         String url = nextcloudConfig.host() + nextcloudConfig.webdavEndpoint().replace(Field.FILES, "") + Field.TRASHBIN
                 + "/" + userSession.userId() + "/" + path;
-        this.client.deleteAbs(url)
-                .basicAuthentication(userSession.userId(), userSession.token())
+        authenticate(this.client.deleteAbs(url), userSession)
                 .send(responseAsync -> onDeleteDocumentHandler(responseAsync, promise));
         return promise.future();
     }
@@ -359,7 +360,7 @@ public class DefaultDocumentsService implements DocumentsService {
         final NextcloudConfig nextcloudConfig = this.nextcloudConfigMapByHost.get(host);
 
         if (host == null || nextcloudConfig == null || userSession == null
-                || userSession.userId() == null || userSession.token() == null) {
+                || userSession.userId() == null || (userSession.token() == null && !userSession.hasOAuthAccessToken())) {
             String messageToFormat = "[Nextcloud@%s::restoreDocuments] Invalid input parameters.";
             PromiseHelper.reject(log, messageToFormat, this.getClass().getSimpleName(),
                     new Exception("Invalid input parameters."), promise);
@@ -373,22 +374,20 @@ public class DefaultDocumentsService implements DocumentsService {
             return promise.future();
         }
 
-        String baseUrl = nextcloudConfig.host();
-        String userId = userSession.userId();
-        String authToken = userSession.token();
+        String trashbinUrl = nextcloudConfig.host() + nextcloudConfig.webdavEndpoint().replace(Field.FILES, "") + Field.TRASHBIN
+                + "/" + userSession.userId();
 
         List<Future<Void>> operations = new ArrayList<>();
 
         for (String trashPath : paths) {
             String filename = trashPath.substring(trashPath.lastIndexOf("/") + 1);
-            String sourceUrl = baseUrl + "remote.php/dav/trashbin/" + userId + trashPath;
-            String destinationUrl = baseUrl + "remote.php/dav/trashbin/" + userId + "/restore/" + filename;
+            String sourceUrl = trashbinUrl + trashPath;
+            String destinationUrl = trashbinUrl + "/restore/" + filename;
 
             Promise<Void> operationPromise = Promise.promise();
 
-            this.client.requestAbs(HttpMethod.MOVE, sourceUrl)
+            authenticate(this.client.requestAbs(HttpMethod.MOVE, sourceUrl), userSession)
                     .putHeader("Destination", destinationUrl)
-                    .basicAuthentication(userId, authToken)
                     .send(ar -> {
                         if (ar.failed()) {
                             String messageToFormat = "[Nextcloud@%s::restoreDocuments] Failed to restore document from: %s -> %s";
@@ -441,19 +440,17 @@ public class DefaultDocumentsService implements DocumentsService {
                 || nextcloudConfig == null
                 || userSession == null
                 || userSession.userId() == null
-                || userSession.token() == null) {
+                || (userSession.token() == null && !userSession.hasOAuthAccessToken())) {
             String messageToFormat = "[Nextcloud@%s::listTrash] Invalid input parameters.";
             PromiseHelper.reject(log, messageToFormat, this.getClass().getSimpleName(),
                     new Exception("Invalid input parameters."), promise);
             return promise.future();
         }
 
-        String url = nextcloudConfig.host() + "remote.php/dav/" + Field.TRASHBIN + "/" +
+        String url = nextcloudConfig.host() + nextcloudConfig.webdavEndpoint().replace(Field.FILES, "") + Field.TRASHBIN + "/" +
                 userSession.userId() + "/" + Field.TRASH;
 
-        this.client
-                .requestAbs(HttpMethod.PROPFIND, url)
-                .basicAuthentication(userSession.userId(), userSession.token())
+        authenticate(this.client.requestAbs(HttpMethod.PROPFIND, url), userSession)
                 .send(responseAsync -> {
                     if (responseAsync.failed()) {
                         String messageToFormat = "[Nextcloud@%s::listTrash] An error has occurred during PROPFIND : %s";
@@ -548,8 +545,7 @@ public class DefaultDocumentsService implements DocumentsService {
     public Future<Void> deleteTrash(String host, UserNextcloud.TokenProvider userSession) {
         Promise<Void> promise = Promise.promise();
         final NextcloudConfig nextcloudConfig = this.nextcloudConfigMapByHost.get(host);
-        this.client.deleteAbs(nextcloudConfig.host() + nextcloudConfig.webdavEndpoint().replace(Field.FILES, "") + Field.TRASHBIN + "/" + userSession.userId() + "/" + Field.TRASH)
-                .basicAuthentication(userSession.userId(), userSession.token())
+        authenticate(this.client.deleteAbs(nextcloudConfig.host() + nextcloudConfig.webdavEndpoint().replace(Field.FILES, "") + Field.TRASHBIN + "/" + userSession.userId() + "/" + Field.TRASH), userSession)
                 .send(responseAsync -> onDeleteDocumentHandler(responseAsync, promise));
         return promise.future();
     }
@@ -653,9 +649,8 @@ public class DefaultDocumentsService implements DocumentsService {
 
                     vertx.fileSystem().open(tmpFile.toString(), new OpenOptions())
                             .onSuccess(asyncFile -> {
-                                client.putAbs(nextcloudConfig.host() + nextcloudConfig.webdavEndpoint() + "/" +
-                                                user.userId() + "/" + StringHelper.encodeUrlForNc(filePath))
-                                        .basicAuthentication(user.userId(), user.token())
+                                authenticate(client.putAbs(nextcloudConfig.host() + nextcloudConfig.webdavEndpoint() + "/" +
+                                                user.userId() + "/" + StringHelper.encodeUrlForNc(filePath)), user)
                                         .as(BodyCodec.jsonObject())
                                         .sendStream(asyncFile, ar -> {
                                             try { Files.deleteIfExists(tmpFile); } catch (IOException ignored) {}
@@ -732,9 +727,12 @@ public class DefaultDocumentsService implements DocumentsService {
      * @param parentId      Identifier of the parent in the workspace (if you want to create the new folder under specific one)
      * @param user          User infos
      * @param userSession   Session infos
+     * @param application       Application the documents are added from
+     * @param protectedContent  Whether the documents go to the documents added from applications
      * @return              Infos about the copy
      */
-    Future<JsonObject> folderCopy(String host, JsonArray fileInfo, String file, String parentId, UserInfos user, UserNextcloud.TokenProvider userSession) {
+    Future<JsonObject> folderCopy(String host, JsonArray fileInfo, String file, String parentId, UserInfos user,
+                                  UserNextcloud.TokenProvider userSession, String application, boolean protectedContent) {
         Promise<JsonObject> promise = Promise.promise();
         JsonObject folderData = new JsonObject();
         NextcloudFolder ncFolder = new NextcloudFolder(fileInfo);
@@ -754,7 +752,8 @@ public class DefaultDocumentsService implements DocumentsService {
                 .compose(folderInfos -> {
                     ncFolder.setWorkspaceId(folderInfos.getString(Field.UNDERSCORE_ID));
                     folderData.put(Field.DATA, folderInfos);
-                    return copyDocumentToWorkspace(host, userSession, user, ncFolder.getFolderItemPath(), ncFolder.getWorkspaceId());
+                    return copyDocumentToWorkspace(host, userSession, user, ncFolder.getFolderItemPath(),
+                            ncFolder.getWorkspaceId(), application, protectedContent);
                 })
                 .onSuccess(resultFolderMove -> promise.complete(folderData.getJsonObject(Field.DATA)
                         .put(Field.NAME, ncFolder.getName())
@@ -782,7 +781,7 @@ public class DefaultDocumentsService implements DocumentsService {
         Promise<JsonObject> promise = Promise.promise();
         JsonObject result = new JsonObject();
 
-        folderCopy(host, fileInfo, file, parentId, user, userSession)
+        folderCopy(host, fileInfo, file, parentId, user, userSession, Field.APP, false)
                 .compose(folderCopyInfos -> {
                     result.put(Field.RESULT, folderCopyInfos);
                     return deleteDocument(host, userSession, file);
@@ -803,18 +802,23 @@ public class DefaultDocumentsService implements DocumentsService {
      * @param user              User infos
      * @param filesPath         Path of all the files to move
      * @param parentId          Identifier of the previous folder if moving in a folder
+     * @param application       Application the documents are added from
+     * @param protectedContent  Whether the documents go to the documents added from applications
      * @return                  Future list of JsonObject with infos about every file copied
      */
     public Future<List<JsonObject>> copyDocumentToWorkspace(String host, UserNextcloud.TokenProvider userSession,
                                                       UserInfos user,
                                                       List<String> filesPath,
-                                                      String parentId) {
+                                                      String parentId,
+                                                      String application,
+                                                      boolean protectedContent) {
         Promise<List<JsonObject>> promise = Promise.promise();
         Future<JsonObject> current = Future.succeededFuture();
         Map<String, Future<JsonObject>> result = new HashMap<>();
         for (String file : filesPath) {
             current = current.compose(v -> {
-                Future<JsonObject> future = copyToWorkspace(host, userSession, user, file.startsWith("/") ? file.substring(1) : file, parentId);
+                Future<JsonObject> future = copyToWorkspace(host, userSession, user,
+                        file.startsWith("/") ? file.substring(1) : file, parentId, application, protectedContent);
                 Promise<JsonObject> succeedPromise = Promise.promise();
                 future.onComplete(r -> {
                     result.put(file, future);
@@ -887,7 +891,9 @@ public class DefaultDocumentsService implements DocumentsService {
     private Future<JsonObject> copyToWorkspace(String host, UserNextcloud.TokenProvider userSession,
                                                UserInfos user,
                                                String file,
-                                               String parentId) {
+                                               String parentId,
+                                               String application,
+                                               boolean protectedContent) {
         Promise<JsonObject> promiseResult = Promise.promise();
         //The listFiles function here is called to gather data on one specific file.
         String decodedPath = StringHelper.decodeUrlForNc(file).replace(Field.ASCIISPACE, Field.PLUS_SIGN);
@@ -902,7 +908,7 @@ public class DefaultDocumentsService implements DocumentsService {
                             return;
                         }
                         if (Boolean.FALSE.equals(fileInfo.getJsonObject(0).getBoolean(Field.ISFOLDER))) {
-                            storeFileWorkspace(host, userSession, user, file, parentId).onComplete(fileInfos -> {
+                            storeFileWorkspace(host, userSession, user, file, parentId, application, protectedContent).onComplete(fileInfos -> {
                                 if (fileInfos.succeeded()) {
                                     promiseResult.complete(fileInfos.result());
                                 }
@@ -911,7 +917,7 @@ public class DefaultDocumentsService implements DocumentsService {
                                 }
                             });
                         } else {
-                            folderCopy(host, fileInfo, file, parentId, user, userSession)
+                            folderCopy(host, fileInfo, file, parentId, user, userSession, application, protectedContent)
                                     .onSuccess(promiseResult::complete)
                                     .onFailure(err -> {
                                         String messageToFormat = "[Nextcloud@%s::copyToWorkspace] Error while handling folder copy : %s";
@@ -999,7 +1005,7 @@ public class DefaultDocumentsService implements DocumentsService {
     private Future<JsonObject> retrieveAndDeleteFile(String host, UserNextcloud.TokenProvider userSession, UserInfos user, String filePath, String parentId) {
         Promise<JsonObject> promise = Promise.promise();
         Map<String, JsonObject> result = new HashMap<>();
-        storeFileWorkspace(host, userSession, user, filePath, parentId)
+        storeFileWorkspace(host, userSession, user, filePath, parentId, Field.APP, false)
                 .compose(res -> {
                     result.put(Field.RESULT, res);
                     return deleteDocument(host, userSession, filePath);
@@ -1022,7 +1028,9 @@ public class DefaultDocumentsService implements DocumentsService {
      * @param parentId          Identifier of the previous folder if moving in a folder
      * @return                  Future with the status of the action
      */
-    private Future<JsonObject> storeFileWorkspace(String host, UserNextcloud.TokenProvider userSession, UserInfos user, String filePath, String parentId) {
+    private Future<JsonObject> storeFileWorkspace(String host, UserNextcloud.TokenProvider userSession, UserInfos user,
+                                                  String filePath, String parentId, String application,
+                                                  boolean protectedContent) {
         Promise<JsonObject> promise = Promise.promise();
         String[] splitPath = filePath.split("/");
         String fileName = splitPath[splitPath.length - 1];
@@ -1033,7 +1041,8 @@ public class DefaultDocumentsService implements DocumentsService {
                 )
                 .compose(writeInfo -> {
                     writeInfo.put(Field.PARENTID, parentId);
-                    return FileHelper.addFileReference(writeInfo, user, StringHelper.decodeUrlForNc(fileName), workspaceHelper);
+                    return FileHelper.addFileReference(writeInfo, user, StringHelper.decodeUrlForNc(fileName),
+                            workspaceHelper, application, protectedContent);
                 })
                 .compose(resDoc -> {
                     fileInfos[0] = resDoc;
@@ -1112,8 +1121,7 @@ public class DefaultDocumentsService implements DocumentsService {
                     final NextcloudConfig nextcloudConfig = this.nextcloudConfigMapByHost.get(host);
                     //Read the file on the vertx container, id is needed to locate it
                     storage.readFile(file.id(), res ->
-                        this.client.putAbs(nextcloudConfig.host() + nextcloudConfig.webdavEndpoint() + "/" + user.userId() + "/" + StringHelper.encodeUrlForNc(filePath))
-                                .basicAuthentication(user.userId(), user.token())
+                        authenticate(this.client.putAbs(nextcloudConfig.host() + nextcloudConfig.webdavEndpoint() + "/" + user.userId() + "/" + StringHelper.encodeUrlForNc(filePath)), user)
                                 .as(BodyCodec.jsonObject())
                                 .sendBuffer(res, responseAsync -> {
                                     if (responseAsync.failed()) {
@@ -1369,9 +1377,8 @@ public class DefaultDocumentsService implements DocumentsService {
                 getUniqueFileName(host, userSession, StringHelper.encodeUrlForNc(finalPath + docName), 0)
                         .onSuccess(name -> {
                             final NextcloudConfig nextcloudConfig = this.nextcloudConfigMapByHost.get(host);
-                            this.client.putAbs(nextcloudConfig.host() + nextcloudConfig.webdavEndpoint() + "/" + userSession.userId() + "/" +
-                                            name)
-                                    .basicAuthentication(userSession.userId(), userSession.token())
+                            authenticate(this.client.putAbs(nextcloudConfig.host() + nextcloudConfig.webdavEndpoint() + "/" + userSession.userId() + "/" +
+                                            name), userSession)
                                     .sendBuffer(file.getData(), responseAsync -> {
                                         if (responseAsync.failed()) {
                                             String messageToFormat = "[Nextcloud@%s::sendWorkspaceFileToNC] An error has occurred during uploading file : %s";
