@@ -105,6 +105,7 @@ public class Field {
 
     // OAuth2 config
     public static final String OAUTH_CLIENT = "oauth-client";
+    public static final String HOST = "host";
     public static final String KEBAB_CLIENT_ID = "client-id";
     public static final String KEBAB_CLIENT_SECRET = "client-secret";
     public static final String KEBAB_OAUTH_REDIRECT_URI = "oauth-redirect-uri";

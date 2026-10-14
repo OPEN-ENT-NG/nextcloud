@@ -79,9 +79,9 @@ public class UserController extends ControllerHelper {
             final NextcloudConfig nextcloudConfig = this.nextcloudConfigMapByHost.get(Renders.getHost(request));
             final String state = UUID.randomUUID().toString();
             CookieHelper.getInstance().setSigned(OAUTH_STATE_COOKIE, state, OAUTH_STATE_TTL_SECONDS, request);
-            final String host = nextcloudConfig.host().endsWith("/")
-                    ? nextcloudConfig.host().substring(0, nextcloudConfig.host().length() - 1)
-                    : nextcloudConfig.host();
+            final String host = nextcloudConfig.oauthHost().endsWith("/")
+                    ? nextcloudConfig.oauthHost().substring(0, nextcloudConfig.oauthHost().length() - 1)
+                    : nextcloudConfig.oauthHost();
 
             final String encodedOauthClientId = urlEncode( nextcloudConfig.oauthClientId());
             final String encodedOauthState = urlEncode(state);

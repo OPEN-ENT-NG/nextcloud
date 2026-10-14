@@ -334,7 +334,7 @@ public class DefaultUserService implements UserService {
     private Future<UserNextcloud.OAuthToken> postTokenEndpoint(final String host, MultiMap form) {
         Promise<UserNextcloud.OAuthToken> promise = Promise.promise();
         final NextcloudConfig nextcloudConfig = this.nextcloudConfigMapByHost.get(host);
-        this.client.postAbs(stripTrailingSlash(nextcloudConfig.host()) + OAUTH_TOKEN_ENDPOINT)
+        this.client.postAbs(stripTrailingSlash(nextcloudConfig.oauthHost()) + OAUTH_TOKEN_ENDPOINT)
                 .basicAuthentication(nextcloudConfig.oauthClientId(), nextcloudConfig.oauthClientSecret())
                 .as(BodyCodec.jsonObject())
                 .sendForm(form, responseAsync -> proceedTokenExchange(responseAsync, promise));
