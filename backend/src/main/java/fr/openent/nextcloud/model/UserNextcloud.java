@@ -114,6 +114,7 @@ public class UserNextcloud {
         private String userId;
         private String userName;
         private String token;
+        private String accessToken;
 
         public String userId() {
             return userId;
@@ -125,6 +126,10 @@ public class UserNextcloud {
 
         public String token() {
             return token;
+        }
+
+        public String accessToken() {
+            return accessToken;
         }
 
         public TokenProvider setUserId(String userId) {
@@ -142,6 +147,11 @@ public class UserNextcloud {
             return this;
         }
 
+        public TokenProvider setAccessToken(String accessToken) {
+            this.accessToken = accessToken;
+            return this;
+        }
+
         public JsonObject toJSON() {
             return new JsonObject()
                     .put(Field.LOGINNAME, this.userName)
@@ -151,7 +161,42 @@ public class UserNextcloud {
         public boolean isEmpty() {
             return this.userId == null
                     && this.userName == null
-                    && this.token == null;
+                    && this.token == null
+                    && this.accessToken == null;
+        }
+
+        public boolean hasOAuthAccessToken() {
+            return this.accessToken != null && !this.accessToken.isEmpty();
+        }
+    }
+
+    public static class OAuthToken {
+        private final String accessToken;
+        private final String refreshToken;
+        private final Long expiresIn;
+        private final String nextcloudUserId;
+
+        public OAuthToken(JsonObject payload) {
+            this.accessToken = payload.getString(Field.ACCESS_TOKEN);
+            this.refreshToken = payload.getString(Field.REFRESH_TOKEN);
+            this.expiresIn = payload.getLong(Field.EXPIRES_IN);
+            this.nextcloudUserId = payload.getString(Field.USER_ID);
+        }
+
+        public String accessToken() {
+            return accessToken;
+        }
+
+        public String refreshToken() {
+            return refreshToken;
+        }
+
+        public Long expiresIn() {
+            return expiresIn;
+        }
+
+        public String nextcloudUserId() {
+            return nextcloudUserId;
         }
     }
 }

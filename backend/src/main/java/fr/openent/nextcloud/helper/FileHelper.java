@@ -191,15 +191,18 @@ public class FileHelper {
 
     /**
      * Handler which adds document into the MongoDB after downloading it from the NC server
-     * @param uploaded      Data about the download (metadata, title ...)
-     * @param user          User infos
-     * @param fileName      Name of the file on the NC server
+     * @param uploaded          Data about the download (metadata, title ...)
+     * @param user              User infos
+     * @param fileName          Name of the file on the NC server
+     * @param application       Application the document is added from
+     * @param protectedContent  Whether the document goes to the documents added from applications
      * @return              The handler
      */
     public static Future<JsonObject> addFileReference(JsonObject uploaded, UserInfos user, String fileName,
-                                                      WorkspaceHelper workspaceHelper) {
+                                                      WorkspaceHelper workspaceHelper, String application,
+                                                      boolean protectedContent) {
         Promise<JsonObject> promise = Promise.promise();
-        workspaceHelper.addDocument(uploaded, user, fileName, Field.APP, false, null,
+        workspaceHelper.addDocument(uploaded, user, fileName, application, protectedContent, null,
                 resDoc -> {
                     if (resDoc.succeeded()) {
                         promise.complete(resDoc.result().body());
