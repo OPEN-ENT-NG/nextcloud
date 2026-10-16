@@ -36,6 +36,14 @@
     {% else %}
       "nextcloud-providers": {{ nextcloudProviders }},
     {% endif %}
+    {% if (nextcloudHostOauth is defined) %}
+      "oauth-client": {
+        "host": "{{ nextcloudHostOauth }}",
+        "client-id": "{{ nextcloudClientId | default('') }}",
+        "client-secret": "{{ nextcloudClientSecret | default('') }}",
+        "oauth-redirect-uri": "{{ nextcloudOauthRedirectUri | default('') }}"
+      },
+    {% endif %}
     "entcore.port" : 8009
   }
 }
