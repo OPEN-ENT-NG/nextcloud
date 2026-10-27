@@ -316,6 +316,56 @@ public class DefaultDocumentsService implements DocumentsService {
         return promise.future();
     }
 
+    /**
+     * Deletes a document/folder like deleteDocument (a plain WebDAV DELETE, which Nextcloud itself always
+     * soft-deletes into the user's own trash), then immediately purges the resulting trash entry so a
+     * cross-storage move (Nextcloud -> workspace, see retrieveAndDeleteFile/folderMove) leaves no trace
+     * behind — otherwise the moved item silently stayed visible in the user's Nextcloud trash even though
+     * it had already been copied into their workspace, which isn't what "move" means.
+     * <p>
+     * The new trash entry is identified by diffing listTrash() before/after the delete rather than
+     * matching on name: trash display names come back decoded from Nextcloud's own XML, while the path
+     * this method receives may still be URL-encoded (see the decode/"+"-for-space dance already done for
+     * the listFiles call above, in moveToWorkspace) — a diff sidesteps that encoding mismatch entirely.
+     *
+     * @param host          host
+     * @param userSession   User session
+     * @param path          Path of the file/folder on the Nextcloud server to delete and purge
+     * @return              Future completed once the document is deleted and purged from trash
+     */
+    private Future<Void> deleteDocumentPermanently(String host, UserNextcloud.TokenProvider userSession, String path) {
+        Promise<Void> promise = Promise.promise();
+        listTrash(host, userSession)
+                .compose(before -> {
+                    Set<String> pathsBefore = new HashSet<>();
+                    for (int i = 0; i < before.size(); i++) {
+                        pathsBefore.add(before.getJsonObject(i).getString(Field.PATH));
+                    }
+                    return deleteDocument(host, userSession, path)
+                            .compose(v -> listTrash(host, userSession))
+                            .compose(after -> {
+                                List<String> newTrashPaths = new ArrayList<>();
+                                for (int i = 0; i < after.size(); i++) {
+                                    String trashPath = after.getJsonObject(i).getString(Field.PATH);
+                                    if (!pathsBefore.contains(trashPath)) {
+                                        newTrashPaths.add(trashPath);
+                                    }
+                                }
+                                if (newTrashPaths.isEmpty()) {
+                                    // Shouldn't happen (the delete above just created one) — nothing left to purge either way.
+                                    return Future.<Void>succeededFuture();
+                                }
+                                return deleteDocumentsFromTrashbin(host, userSession, newTrashPaths).mapEmpty();
+                            });
+                })
+                .onSuccess(v -> promise.complete())
+                .onFailure(err -> {
+                    String messageToFormat = "[Nextcloud@%s::deleteDocumentPermanently] Error while purging document from trash after move : %s";
+                    PromiseHelper.reject(log, messageToFormat, this.getClass().getSimpleName(), err, promise);
+                });
+        return promise.future();
+    }
+
     @Override
     public Future<JsonObject> deleteDocumentsFromTrashbin(String host, TokenProvider userSession, List<String> paths) {
         Promise<JsonObject> promise = Promise.promise();
@@ -784,7 +834,7 @@ public class DefaultDocumentsService implements DocumentsService {
         folderCopy(host, fileInfo, file, parentId, user, userSession, Field.APP, false)
                 .compose(folderCopyInfos -> {
                     result.put(Field.RESULT, folderCopyInfos);
-                    return deleteDocument(host, userSession, file);
+                    return deleteDocumentPermanently(host, userSession, file);
                 })
                 .onSuccess(deleteStatus -> promise.complete(result.getJsonObject(Field.RESULT)))
                 .onFailure(err -> {
@@ -1008,7 +1058,7 @@ public class DefaultDocumentsService implements DocumentsService {
         storeFileWorkspace(host, userSession, user, filePath, parentId, Field.APP, false)
                 .compose(res -> {
                     result.put(Field.RESULT, res);
-                    return deleteDocument(host, userSession, filePath);
+                    return deleteDocumentPermanently(host, userSession, filePath);
                 })
                 .onSuccess(res -> promise.complete(result.get(Field.RESULT)))
                 .onFailure(err -> {
