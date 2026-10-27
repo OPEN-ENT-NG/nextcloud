@@ -49,25 +49,28 @@ public interface DocumentsService {
     Future<HttpResponse<Buffer>> getFile(String host, UserNextcloud.TokenProvider userSession, String path);
 
     /**
-     * get/download folder
+     * download folder as a zip archive, built locally from individual WebDAV downloads (see
+     * DefaultDocumentsService#addToZip): Nextcloud's own ajax/download.php zip endpoint doesn't
+     * authenticate via the Bearer/Basic tokens this backend uses, so it can't be proxied directly.
      *
      * @param host host
      * @param userSession   User Session {@link UserNextcloud.TokenProvider}
      * @param path          folder path of nextcloud's user
-     * @return  Future containing Buffer of folder {@link Buffer}
+     * @return  Future containing the zip archive {@link Buffer}
      */
-    Future<HttpResponse<Buffer>> getFolder(String host, UserNextcloud.TokenProvider userSession, String path);
+    Future<Buffer> getFolder(String host, UserNextcloud.TokenProvider userSession, String path);
 
     /**
-     * download multiple files (.zip given)
+     * download multiple files and/or folders as a single zip archive, built locally the same way as
+     * getFolder (see DefaultDocumentsService#addToZip).
      *
      * @param host host
      * @param userSession       User Session {@link UserNextcloud.TokenProvider}
      * @param path              path of nextcloud's user
      * @param files             List of wanted file to download
-     * @return  Future containing Buffer of file {@link Buffer}
+     * @return  Future containing the zip archive {@link Buffer}
      */
-    Future<HttpResponse<Buffer>> getFiles(String host, UserNextcloud.TokenProvider userSession, String path, List<String> files);
+    Future<Buffer> getFiles(String host, UserNextcloud.TokenProvider userSession, String path, List<String> files);
 
     /**
      * Move Document

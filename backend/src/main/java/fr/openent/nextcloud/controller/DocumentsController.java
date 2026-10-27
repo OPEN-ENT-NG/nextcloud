@@ -77,25 +77,28 @@ public class DocumentsController extends ControllerHelper {
         boolean isFolder = Boolean.parseBoolean(request.getParam(Field.ISFOLDER));
         UserUtils.getUserInfos(eb, request, user ->
                 userService.getUserSession(Renders.getHost(request), user.getUserId())
-                        .compose(userSession -> {
+                        .onSuccess(userSession -> {
                             if (isFolder) {
-                                return documentsService.getFolder(Renders.getHost(request), userSession, path);
+                                documentsService.getFolder(Renders.getHost(request), userSession, path)
+                                        .onSuccess(zipBuffer -> {
+                                            HttpServerResponse resp = request.response();
+                                            resp.putHeader("Content-Type", "application/octet-stream")
+                                                    .putHeader("Content-Disposition", "attachment; filename=\" "+ fileName +" .zip\"")
+                                                    .putHeader("Content-Description", "File Transfer")
+                                                    .putHeader("Content-Transfer-Encoding", "binary");
+                                            resp.end(zipBuffer);
+                                        })
+                                        .onFailure(err -> renderError(request));
                             } else {
-                                return documentsService.getFile(Renders.getHost(request), userSession, StringHelper.encodeUrlForNc(path));
+                                documentsService.getFile(Renders.getHost(request), userSession, StringHelper.encodeUrlForNc(path))
+                                        .onSuccess(fileResponse -> {
+                                            HttpServerResponse resp = request.response();
+                                            resp.putHeader("Content-type", contentType + "; charset=utf-8")
+                                                    .putHeader("Content-Disposition", "attachment; filename=" + fileName);
+                                            resp.end(fileResponse.body());
+                                        })
+                                        .onFailure(err -> renderError(request));
                             }
-                        })
-                        .onSuccess(fileResponse -> {
-                            HttpServerResponse resp = request.response();
-                            if (isFolder) {
-                                resp.putHeader("Content-Type", "application/octet-stream")
-                                        .putHeader("Content-Disposition", "attachment; filename=\" "+ fileName +" .zip\"")
-                                        .putHeader("Content-Description", "File Transfer")
-                                        .putHeader("Content-Transfer-Encoding", "binary");
-                            } else {
-                                resp.putHeader("Content-type", contentType + "; charset=utf-8")
-                                        .putHeader("Content-Disposition", "attachment; filename=" + fileName);
-                            }
-                            resp.end(fileResponse.body());
                         })
                         .onFailure(err -> renderError(request)));
     }
@@ -111,13 +114,13 @@ public class DocumentsController extends ControllerHelper {
             UserUtils.getUserInfos(eb, request, user ->
                     userService.getUserSession(Renders.getHost(request), user.getUserId())
                             .compose(userSession -> documentsService.getFiles(Renders.getHost(request), userSession, path, files))
-                            .onSuccess(fileResponse -> {
+                            .onSuccess(zipBuffer -> {
                                 HttpServerResponse resp = request.response();
                                 resp.putHeader("Content-Disposition", "attachment; filename=\"" + Field.ARCHIVE + ".zip\"");
                                 resp.putHeader("Content-Type", "application/octet-stream");
                                 resp.putHeader("Content-Description", "File Transfer");
                                 resp.putHeader("Content-Transfer-Encoding", "binary");
-                                resp.end(fileResponse.body());
+                                resp.end(zipBuffer);
                             })
                             .onFailure(err -> renderError(request)));
         } else {

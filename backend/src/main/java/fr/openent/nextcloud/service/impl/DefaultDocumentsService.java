@@ -33,15 +33,19 @@ import org.entcore.common.storage.Storage;
 import org.entcore.common.user.UserInfos;
 import org.entcore.common.utils.FileUtils;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 public class DefaultDocumentsService implements DocumentsService {
     private static final Logger log = LoggerFactory.getLogger(DefaultDocumentsService.class);
@@ -50,9 +54,6 @@ public class DefaultDocumentsService implements DocumentsService {
     private final Storage storage;
     private final WorkspaceHelper workspaceHelper;
     private final EventBus eventBus;
-
-    private static final String DOWNLOAD_ENDPOINT = "/index.php/apps/files/ajax/download.php";
-
 
     public DefaultDocumentsService(ServiceFactory serviceFactory) {
         this.client = serviceFactory.webClient();
@@ -219,24 +220,107 @@ public class DefaultDocumentsService implements DocumentsService {
     }
 
     @Override
-    public Future<HttpResponse<Buffer>> getFiles(String host, UserNextcloud.TokenProvider userSession, String path, List<String> files) {
-        Promise<HttpResponse<Buffer>> promise = Promise.promise();
-        final NextcloudConfig nextcloudConfig = this.nextcloudConfigMapByHost.get(host);
-        authenticate(this.client.getAbs(nextcloudConfig.host() + DOWNLOAD_ENDPOINT), userSession)
-                .addQueryParam(Field.DIR, path)
-                .addQueryParam(Field.FILES, new JsonArray(files).toString())
-                .send(responseAsync -> proceedGetDocument(responseAsync, promise));
+    public Future<Buffer> getFiles(String host, UserNextcloud.TokenProvider userSession, String path, List<String> files) {
+        Promise<Buffer> promise = Promise.promise();
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        ZipOutputStream zos = new ZipOutputStream(baos);
+        Future<Void> current = Future.succeededFuture();
+        for (String file : files) {
+            String filePath = (path != null && !path.isEmpty() ? path + "/" : "") + file;
+            current = current.compose(v -> addToZip(host, userSession, filePath, file, zos));
+        }
+        current
+                .onSuccess(v -> completeZip(zos, baos, promise, "getFiles"))
+                .onFailure(err -> {
+                    String messageToFormat = "[Nextcloud@%s::getFiles] Error while building zip archive : %s";
+                    PromiseHelper.reject(log, messageToFormat, this.getClass().getSimpleName(), err, promise);
+                });
         return promise.future();
     }
 
     @Override
-    public Future<HttpResponse<Buffer>> getFolder(String host, UserNextcloud.TokenProvider userSession, String path) {
-        Promise<HttpResponse<Buffer>> promise = Promise.promise();
-        final NextcloudConfig nextcloudConfig = this.nextcloudConfigMapByHost.get(host);
-        authenticate(this.client.getAbs(nextcloudConfig.host() + DOWNLOAD_ENDPOINT), userSession)
-                .addQueryParam(Field.DIR, path)
-                .send(responseAsync -> proceedGetDocument(responseAsync, promise));
+    public Future<Buffer> getFolder(String host, UserNextcloud.TokenProvider userSession, String path) {
+        Promise<Buffer> promise = Promise.promise();
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        ZipOutputStream zos = new ZipOutputStream(baos);
+        String folderName = Paths.get(path).getFileName().toString();
+        addToZip(host, userSession, path, folderName, zos)
+                .onSuccess(v -> completeZip(zos, baos, promise, "getFolder"))
+                .onFailure(err -> {
+                    String messageToFormat = "[Nextcloud@%s::getFolder] Error while building zip archive : %s";
+                    PromiseHelper.reject(log, messageToFormat, this.getClass().getSimpleName(), err, promise);
+                });
         return promise.future();
+    }
+
+    /**
+     * Recursively add a file, or a folder and all its descendants, from Nextcloud into the given zip
+     * stream. Downloads each file individually via the WebDAV endpoint (getFile, already proven to work
+     * with this backend's Bearer/Basic auth) instead of proxying Nextcloud's own ajax/download.php zip
+     * endpoint, which only authenticates a real browser session and otherwise silently serves back the
+     * Files app's own HTML page (HTTP 200) in place of a zip.
+     * <p>
+     * Traversal mirrors folderCopy/copyToWorkspace's own listFiles-based walk: a PROPFIND here only
+     * returns one level of children per call (see NextcloudFolder's own "removing first one because it
+     * is the folder itself"), so each subfolder is listed and recursed into separately. The decode dance
+     * on each child path reuses copyToWorkspace's own (NextcloudFolder's item paths come back still
+     * URL-encoded from the href parsed out of the PROPFIND response).
+     *
+     * @param host          host
+     * @param userSession   User session
+     * @param path          Plain (decoded) path of the file/folder on Nextcloud
+     * @param zipEntryName  Name (with any parent segments already prefixed) to store this entry under
+     * @param zos           Zip stream being built; recursion runs one branch at a time, so writes never overlap
+     * @return              Future completed once this file/folder, and all its descendants, are in the zip
+     */
+    private Future<Void> addToZip(String host, UserNextcloud.TokenProvider userSession, String path, String zipEntryName, ZipOutputStream zos) {
+        Promise<Void> promise = Promise.promise();
+        listFiles(host, userSession, path)
+                .compose(fileInfo -> {
+                    if (fileInfo.isEmpty()) {
+                        return Future.<Void>failedFuture("nextcloud.server.file.no.exist");
+                    }
+                    if (Boolean.FALSE.equals(fileInfo.getJsonObject(0).getBoolean(Field.ISFOLDER))) {
+                        return getFile(host, userSession, StringHelper.encodeUrlForNc(path))
+                                .compose(response -> {
+                                    try {
+                                        zos.putNextEntry(new ZipEntry(zipEntryName));
+                                        zos.write(response.body().getBytes());
+                                        zos.closeEntry();
+                                        return Future.<Void>succeededFuture();
+                                    } catch (IOException e) {
+                                        return Future.<Void>failedFuture(e);
+                                    }
+                                });
+                    }
+                    NextcloudFolder ncFolder = new NextcloudFolder(fileInfo);
+                    if (!ncFolder.isSet()) {
+                        return Future.<Void>failedFuture("folder.info.retrieve.failed");
+                    }
+                    ncFolder.setPath(path);
+                    List<String> childNames = ncFolder.getFolderItemsNames();
+                    List<String> childPaths = ncFolder.getFolderItemPath();
+                    Future<Void> current = Future.succeededFuture();
+                    for (int i = 0; i < childPaths.size(); i++) {
+                        String decodedChildPath = StringHelper.decodeUrlForNc(childPaths.get(i)).replace(Field.ASCIISPACE, Field.PLUS_SIGN);
+                        String childZipEntryName = zipEntryName + "/" + StringHelper.decodeUrlForNc(childNames.get(i));
+                        current = current.compose(v -> addToZip(host, userSession, decodedChildPath, childZipEntryName, zos));
+                    }
+                    return current;
+                })
+                .onSuccess(v -> promise.complete())
+                .onFailure(promise::fail);
+        return promise.future();
+    }
+
+    private void completeZip(ZipOutputStream zos, ByteArrayOutputStream baos, Promise<Buffer> promise, String caller) {
+        try {
+            zos.close();
+            promise.complete(Buffer.buffer(baos.toByteArray()));
+        } catch (IOException e) {
+            String messageToFormat = "[Nextcloud@%s::" + caller + "] Error while closing zip stream : %s";
+            PromiseHelper.reject(log, messageToFormat, this.getClass().getSimpleName(), e, promise);
+        }
     }
 
 
@@ -385,12 +469,18 @@ public class DefaultDocumentsService implements DocumentsService {
         return promise.future();
     }
 
+    /**
+     * path here is always the full WebDAV href as returned by listTrash/parseTrashEntries (e.g.
+     * "/remote.php/dav/trashbin/1/trash/file.txt.d200"), already rooted at the server — NOT a name
+     * relative to the user's trashbin. Prepending webdavEndpoint/TRASHBIN/userId again (as this used to
+     * do) built a doubled, malformed URL that 404'd silently: deleteDocumentPermanently's purge call
+     * (used right after a Nextcloud -> workspace move) would fail without surfacing an error, leaving the
+     * moved file's trash entry behind even though the move itself had already succeeded.
+     */
     private Future<Void> deleteDocumentsFromTrashbin(String host, TokenProvider userSession, String path) {
         Promise<Void> promise = Promise.promise();
         final NextcloudConfig nextcloudConfig = this.nextcloudConfigMapByHost.get(host);
-        String url = nextcloudConfig.host() + nextcloudConfig.webdavEndpoint().replace(Field.FILES, "") + Field.TRASHBIN
-                + "/" + userSession.userId() + "/" + path;
-        authenticate(this.client.deleteAbs(url), userSession)
+        authenticate(this.client.deleteAbs(nextcloudConfig.host() + path), userSession)
                 .send(responseAsync -> onDeleteDocumentHandler(responseAsync, promise));
         return promise.future();
     }
