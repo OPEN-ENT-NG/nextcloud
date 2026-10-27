@@ -12,9 +12,6 @@ import org.entcore.common.sql.Sql;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.powermock.reflect.Whitebox;
 
 @RunWith(VertxUnitRunner.class)
 public class UserServiceTest {
@@ -36,13 +33,13 @@ public class UserServiceTest {
         Async async = ctx.async();
         vertx.eventBus().consumer("fr.openent.next", message -> {
             JsonObject body = (JsonObject) message.body();
-            ctx.assertEquals(body.getString("statement"), "SELECT * FROM nextcloud.user WHERE user_id = ?");
+            ctx.assertEquals(body.getString("statement"), "SELECT *, (token_expires_at IS NOT NULL AND token_expires_at <= now()) AS token_expired " +
+                    "FROM nextcloud.user WHERE user_id = ?");
             ctx.assertEquals(body.getJsonArray("values"), new JsonArray()
                     .add("userId"));
             async.complete();
         });
 
-        Whitebox.invokeMethod(this.userService, "getUserSession",
-                "userId");
+        this.userService.getUserSession("host", "userId");
     }
 }

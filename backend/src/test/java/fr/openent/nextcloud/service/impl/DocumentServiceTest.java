@@ -22,7 +22,6 @@ import io.vertx.ext.web.client.HttpRequest;
 import io.vertx.ext.web.client.WebClient;
 import org.entcore.common.sql.Sql;
 import org.entcore.common.storage.Storage;
-import org.entcore.common.storage.StorageFactory;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -32,7 +31,9 @@ import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.powermock.modules.junit4.PowerMockRunnerDelegate;
+import org.powermock.reflect.Whitebox;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -61,7 +62,7 @@ public class DocumentServiceTest {
         NextcloudConfig nextcloudConfig = new NextcloudConfig(config);
         final Map<String, NextcloudConfig> nextcloudConfigMapByHost = new HashMap<>();
         nextcloudConfigMapByHost.put("localhost", nextcloudConfig);
-        this.storage = Mockito.spy(new StorageFactory(vertx, null).getStorage());
+        this.storage = Mockito.mock(Storage.class);
         serviceFactory = new ServiceFactory(vertx, this.storage, null, null, null, webClient, nextcloudConfigMapByHost);
         PowerMockito.spy(DefaultDocumentsService.class);
         this.documentService = PowerMockito.spy(new DefaultDocumentsService(serviceFactory));
@@ -128,13 +129,13 @@ public class DocumentServiceTest {
         HttpRequest<Buffer> httpRequest = Mockito.spy(HttpRequest.class);
 
         Mockito.doAnswer(invocation -> {
-            String method = invocation.getArgument(0);
+            HttpMethod method = invocation.getArgument(0);
             String absoluteURI = invocation.getArgument(1);
-            ctx.assertEquals(method, "PROPFIND");
+            ctx.assertEquals(method, HttpMethod.PROPFIND);
             ctx.assertEquals(absoluteURI, expectedURI);
             async.complete();
             return httpRequest;
-        }).when(this.webClient).request(Mockito.any(HttpMethod.class), Mockito.anyString());
+        }).when(this.webClient).requestAbs(Mockito.any(HttpMethod.class), Mockito.anyString());
 
         Mockito.doReturn(httpRequest).when(httpRequest).basicAuthentication(Mockito.anyString(), Mockito.anyString());
         Mockito.doReturn(httpRequest).when(httpRequest).as(Mockito.any());
@@ -174,13 +175,13 @@ public class DocumentServiceTest {
         HttpRequest<Buffer> httpRequest = Mockito.spy(HttpRequest.class);
 
         Mockito.doAnswer(invocation -> {
-            String method = invocation.getArgument(0);
+            HttpMethod method = invocation.getArgument(0);
             String absoluteURI = invocation.getArgument(1);
-            ctx.assertEquals(method, "MOVE");
+            ctx.assertEquals(method, HttpMethod.MOVE);
             ctx.assertEquals(absoluteURI, expectedURI);
             async.countDown();
             return httpRequest;
-        }).when(this.webClient).request(Mockito.any(HttpMethod.class), Mockito.anyString());
+        }).when(this.webClient).requestAbs(Mockito.any(HttpMethod.class), Mockito.anyString());
 
         Mockito.doAnswer(invocation -> {
             String headerName = invocation.getArgument(0);
@@ -193,8 +194,75 @@ public class DocumentServiceTest {
 
         Mockito.doReturn(httpRequest).when(httpRequest).basicAuthentication(Mockito.anyString(), Mockito.anyString());
         Mockito.doReturn(httpRequest).when(httpRequest).as(Mockito.any());
-        Mockito.doNothing().when(httpRequest).sendBuffer(Mockito.any(), Mockito.any());
+        Mockito.doNothing().when(httpRequest).send(Mockito.any());
         this.documentService.moveDocument(host, userSession, filePath, moveURI);
+
+        async.awaitSuccess(5000);
+    }
+
+    @Test
+    public void testDeleteDocumentPermanentlyPurgesOnlyNewTrashEntry(TestContext ctx) throws Exception {
+        Async async = ctx.async();
+        String path = "Documents/test%20file.txt";
+        UserNextcloud.TokenProvider userSession = new UserNextcloud.TokenProvider();
+        userSession.setUserId("1");
+
+        JsonObject oldEntry = new JsonObject().put(Field.PATH, "/remote.php/dav/trashbin/1/trash/old.txt.d100");
+        JsonObject newEntry = new JsonObject().put(Field.PATH, "/remote.php/dav/trashbin/1/trash/test file.txt.d200");
+        Mockito.doReturn(Future.succeededFuture(new JsonArray().add(oldEntry)),
+                        Future.succeededFuture(new JsonArray().add(oldEntry).add(newEntry)))
+                .when(this.documentService).listTrash(host, userSession);
+        PowerMockito.doReturn(Future.succeededFuture()).when(this.documentService, "deleteDocument", host, userSession, path);
+        Mockito.doReturn(Future.succeededFuture(new JsonObject()))
+                .when(this.documentService).deleteDocumentsFromTrashbin(Mockito.eq(host), Mockito.eq(userSession), Mockito.anyList());
+
+        Future<Void> result = Whitebox.invokeMethod(this.documentService, "deleteDocumentPermanently", host, userSession, path);
+        result.onComplete(ctx.asyncAssertSuccess(v -> {
+            Mockito.verify(this.documentService).deleteDocumentsFromTrashbin(host, userSession,
+                    Collections.singletonList(newEntry.getString(Field.PATH)));
+            async.complete();
+        }));
+
+        async.awaitSuccess(5000);
+    }
+
+    @Test
+    public void testDeleteDocumentPermanentlyWithoutNewTrashEntry(TestContext ctx) throws Exception {
+        Async async = ctx.async();
+        String path = "Documents/test.txt";
+        UserNextcloud.TokenProvider userSession = new UserNextcloud.TokenProvider();
+        userSession.setUserId("1");
+
+        JsonArray trash = new JsonArray().add(new JsonObject().put(Field.PATH, "/remote.php/dav/trashbin/1/trash/old.txt.d100"));
+        Mockito.doReturn(Future.succeededFuture(trash)).when(this.documentService).listTrash(host, userSession);
+        PowerMockito.doReturn(Future.succeededFuture()).when(this.documentService, "deleteDocument", host, userSession, path);
+
+        Future<Void> result = Whitebox.invokeMethod(this.documentService, "deleteDocumentPermanently", host, userSession, path);
+        result.onComplete(ctx.asyncAssertSuccess(v -> {
+            Mockito.verify(this.documentService, Mockito.never())
+                    .deleteDocumentsFromTrashbin(Mockito.anyString(), Mockito.any(), Mockito.anyList());
+            async.complete();
+        }));
+
+        async.awaitSuccess(5000);
+    }
+
+    @Test
+    public void testDeleteDocumentPermanentlyFailsWhenDeleteFails(TestContext ctx) throws Exception {
+        Async async = ctx.async();
+        String path = "Documents/test.txt";
+        UserNextcloud.TokenProvider userSession = new UserNextcloud.TokenProvider();
+        userSession.setUserId("1");
+
+        Mockito.doReturn(Future.succeededFuture(new JsonArray())).when(this.documentService).listTrash(host, userSession);
+        PowerMockito.doReturn(Future.failedFuture("delete failed")).when(this.documentService, "deleteDocument", host, userSession, path);
+
+        Future<Void> result = Whitebox.invokeMethod(this.documentService, "deleteDocumentPermanently", host, userSession, path);
+        result.onComplete(ctx.asyncAssertFailure(err -> {
+            Mockito.verify(this.documentService, Mockito.never())
+                    .deleteDocumentsFromTrashbin(Mockito.anyString(), Mockito.any(), Mockito.anyList());
+            async.complete();
+        }));
 
         async.awaitSuccess(5000);
     }
