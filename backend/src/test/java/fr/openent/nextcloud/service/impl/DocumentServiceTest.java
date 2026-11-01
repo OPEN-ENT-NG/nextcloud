@@ -33,6 +33,7 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.powermock.modules.junit4.PowerMockRunnerDelegate;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -106,6 +107,50 @@ public class DocumentServiceTest {
         Mockito.doNothing().when(httpRequest).sendBuffer(Mockito.any(), Mockito.any());
         Mockito.doNothing().when(this.storage).removeFile(Mockito.anyString(), Mockito.any());
         this.documentService.uploadFile(host, userSession, new Attachment("id", new Metadata(new JsonObject().put(Field.FILENAMELOWER, "filename"))), null, Boolean.TRUE);
+
+        async.awaitSuccess(10000);
+    }
+
+    @Test
+    public void testUploadFileKeepsStorageFileWhenNextcloudFails(TestContext ctx) throws Exception {
+        Async async = ctx.async();
+        UserNextcloud.TokenProvider userSession = new UserNextcloud.TokenProvider().setUserId("1").setToken("token");
+        PowerMockito.doReturn(Future.failedFuture("nextcloud unreachable")).when(this.documentService, "getUniqueFileName", Mockito.anyString(), Mockito.any(), Mockito.anyString(), Mockito.eq(0));
+
+        this.documentService.uploadFile(host, userSession, new Attachment("id", new Metadata(new JsonObject().put(Field.FILENAMELOWER, "filename"))), null, Boolean.FALSE)
+                .onComplete(ctx.asyncAssertSuccess(result -> {
+                    ctx.assertEquals("nextcloud unreachable", result.getString(Field.ERROR));
+                    Mockito.verify(this.storage, Mockito.never()).removeFile(Mockito.anyString(), Mockito.any());
+                    async.complete();
+                }));
+
+        async.awaitSuccess(10000);
+    }
+
+    @Test
+    public void testCopyStorageFilesToNCReportsEachFile(TestContext ctx) {
+        Async async = ctx.async();
+        UserNextcloud.TokenProvider userSession = new UserNextcloud.TokenProvider().setUserId("1").setToken("token");
+        Attachment copied = new Attachment("file-1", new Metadata(new JsonObject().put(Field.FILENAMELOWER, "copied.pdf")));
+        Attachment rejected = new Attachment("file-2", new Metadata(new JsonObject().put(Field.FILENAMELOWER, "rejected.pdf")));
+        Attachment failed = new Attachment("file-3", new Metadata(new JsonObject().put(Field.FILENAMELOWER, "failed.pdf")));
+        Mockito.doReturn(Future.succeededFuture(new JsonObject().put(Field.STATUSCODE, 201)))
+                .when(this.documentService).uploadFile(host, userSession, copied, "Documents/Casier", Boolean.FALSE);
+        Mockito.doReturn(Future.succeededFuture(new JsonObject().put(Field.STATUSCODE, 507)))
+                .when(this.documentService).uploadFile(host, userSession, rejected, "Documents/Casier", Boolean.FALSE);
+        Mockito.doReturn(Future.failedFuture("File not found in storage"))
+                .when(this.documentService).uploadFile(host, userSession, failed, "Documents/Casier", Boolean.FALSE);
+
+        this.documentService.copyStorageFilesToNC(host, userSession, Arrays.asList(copied, rejected, failed), "/Documents/Casier/")
+                .onComplete(ctx.asyncAssertSuccess(results -> {
+                    ctx.assertEquals(new JsonArray()
+                            .add(new JsonObject().put(Field.FILEID, "file-1").put(Field.NAME, "copied.pdf").put(Field.STATUS, Field.OK_LOWER))
+                            .add(new JsonObject().put(Field.FILEID, "file-2").put(Field.NAME, "rejected.pdf").put(Field.STATUS, Field.KO_LOWER)
+                                    .put(Field.ERROR, "nextcloud.upload.status.507"))
+                            .add(new JsonObject().put(Field.FILEID, "file-3").put(Field.NAME, "failed.pdf").put(Field.STATUS, Field.KO_LOWER)
+                                    .put(Field.ERROR, "File not found in storage")), results);
+                    async.complete();
+                }));
 
         async.awaitSuccess(10000);
     }

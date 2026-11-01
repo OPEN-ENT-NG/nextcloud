@@ -8,6 +8,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.text.Normalizer;
+import java.util.Arrays;
 
 public class StringHelper {
     private static final Logger log = LoggerFactory.getLogger(StringHelper.class);
@@ -29,6 +30,18 @@ public class StringHelper {
      */
     public static String removeFirstChar(String firstChar, String string) {
         return string.startsWith(firstChar) ? string.substring(1) : string;
+    }
+
+    // The path is appended to the user's WebDAV root: it must not leave it.
+    public static boolean isInsideUserRoot(String path) {
+        return path == null || Arrays.stream(path.split("[/\\\\]"))
+                .noneMatch(segment -> segment.equals(".") || segment.equals(".."));
+    }
+
+    // The name is appended to the folder path: it must stay a single segment.
+    public static boolean isValidFileName(String name) {
+        return name != null && !name.trim().isEmpty() && isInsideUserRoot(name)
+                && !name.contains(Field.URL_DELIMITER) && !name.contains("\\");
     }
 
     /**
