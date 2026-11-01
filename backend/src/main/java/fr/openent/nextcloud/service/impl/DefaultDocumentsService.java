@@ -1120,7 +1120,12 @@ public class DefaultDocumentsService implements DocumentsService {
                 .onSuccess(filePath -> {
                     final NextcloudConfig nextcloudConfig = this.nextcloudConfigMapByHost.get(host);
                     //Read the file on the vertx container, id is needed to locate it
-                    storage.readFile(file.id(), res ->
+                    storage.readFile(file.id(), res -> {
+                        if (res == null) {
+                            String messageToFormat = "[Nextcloud@%s::uploadFile] File not found in storage : %s";
+                            PromiseHelper.reject(log, messageToFormat, this.getClass().getSimpleName(), new Exception(file.id()), promise);
+                            return;
+                        }
                         authenticate(this.client.putAbs(nextcloudConfig.host() + nextcloudConfig.webdavEndpoint() + "/" + user.userId() + "/" + StringHelper.encodeUrlForNc(filePath)), user)
                                 .as(BodyCodec.jsonObject())
                                 .sendBuffer(res, responseAsync -> {
@@ -1132,13 +1137,16 @@ public class DefaultDocumentsService implements DocumentsService {
                                                 .put(Field.NAME, file.metadata().filename())
                                                 .put(Field.STATUSCODE, responseAsync.result().statusCode()));
                                     }
-                                }));
+                                });
+                    });
                     if (Boolean.TRUE.equals(deleteFromStorage))
                         storage.removeFile(file.id(), e -> {});
                 })
                 .onFailure(err -> {
-                    promise.complete(new JsonObject().put(Field.ERROR, err));
-                    storage.removeFile(file.id(), e -> {});
+                    promise.complete(new JsonObject().put(Field.ERROR, err.getMessage()));
+                    // The file may belong to another module (e.g. a Rack document): only the caller can allow its removal.
+                    if (Boolean.TRUE.equals(deleteFromStorage))
+                        storage.removeFile(file.id(), e -> {});
                 });
         return promise.future();
     }
@@ -1169,6 +1177,39 @@ public class DefaultDocumentsService implements DocumentsService {
                 });
 
         return promise.future();
+    }
+
+    @Override
+    public Future<JsonArray> copyStorageFilesToNC(String host, UserNextcloud.TokenProvider userSession, List<Attachment> files, String path) {
+        String folderPath = normalizeFolderPath(path);
+        JsonArray results = new JsonArray();
+        Future<Void> current = Future.succeededFuture();
+        for (Attachment file : files) {
+            current = current.compose(v -> uploadFile(host, userSession, file, folderPath, Boolean.FALSE)
+                    .otherwise(err -> new JsonObject().put(Field.ERROR, err.getMessage()))
+                    .map(uploadResult -> results.add(storageCopyResult(file, uploadResult)))
+                    .mapEmpty());
+        }
+        return current.map(v -> results);
+    }
+
+    private String normalizeFolderPath(String path) {
+        if (path == null) return null;
+        String trimmed = path.replaceAll("^/+|/+$", "");
+        return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    private JsonObject storageCopyResult(Attachment file, JsonObject uploadResult) {
+        int statusCode = uploadResult.getInteger(Field.STATUSCODE, 0);
+        boolean copied = !uploadResult.containsKey(Field.ERROR) && statusCode >= 200 && statusCode < 300;
+        JsonObject result = new JsonObject()
+                .put(Field.FILEID, file.id())
+                .put(Field.NAME, file.metadata().filename())
+                .put(Field.STATUS, copied ? Field.OK_LOWER : Field.KO_LOWER);
+        if (!copied) {
+            result.put(Field.ERROR, uploadResult.getString(Field.ERROR, "nextcloud.upload.status." + statusCode));
+        }
+        return result;
     }
 
     /**

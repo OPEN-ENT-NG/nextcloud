@@ -92,6 +92,32 @@ You also need to add **_"enable-nextcloud": true_** in ent-core.json, under work
 }
 </pre>
 
+## Event bus API (other ENT modules)
+
+Address `fr.openent.nextcloud`, action `copyFromStorage`: copy files of the ENT storage into the Nextcloud of a user.
+The files stay in the ENT storage. **The calling module must check that the user can access these files**
+(Nextcloud cannot know the rights of another module's resources) and that the user has the Nextcloud `view` right.
+
+```json
+{
+  "action": "copyFromStorage",
+  "userId": "<ENT user id, owner of the destination Nextcloud>",
+  "host": "<request host, key of the Nextcloud configuration>",
+  "path": "/Documents/Casier/",
+  "files": [
+    { "fileId": "<ENT storage file id>", "metadata": { "filename": "report.pdf", "content-type": "application/pdf", "size": 1024 } }
+  ]
+}
+```
+
+- `path` is optional (Nextcloud root by default). A file whose name already exists is renamed `name (1).ext`.
+- Reply: `{ "status": "ok", "data": [{ "fileId", "name", "status": "ok" | "ko", "error"? }] }`, one entry per file.
+- Failures: `400` invalid message, `401` `nextcloud.session.missing` when the user has never connected to Nextcloud
+  (the front must offer the OAuth2 login), `500` otherwise.
+- Files are uploaded one after the other: use a send timeout longer than the default 30s for large selections.
+
+Example: Rack, `POST /rack/copy/nextcloud`.
+
 # Documentation API
 
 - [OCS](https://docs.nextcloud.com/server/latest/developer_manual/client_apis/OCS/ocs-api-overview.html)

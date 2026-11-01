@@ -14,9 +14,10 @@ import fr.wseduc.security.ActionType;
 import fr.wseduc.security.SecuredAction;
 import fr.wseduc.webutils.http.Renders;
 import io.vertx.core.eventbus.EventBus;
-import io.vertx.core.eventbus.MessageConsumer;
+import io.vertx.core.eventbus.Message;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.entcore.common.controller.ControllerHelper;
 import org.entcore.common.events.EventHelper;
@@ -28,6 +29,7 @@ import org.entcore.common.user.UserUtils;
 import org.entcore.common.utils.StringUtils;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class DocumentsController extends ControllerHelper {
 
@@ -37,6 +39,10 @@ public class DocumentsController extends ControllerHelper {
     private final EventHelper eventHelper;
     public static final String RESOURCE_DOC = "document";
     public static final String RESOURCE_FOLDER = "folder";
+    public static final String BUS_ADDRESS = "fr.openent.nextcloud";
+    private static final String COPY_FROM_STORAGE_ACTION = "copyFromStorage";
+    private static final String SESSION_MISSING = "nextcloud.session.missing";
+    private static final String PATH_INVALID = "nextcloud.path.invalid";
     private final EventBus eventBus;
 
     public DocumentsController(ServiceFactory serviceFactory) {
@@ -342,42 +348,56 @@ public class DocumentsController extends ControllerHelper {
     }
 
     private void initializeEventBusConsumers() {
-        MessageConsumer<JsonObject> nextcloudRackEventConsumer = eventBus.consumer("nextcloud.rack.upload");
+        eventBus.consumer(BUS_ADDRESS, this::onBusMessage);
+    }
 
-        nextcloudRackEventConsumer.handler(message -> {
-            JsonObject body = message.body();
+    private void onBusMessage(Message<JsonObject> message) {
+        String action = message.body().getString(Field.ACTION, "");
+        if (COPY_FROM_STORAGE_ACTION.equals(action)) {
+            copyFromStorage(message);
+        } else {
+            message.fail(400, "Unknown action: " + action);
+        }
+    }
 
-            String fileId = body.getString("fileId");
-            JsonObject metadata = body.getJsonObject("metadata");
-            String recipientUserId = body.getString("recipientId");
-            String host = body.getString("host");
+    /**
+     * Copy files of the ENT storage into the Nextcloud of a user. The calling module must have checked
+     * that this user can access these files.
+     * Body: { userId, host, path (optional), files: [{ fileId, metadata: { filename, content-type, size } }] }
+     */
+    private void copyFromStorage(Message<JsonObject> message) {
+        JsonObject body = message.body();
+        String userId = body.getString(Field.USERID_CAPS);
+        String host = body.getString(Field.HOST);
+        List<Attachment> files = body.getJsonArray(Field.FILES, new JsonArray()).stream()
+                .filter(JsonObject.class::isInstance)
+                .map(JsonObject.class::cast)
+                .map(file -> new Attachment(file.getString(Field.FILEID), new Metadata(file.getJsonObject(Field.METADATA, new JsonObject()))))
+                .collect(Collectors.toList());
+        boolean hasInvalidFile = files.stream()
+                .anyMatch(file -> file.id() == null || !StringHelper.isValidFileName(file.metadata().filename()));
+        if (userId == null || host == null || files.isEmpty() || hasInvalidFile) {
+            message.fail(400, "userId, host and files with a fileId and a valid metadata.filename are required");
+            return;
+        }
+        String path = body.getString(Field.PATH);
+        if (!StringHelper.isInsideUserRoot(path)) {
+            message.fail(400, PATH_INVALID);
+            return;
+        }
 
-            Attachment attachment = new Attachment(fileId, new Metadata(metadata));
-
-            userService.getUserSession(host, recipientUserId)
-                    .compose(userSession -> documentsService.listFiles(
-                            host, userSession, "CASIER")
-                            .compose(files -> {
-                                if (files.isEmpty()) {
-                                    // Folder does not exist, create it
-                                    return documentsService.createFolderNextcloud(
-                                                    host, userSession,
-                                            "CASIER");
-                                } else {
-                                    return io.vertx.core.Future.succeededFuture(new io.vertx.core.json.JsonObject());
-                                }
-                            })
-                            .compose(result -> documentsService.uploadFile(
-                                    host,
-                                    userSession, attachment, "CASIER", Boolean.FALSE)))
-                    .onSuccess(result -> {
-                        message.reply(new JsonObject()
-                                .put(Field.STATUS, Field.OK)
-                                .put(Field.MESSAGE, "Upload succeeded"));
-                    })
-                    .onFailure(err -> {
-                        message.fail(500, "Upload failed: " + err.getMessage());
-                    });
-        });
+        userService.getUserSession(host, userId)
+                .onFailure(err -> message.fail(500, err.getMessage()))
+                .onSuccess(userSession -> {
+                    if (!userSession.hasOAuthAccessToken() && userSession.token() == null) {
+                        message.fail(401, SESSION_MISSING);
+                        return;
+                    }
+                    documentsService.copyStorageFilesToNC(host, userSession, files, path)
+                            .onSuccess(results -> message.reply(new JsonObject()
+                                    .put(Field.STATUS, Field.OK_LOWER)
+                                    .put(Field.DATA, results)))
+                            .onFailure(err -> message.fail(500, err.getMessage()));
+                });
     }
 }

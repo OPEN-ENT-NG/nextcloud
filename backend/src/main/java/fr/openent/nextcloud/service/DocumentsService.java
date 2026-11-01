@@ -136,6 +136,16 @@ public interface DocumentsService {
     Future<JsonObject> uploadFile(String host, UserNextcloud.TokenProvider user, Attachment file, String path,  Boolean deleteFromStorage);
 
     /**
+     * Copy files of the ENT storage to Nextcloud, keeping them in the storage
+     * @param host          host
+     * @param userSession   User session
+     * @param files         Files of the ENT storage to copy
+     * @param path          Path of the destination folder in Nextcloud, root when null or empty
+     * @return              Future JsonArray with the status of each copy
+     */
+    Future<JsonArray> copyStorageFilesToNC(String host, UserNextcloud.TokenProvider userSession, List<Attachment> files, String path);
+
+    /**
      * upload files
      *  @param host host
      *  @param userSession      User session
